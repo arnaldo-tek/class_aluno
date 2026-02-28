@@ -41,6 +41,7 @@ export function useTopProfessors() {
         .from('professor_profiles')
         .select('id, nome_professor, foto_perfil, average_rating')
         .eq('approval_status', 'aprovado')
+        .eq('is_blocked', false)
         .order('average_rating', { ascending: false })
         .limit(10)
 

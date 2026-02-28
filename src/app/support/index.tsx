@@ -121,7 +121,14 @@ export default function SupportScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ padding: 16 }}
             renderItem={({ item }) => (
-              <View className="bg-dark-surface rounded-2xl p-4 mb-3 border border-darkBorder">
+              <TouchableOpacity
+                onPress={() => router.push({
+                  pathname: '/support/[id]',
+                  params: { id: item.id, descricao: item.descricao ?? '', status: item.status ?? 'aberto' },
+                })}
+                activeOpacity={0.7}
+                className="bg-dark-surface rounded-2xl p-4 mb-3 border border-darkBorder"
+              >
                 <View className="flex-row items-start justify-between mb-2">
                   <Badge variant={getStatusVariant(item.status ?? 'aberto')}>
                     {getStatusLabel(item.status ?? 'aberto')}
@@ -133,7 +140,11 @@ export default function SupportScreen() {
                 <Text className="text-sm text-darkText-secondary leading-5" numberOfLines={4}>
                   {item.descricao}
                 </Text>
-              </View>
+                <View className="flex-row items-center mt-2">
+                  <Ionicons name="chatbubble-outline" size={14} color="#9ca3af" />
+                  <Text className="text-xs text-darkText-muted ml-1">Toque para ver mensagens</Text>
+                </View>
+              </TouchableOpacity>
             )}
           />
         )}

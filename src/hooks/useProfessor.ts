@@ -9,6 +9,8 @@ export function useProfessorDetail(professorId: string) {
         .from('professor_profiles')
         .select('*')
         .eq('id', professorId)
+        .eq('approval_status', 'aprovado')
+        .eq('is_blocked', false)
         .single()
 
       if (error) throw error

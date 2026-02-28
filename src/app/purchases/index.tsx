@@ -35,7 +35,7 @@ export default function PurchaseHistoryScreen() {
       ) : !purchases?.length ? (
         <EmptyState
           title="Nenhuma compra"
-          description="Suas compras aparecerão aqui."
+          description="Aqui aparecerão suas compras de cursos e pacotes pagos. Inscrições gratuitas não geram registro de compra."
           icon={<Ionicons name="receipt-outline" size={48} color="#9ca3af" />}
         />
       ) : (

@@ -39,7 +39,7 @@ function useFavoriteNewsDetails(ids: string[]) {
       if (!ids.length) return []
       const { data, error } = await supabase
         .from('noticias')
-        .select('id, titulo, imagem_capa, created_at')
+        .select('id, titulo, imagem, created_at')
         .in('id', ids)
       if (error) throw error
       return data ?? []
@@ -55,7 +55,7 @@ function useFavoriteNoticeDetails(ids: string[]) {
       if (!ids.length) return []
       const { data, error } = await supabase
         .from('editais')
-        .select('id, titulo, imagem_capa, created_at')
+        .select('id, titulo, imagem, created_at')
         .in('id', ids)
       if (error) throw error
       return data ?? []
@@ -109,7 +109,7 @@ export default function FavoritesScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#e5e5e5" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-darkText">{t('profile.favorites')}</Text>
       </View>
@@ -234,8 +234,8 @@ export default function FavoritesScreen() {
                 className="bg-dark-surface rounded-2xl mb-3 overflow-hidden"
                 activeOpacity={0.7}
               >
-                {item.imagem_capa && (
-                  <Image source={{ uri: item.imagem_capa }} className="w-full h-32" resizeMode="cover" />
+                {item.imagem && (
+                  <Image source={{ uri: item.imagem }} className="w-full h-32" resizeMode="cover" />
                 )}
                 <View className="px-4 py-3">
                   <Text className="text-base font-medium text-darkText">{item.titulo}</Text>
@@ -264,8 +264,8 @@ export default function FavoritesScreen() {
                 className="bg-dark-surface rounded-2xl mb-3 overflow-hidden"
                 activeOpacity={0.7}
               >
-                {item.imagem_capa && (
-                  <Image source={{ uri: item.imagem_capa }} className="w-full h-32" resizeMode="cover" />
+                {item.imagem && (
+                  <Image source={{ uri: item.imagem }} className="w-full h-32" resizeMode="cover" />
                 )}
                 <View className="px-4 py-3">
                   <Text className="text-base font-medium text-darkText">{item.titulo}</Text>

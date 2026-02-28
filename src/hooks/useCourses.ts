@@ -7,9 +7,11 @@ export function useFeaturedCourses() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('cursos')
-        .select('id, nome, imagem, preco, average_rating, professor:professor_profiles(nome_professor)')
+        .select('id, nome, imagem, preco, average_rating, professor:professor_profiles!inner(nome_professor, approval_status, is_blocked)')
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
+        .eq('professor.approval_status', 'aprovado')
+        .eq('professor.is_blocked', false)
         .order('average_rating', { ascending: false })
         .limit(10)
 
@@ -37,9 +39,11 @@ export function useCourses(filters: CoursesFilter = {}) {
     queryFn: async () => {
       let query = supabase
         .from('cursos')
-        .select('id, nome, imagem, preco, average_rating, descricao, professor:professor_profiles(nome_professor)', { count: 'exact' })
+        .select('id, nome, imagem, preco, average_rating, descricao, professor:professor_profiles!inner(nome_professor, approval_status, is_blocked)', { count: 'exact' })
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
+        .eq('professor.approval_status', 'aprovado')
+        .eq('professor.is_blocked', false)
         .order('created_at', { ascending: false })
         .range((page - 1) * pageSize, page * pageSize - 1)
 
@@ -69,10 +73,12 @@ export function useCourseDetail(courseId: string) {
         .from('cursos')
         .select(`
           *,
-          professor:professor_profiles(id, nome_professor, foto_perfil, average_rating, descricao, user_id),
+          professor:professor_profiles!inner(id, nome_professor, foto_perfil, average_rating, descricao, user_id, approval_status, is_blocked),
           categoria:categorias(nome)
         `)
         .eq('id', courseId)
+        .eq('professor.approval_status', 'aprovado')
+        .eq('professor.is_blocked', false)
         .single()
 
       if (error) throw error

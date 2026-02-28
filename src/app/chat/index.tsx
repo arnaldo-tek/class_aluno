@@ -18,8 +18,8 @@ export default function ChatListScreen() {
     const profile = isUserA ? chat.user_b_profile : chat.user_a_profile
     return {
       id: isUserA ? chat.user_b : chat.user_a,
-      name: profile?.display_name ?? 'Usuário',
-      photo: profile?.photo_url ?? null,
+      name: profile?.display_name || 'Usuário',
+      photo: profile?.photo_url || null,
     }
   }
 
@@ -75,7 +75,7 @@ export default function ChatListScreen() {
                 ) : (
                   <View className="w-12 h-12 rounded-full bg-primary-50 items-center justify-center">
                     <Text className="text-lg font-bold text-primary-light">
-                      {other.name[0].toUpperCase()}
+                      {(other.name ?? '?')[0].toUpperCase()}
                     </Text>
                   </View>
                 )}

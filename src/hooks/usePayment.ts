@@ -44,7 +44,7 @@ interface PixResult extends OrderResult {
 
 async function invokeEdgeFunction<T>(name: string, body: unknown): Promise<T> {
   const { data, error } = await supabase.functions.invoke(name, {
-    body: JSON.stringify(body),
+    body,
   })
   if (error) throw new Error(error.message ?? `Edge function ${name} failed`)
   return data as T

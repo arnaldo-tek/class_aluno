@@ -41,7 +41,10 @@
     "extra": {
       "supabaseUrl": "http://127.0.0.1:54321",
       "supabaseAnonKey": "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH",
-      "sentryDsn": ""
+      "sentryDsn": "",
+      "eas": {
+        "projectId": "100d208a-f02e-46d5-95bd-0999e523ada2"
+      }
     }
   }
 }

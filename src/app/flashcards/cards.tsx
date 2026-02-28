@@ -8,8 +8,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 
 export default function FlashcardsListScreen() {
-  const { block_id, block_name, folder_id } = useLocalSearchParams<{
-    block_id: string; block_name?: string; folder_id: string
+  const { block_id, block_name, folder_id, folder_name } = useLocalSearchParams<{
+    block_id: string; block_name?: string; folder_id: string; folder_name?: string
   }>()
   const router = useRouter()
   const { data: cards, isLoading } = useFlashcards(block_id!)
@@ -55,6 +55,19 @@ export default function FlashcardsListScreen() {
             <Ionicons name="add-circle-outline" size={28} color="#60a5fa" />
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Breadcrumb */}
+      <View className="flex-row items-center px-4 py-2 bg-dark-bg">
+        <TouchableOpacity onPress={() => router.push('/flashcards')}>
+          <Text className="text-xs text-primary-light">Flashcards</Text>
+        </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={12} color="#9ca3af" style={{ marginHorizontal: 4 }} />
+        <TouchableOpacity onPress={() => router.push({ pathname: '/flashcards/blocks', params: { folder_id: folder_id!, folder_name: folder_name ?? '' } })}>
+          <Text className="text-xs text-primary-light" numberOfLines={1}>{folder_name ?? 'Pasta'}</Text>
+        </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={12} color="#9ca3af" style={{ marginHorizontal: 4 }} />
+        <Text className="text-xs text-darkText-muted" numberOfLines={1}>{block_name ?? 'Bloco'}</Text>
       </View>
 
       {showForm && (

@@ -30,11 +30,15 @@ export default function RegisterScreen() {
       if (data.session) {
         router.replace('/(tabs)/home')
       } else {
-        Alert.alert(
-          'Verifique seu email',
-          'Enviamos um link de confirmacao para o seu email. Confirme para acessar o app.',
-          [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }],
-        )
+        if (Platform.OS === 'web') {
+          alert('Verifique seu email: Enviamos um link de confirmação para o seu email. Confirme para acessar o app.')
+        } else {
+          Alert.alert(
+            'Verifique seu email',
+            'Enviamos um link de confirmacao para o seu email. Confirme para acessar o app.',
+          )
+        }
+        router.replace('/(auth)/login')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.registerError'))

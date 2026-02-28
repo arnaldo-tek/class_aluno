@@ -1,66 +1,111 @@
 import { useState, useRef, useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { Audio } from 'expo-av'
 import { useAudioLawDetail } from '@/hooks/useAudio'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { t } from '@/i18n'
+
+// Web-compatible audio player
+function useAudioPlayer() {
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const audioRef = useRef<any>(null)
+
+  const play = useCallback(async (url: string, index: number, audios: any[], onFinish?: () => void) => {
+    // Stop current
+    if (audioRef.current) {
+      if (Platform.OS === 'web') {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+      } else {
+        try {
+          const { Audio } = require('expo-av')
+          await audioRef.current.stopAsync?.()
+          await audioRef.current.unloadAsync?.()
+        } catch {}
+      }
+      audioRef.current = null
+    }
+
+    if (Platform.OS === 'web') {
+      const audio = new window.Audio(url)
+      audio.onended = () => {
+        const nextIdx = index + 1
+        if (nextIdx < audios.length) {
+          play(audios[nextIdx].audio_url, nextIdx, audios, onFinish)
+        } else {
+          setIsPlaying(false)
+          setCurrentIndex(null)
+        }
+      }
+      audio.onerror = () => {
+        setIsPlaying(false)
+        setCurrentIndex(null)
+      }
+      audioRef.current = audio
+      audio.play()
+      setCurrentIndex(index)
+      setIsPlaying(true)
+    } else {
+      try {
+        const { Audio } = require('expo-av')
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: url },
+          { shouldPlay: true },
+          (status: any) => {
+            if (status.isLoaded && status.didJustFinish) {
+              const nextIdx = index + 1
+              if (nextIdx < audios.length) {
+                play(audios[nextIdx].audio_url, nextIdx, audios, onFinish)
+              } else {
+                setIsPlaying(false)
+                setCurrentIndex(null)
+              }
+            }
+          },
+        )
+        audioRef.current = sound
+        setCurrentIndex(index)
+        setIsPlaying(true)
+      } catch {
+        setIsPlaying(false)
+        setCurrentIndex(null)
+      }
+    }
+  }, [])
+
+  const togglePlayPause = useCallback(async (index: number, url: string, audios: any[]) => {
+    if (currentIndex === index && isPlaying) {
+      if (Platform.OS === 'web') {
+        audioRef.current?.pause()
+      } else {
+        await audioRef.current?.pauseAsync?.()
+      }
+      setIsPlaying(false)
+    } else if (currentIndex === index && !isPlaying) {
+      if (Platform.OS === 'web') {
+        audioRef.current?.play()
+      } else {
+        await audioRef.current?.playAsync?.()
+      }
+      setIsPlaying(true)
+    } else {
+      await play(url, index, audios)
+    }
+  }, [currentIndex, isPlaying, play])
+
+  return { currentIndex, isPlaying, play, togglePlayPause }
+}
 
 export default function AudioPlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const { data, isLoading } = useAudioLawDetail(id!)
-
-  const [currentIndex, setCurrentIndex] = useState<number | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const soundRef = useRef<Audio.Sound | null>(null)
+  const { currentIndex, isPlaying, play, togglePlayPause } = useAudioPlayer()
 
   const audios = data?.audios ?? []
-
-  const playAudio = useCallback(async (index: number) => {
-    if (soundRef.current) {
-      await soundRef.current.stopAsync()
-      await soundRef.current.unloadAsync()
-      soundRef.current = null
-    }
-
-    const audio = audios[index]
-    if (!audio) return
-
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: audio.audio_url },
-      { shouldPlay: true },
-      (status: any) => {
-        if (status.isLoaded && status.didJustFinish) {
-          const nextIndex = index + 1
-          if (nextIndex < audios.length) {
-            playAudio(nextIndex)
-          } else {
-            setIsPlaying(false)
-            setCurrentIndex(null)
-          }
-        }
-      },
-    )
-
-    soundRef.current = sound
-    setCurrentIndex(index)
-    setIsPlaying(true)
-  }, [audios])
-
-  const togglePlayPause = useCallback(async (index: number) => {
-    if (currentIndex === index && isPlaying) {
-      await soundRef.current?.pauseAsync()
-      setIsPlaying(false)
-    } else if (currentIndex === index && !isPlaying) {
-      await soundRef.current?.playAsync()
-      setIsPlaying(true)
-    } else {
-      await playAudio(index)
-    }
-  }, [currentIndex, isPlaying, playAudio])
 
   if (isLoading) return <LoadingSpinner />
   if (!data?.lei) return null
@@ -88,7 +133,7 @@ export default function AudioPlayerScreen() {
             {audios.map((audio, i) => (
               <TouchableOpacity
                 key={audio.id}
-                onPress={() => togglePlayPause(i)}
+                onPress={() => togglePlayPause(i, audio.audio_url, audios)}
                 className={`flex-row items-center px-4 py-3 mb-2 rounded-2xl border ${
                   currentIndex === i
                     ? 'border-primary bg-primary-50'
@@ -101,7 +146,7 @@ export default function AudioPlayerScreen() {
                   <Ionicons
                     name={currentIndex === i && isPlaying ? 'pause' : 'play'}
                     size={18}
-                    color={currentIndex === i && isPlaying ? '#1a1a2e' : '#60a5fa'}
+                    color={currentIndex === i && isPlaying ? '#fff' : '#60a5fa'}
                   />
                 </View>
                 <View className="flex-1 ml-3">
@@ -117,10 +162,10 @@ export default function AudioPlayerScreen() {
 
             {audios.length > 1 && (
               <TouchableOpacity
-                onPress={() => playAudio(0)}
+                onPress={() => play(audios[0].audio_url, 0, audios)}
                 className="mt-2 bg-primary rounded-2xl py-3.5 items-center"
               >
-                <Text className="text-darkText-inverse font-semibold text-sm">
+                <Text className="text-white font-semibold text-sm">
                   Reproduzir todos sequencialmente
                 </Text>
               </TouchableOpacity>

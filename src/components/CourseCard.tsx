@@ -11,10 +11,11 @@ interface CourseCardProps {
   professor_nome?: string | null
   average_rating?: number | null
   horizontal?: boolean
+  progress?: number | null
 }
 
 export function CourseCard({
-  id, nome, imagem, preco, professor_nome, average_rating, horizontal,
+  id, nome, imagem, preco, professor_nome, average_rating, horizontal, progress,
 }: CourseCardProps) {
   const router = useRouter()
 
@@ -84,21 +85,33 @@ export function CourseCard({
               <Text className="text-xs text-darkText-muted" numberOfLines={1}>{professor_nome}</Text>
             )}
           </View>
-          <View className="flex-row items-center justify-between mt-2">
-            {average_rating != null && average_rating > 0 ? (
-              <View className="flex-row items-center">
-                <Ionicons name="star" size={12} color="#f59e0b" />
-                <Text className="text-xs text-darkText-secondary ml-1 font-medium">{average_rating.toFixed(1)}</Text>
+          {progress != null ? (
+            <View className="mt-2">
+              <View className="flex-row items-center justify-between mb-1">
+                <Text className="text-xs text-darkText-muted">{t('courses.progress') ?? 'Progresso'}</Text>
+                <Text className="text-xs font-semibold text-primary-light">{Math.round(progress)}%</Text>
               </View>
-            ) : (
-              <View />
-            )}
-            <View className="bg-accent rounded-lg px-2.5 py-1">
-              <Text className="text-xs font-bold text-white">
-                {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
-              </Text>
+              <View className="h-1.5 bg-dark-surfaceLight rounded-full overflow-hidden">
+                <View className="h-full bg-primary rounded-full" style={{ width: `${Math.round(progress)}%` }} />
+              </View>
             </View>
-          </View>
+          ) : (
+            <View className="flex-row items-center justify-between mt-2">
+              {average_rating != null && average_rating > 0 ? (
+                <View className="flex-row items-center">
+                  <Ionicons name="star" size={12} color="#f59e0b" />
+                  <Text className="text-xs text-darkText-secondary ml-1 font-medium">{average_rating.toFixed(1)}</Text>
+                </View>
+              ) : (
+                <View />
+              )}
+              <View className="bg-accent rounded-lg px-2.5 py-1">
+                <Text className="text-xs font-bold text-white">
+                  {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>

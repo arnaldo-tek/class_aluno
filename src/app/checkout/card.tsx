@@ -42,7 +42,8 @@ export default function CardCheckoutScreen() {
     if (parts.length !== 2) return null
     const month = parseInt(parts[0], 10)
     const year = parseInt(parts[1], 10)
-    if (month < 1 || month > 12 || year < 24) return null
+    const currentYear = new Date().getFullYear() % 100
+    if (month < 1 || month > 12 || year < currentYear) return null
     return { month, year: 2000 + year }
   }
 
@@ -79,7 +80,7 @@ export default function CardCheckoutScreen() {
         router.replace({ pathname: '/checkout/success', params: { course_name: params.course_name, pending: '1' } })
       }
     } catch (err: any) {
-      Alert.alert('Erro no pagamento', err.message ?? 'Tente novamente')
+      router.replace('/checkout/failed')
     }
   }
 

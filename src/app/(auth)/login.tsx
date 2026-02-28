@@ -32,10 +32,7 @@ export default function LoginScreen() {
 
       if (profile?.is_suspended) {
         await signOut()
-        Alert.alert(
-          'Conta suspensa',
-          'Sua conta foi suspensa. Entre em contato com o suporte para mais informacoes.',
-        )
+        setError('Sua conta foi suspensa. Entre em contato com o suporte para mais informações.')
         return
       }
 

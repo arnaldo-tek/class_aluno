@@ -70,6 +70,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="packages"
+        options={{
+          title: t('packages.title'),
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'cube' : 'cube-outline'} size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: t('tabs.profile'),

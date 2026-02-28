@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, FlatList, Linking } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -7,7 +7,6 @@ import { useIsFollowing, useToggleFollow } from '@/hooks/useFavorites'
 import { useStartChat } from '@/hooks/useChat'
 import { CourseCard } from '@/components/CourseCard'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { SectionHeader } from '@/components/ui/SectionHeader'
 import { t } from '@/i18n'
 
 export default function ProfessorDetailScreen() {
@@ -32,148 +31,213 @@ export default function ProfessorDetailScreen() {
   if (isLoading) return <LoadingSpinner />
   if (!professor) return null
 
+  const socialLinks = [
+    { key: 'instagram', icon: 'logo-instagram' as const, url: professor.instagram },
+    { key: 'youtube', icon: 'logo-youtube' as const, url: professor.youtube },
+    { key: 'facebook', icon: 'logo-facebook' as const, url: professor.facebook },
+    { key: 'tiktok', icon: 'logo-tiktok' as const, url: professor.tiktok },
+  ].filter((s) => !!s.url)
+
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Cover */}
         <View className="relative">
           {professor.foto_capa ? (
-            <Image source={{ uri: professor.foto_capa }} className="w-full h-40" resizeMode="cover" />
+            <Image source={{ uri: professor.foto_capa }} style={{ width: '100%', height: 160 }} resizeMode="cover" />
           ) : (
-            <View className="w-full h-40 bg-primary-50" />
+            <View style={{ width: '100%', height: 160, backgroundColor: '#dbeafe' }} />
           )}
           <TouchableOpacity
             onPress={() => router.back()}
-            className="absolute top-3 left-3 w-10 h-10 rounded-full bg-black/50 items-center justify-center p-1"
+            style={{
+              position: 'absolute', top: 12, left: 12,
+              width: 36, height: 36, borderRadius: 18,
+              backgroundColor: 'rgba(255,255,255,0.9)',
+              alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            <Ionicons name="arrow-back" size={22} color="#1a1a2e" />
+            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
           </TouchableOpacity>
         </View>
 
-        {/* Avatar + Name */}
+        {/* Avatar + Info */}
         <View className="items-center -mt-12 px-4">
           {professor.foto_perfil ? (
-            <Image source={{ uri: professor.foto_perfil }} className="w-24 h-24 rounded-full border-4 border-dark-bg" />
+            <Image
+              source={{ uri: professor.foto_perfil }}
+              style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#f7f6f3' }}
+            />
           ) : (
-            <View className="w-24 h-24 rounded-full border-4 border-dark-bg bg-primary-200 items-center justify-center">
+            <View style={{
+              width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#f7f6f3',
+              backgroundColor: '#dbeafe', alignItems: 'center', justifyContent: 'center',
+            }}>
               <Ionicons name="person" size={36} color="#60a5fa" />
             </View>
           )}
-          <Text className="text-xl font-bold text-darkText mt-2">{professor.nome_professor}</Text>
+
+          <Text style={{ fontSize: 20, fontWeight: '700', color: '#1a1a2e', marginTop: 10, textAlign: 'center' }}>
+            {professor.nome_professor}
+          </Text>
 
           {/* Rating */}
-          <View className="flex-row items-center mt-1">
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
             <Ionicons name="star" size={16} color="#f59e0b" />
-            <Text className="text-sm font-medium text-darkText-secondary ml-1">
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#4b5563', marginLeft: 4 }}>
               {(professor.average_rating ?? 0).toFixed(1)}
             </Text>
             {reviews && (
-              <Text className="text-sm text-darkText-muted ml-1">({reviews.length} {t('courses.reviews').toLowerCase()})</Text>
+              <Text style={{ fontSize: 13, color: '#9ca3af', marginLeft: 4 }}>
+                ({reviews.length} {reviews.length === 1 ? 'avaliação' : 'avaliações'})
+              </Text>
             )}
           </View>
 
-          {/* Social links */}
-          <View className="flex-row gap-4 mt-3">
-            {professor.instagram && (
-              <TouchableOpacity onPress={() => Linking.openURL(professor.instagram!)}>
-                <Ionicons name="logo-instagram" size={22} color="#6b7280" />
-              </TouchableOpacity>
-            )}
-            {professor.youtube && (
-              <TouchableOpacity onPress={() => Linking.openURL(professor.youtube!)}>
-                <Ionicons name="logo-youtube" size={22} color="#6b7280" />
-              </TouchableOpacity>
-            )}
-            {professor.facebook && (
-              <TouchableOpacity onPress={() => Linking.openURL(professor.facebook!)}>
-                <Ionicons name="logo-facebook" size={22} color="#6b7280" />
-              </TouchableOpacity>
-            )}
-            {professor.tiktok && (
-              <TouchableOpacity onPress={() => Linking.openURL(professor.tiktok!)}>
-                <Ionicons name="logo-tiktok" size={22} color="#6b7280" />
-              </TouchableOpacity>
-            )}
-          </View>
+          {/* Social Links */}
+          {socialLinks.length > 0 && (
+            <View style={{ flexDirection: 'row', gap: 16, marginTop: 12 }}>
+              {socialLinks.map((s) => (
+                <TouchableOpacity
+                  key={s.key}
+                  onPress={() => Linking.openURL(s.url!)}
+                  style={{
+                    width: 40, height: 40, borderRadius: 20,
+                    backgroundColor: '#f0efec', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name={s.icon} size={20} color="#6b7280" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
-          {/* Follow + Chat buttons */}
-          <View className="flex-row gap-3 mt-4">
+          {/* Action Buttons */}
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 16, width: '100%', justifyContent: 'center' }}>
             <TouchableOpacity
               onPress={() => toggleFollow.mutate({ professorId: id!, isFollowing: !!isFollowing })}
-              className={`px-6 py-3 rounded-2xl ${isFollowing ? 'bg-dark-surfaceLight' : 'bg-primary'}`}
               disabled={toggleFollow.isPending}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 6,
+                paddingHorizontal: 24, paddingVertical: 12, borderRadius: 16,
+                backgroundColor: isFollowing ? '#f0efec' : '#60a5fa',
+              }}
             >
-              <Text className={`text-sm font-semibold ${isFollowing ? 'text-darkText-secondary' : 'text-white'}`}>
+              <Ionicons
+                name={isFollowing ? 'checkmark-circle' : 'person-add-outline'}
+                size={16}
+                color={isFollowing ? '#6b7280' : '#ffffff'}
+              />
+              <Text style={{
+                fontSize: 14, fontWeight: '600',
+                color: isFollowing ? '#6b7280' : '#ffffff',
+              }}>
                 {isFollowing ? 'Seguindo' : 'Seguir'}
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={handleChat}
-              className="px-5 py-3 rounded-2xl border border-primary"
               disabled={startChat.isPending}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 6,
+                paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16,
+                borderWidth: 1, borderColor: '#60a5fa',
+              }}
             >
               <Ionicons name="chatbubble-outline" size={16} color="#60a5fa" />
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#60a5fa' }}>Chat</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Bio */}
-        {professor.descricao && (
-          <View className="px-4 mt-4">
-            <Text className="text-sm text-darkText-secondary leading-6">{professor.descricao}</Text>
+        {/* Bio / Descrição */}
+        {(professor.descricao || professor.biografia) && (
+          <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
+            <View style={{
+              backgroundColor: '#ffffff', borderRadius: 16, padding: 16,
+              borderWidth: 1, borderColor: '#e5e4e1',
+            }}>
+              {professor.descricao && (
+                <Text style={{ fontSize: 14, color: '#4b5563', lineHeight: 22 }}>
+                  {professor.descricao}
+                </Text>
+              )}
+              {professor.descricao && professor.biografia && (
+                <View style={{ height: 1, backgroundColor: '#e5e4e1', marginVertical: 12 }} />
+              )}
+              {professor.biografia && (
+                <>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+                    Biografia
+                  </Text>
+                  <Text style={{ fontSize: 14, color: '#4b5563', lineHeight: 22 }}>
+                    {professor.biografia}
+                  </Text>
+                </>
+              )}
+            </View>
           </View>
         )}
 
-        {professor.biografia && (
-          <View className="px-4 mt-3">
-            <Text className="text-xs font-semibold text-darkText-muted uppercase mb-1">Biografia</Text>
-            <Text className="text-sm text-darkText-secondary leading-5">{professor.biografia}</Text>
-          </View>
-        )}
-
-        {/* Courses */}
+        {/* Cursos */}
         {courses && courses.length > 0 && (
-          <View className="mt-6">
-            <SectionHeader title={`${t('courses.title')} (${courses.length})`} />
-            {courses.map((c) => (
-              <CourseCard
-                key={c.id}
-                id={c.id}
-                nome={c.nome}
-                imagem={c.imagem}
-                preco={c.preco ?? 0}
-                average_rating={c.average_rating}
-              />
-            ))}
+          <View style={{ marginTop: 24 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: '#1a1a2e', paddingHorizontal: 16, marginBottom: 12 }}>
+              {t('courses.title')} ({courses.length})
+            </Text>
+            <View style={{ paddingHorizontal: 16 }}>
+              {courses.map((c) => (
+                <CourseCard
+                  key={c.id}
+                  id={c.id}
+                  nome={c.nome}
+                  imagem={c.imagem}
+                  preco={c.preco ?? 0}
+                  average_rating={c.average_rating}
+                />
+              ))}
+            </View>
           </View>
         )}
 
-        {/* Reviews */}
+        {/* Avaliações */}
         {reviews && reviews.length > 0 && (
-          <View className="mt-4 px-4 pb-8">
-            <Text className="text-lg font-bold text-darkText mb-3">
+          <View style={{ marginTop: 24, paddingHorizontal: 16, paddingBottom: 32 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: '#1a1a2e', marginBottom: 12 }}>
               {t('courses.reviews')} ({reviews.length})
             </Text>
             {reviews.map((review: any) => (
-              <View key={review.id} className="mb-3 pb-3 border-b border-darkBorder-subtle">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-medium text-darkText">
+              <View key={review.id} style={{
+                backgroundColor: '#ffffff', borderRadius: 12, padding: 14,
+                borderWidth: 1, borderColor: '#e5e4e1', marginBottom: 8,
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#1a1a2e' }}>
                     {review.user?.display_name ?? 'Aluno'}
                   </Text>
-                  <View className="flex-row items-center">
-                    <Ionicons name="star" size={12} color="#f59e0b" />
-                    <Text className="text-xs text-darkText-secondary ml-1">{review.rating}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Ionicons
+                        key={i}
+                        name={i < (review.rating ?? 0) ? 'star' : 'star-outline'}
+                        size={12}
+                        color="#f59e0b"
+                      />
+                    ))}
                   </View>
                 </View>
                 {review.comentario && (
-                  <Text className="text-sm text-darkText-secondary mt-1">{review.comentario}</Text>
+                  <Text style={{ fontSize: 13, color: '#6b7280', marginTop: 6, lineHeight: 20 }}>
+                    {review.comentario}
+                  </Text>
                 )}
               </View>
             ))}
           </View>
         )}
 
-        <View className="h-6" />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
   )

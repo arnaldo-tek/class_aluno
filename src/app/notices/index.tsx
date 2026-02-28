@@ -42,14 +42,14 @@ export default function NoticesScreen() {
         <Text className="text-base font-bold text-darkText flex-1">{t('notices.title')}</Text>
       </View>
 
-      <SearchInput value={search} onChangeText={setSearch} />
+      <SearchInput value={search} onChangeText={setSearch} className="flex-row items-center bg-dark-surfaceLight rounded-2xl px-4 py-2.5 mx-4 my-3" />
 
       {showCategoryGrid && !search ? (
         <FlatList
           data={categories}
           numColumns={2}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, paddingTop: 0 }}
           columnWrapperStyle={{ gap: 12 }}
           ItemSeparatorComponent={() => <View className="h-3" />}
           renderItem={({ item }) => (

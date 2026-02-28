@@ -99,7 +99,7 @@ export function useCancelSubscription() {
   return useMutation({
     mutationFn: async (pacoteId: string) => {
       const { data, error } = await supabase.functions.invoke('payment-subscription', {
-        body: JSON.stringify({ action: 'cancel', pacote_id: pacoteId }),
+        body: { action: 'cancel', pacote_id: pacoteId },
       })
       if (error) throw new Error(error.message ?? 'Failed to cancel subscription')
       return data

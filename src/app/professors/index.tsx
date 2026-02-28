@@ -17,7 +17,8 @@ function useAllProfessors(search: string) {
       let query = supabase
         .from('professor_profiles')
         .select('id, user_id, nome_professor, foto_perfil, descricao, average_rating')
-        .eq('status', 'ativo')
+        .eq('approval_status', 'aprovado')
+        .eq('is_blocked', false)
         .order('nome_professor')
 
       if (search.trim()) {
@@ -40,7 +41,7 @@ export default function ProfessorsListScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#e5e5e5" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-darkText flex-1">Professores</Text>
       </View>

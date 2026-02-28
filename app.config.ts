@@ -77,7 +77,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'INTERNET',
         'ACCESS_NETWORK_STATE',
       ],
-      googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+      // googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
     },
 
     web: {
@@ -108,7 +108,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
 
     updates: {
-      url: `https://u.expo.dev/${process.env.EAS_PROJECT_ID ?? 'placeholder-project-id'}`,
+      url: `https://u.expo.dev/${process.env.EAS_PROJECT_ID ?? '100d208a-f02e-46d5-95bd-0999e523ada2'}`,
       fallbackToCacheTimeout: 0,
       enabled: isProd || isPreview,
     },
@@ -136,7 +136,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
       // EAS Project ID — necessario para OTA updates
       eas: {
-        projectId: process.env.EAS_PROJECT_ID ?? '',
+        projectId: process.env.EAS_PROJECT_ID ?? '100d208a-f02e-46d5-95bd-0999e523ada2',
       },
     },
   }

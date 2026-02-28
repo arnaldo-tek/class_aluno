@@ -4,16 +4,18 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useCourseDetail } from '@/hooks/useCourses'
+import { usePackageDetail } from '@/hooks/usePackages'
 import { useValidateCoupon, useCustomerId } from '@/hooks/usePayment'
 import { useFreeEnroll } from '@/hooks/useEnrollments'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { t } from '@/i18n'
 
 export default function CheckoutScreen() {
   const { id, type = 'curso' } = useLocalSearchParams<{ id: string; type?: string }>()
   const router = useRouter()
 
-  const { data: course, isLoading } = useCourseDetail(id!)
+  const isPacote = type === 'pacote'
+  const courseQuery = useCourseDetail(isPacote ? '' : id!)
+  const packageQuery = usePackageDetail(isPacote ? id! : '')
   const { data: customerId, isLoading: loadingCustomer } = useCustomerId()
   const validateCoupon = useValidateCoupon()
   const freeEnroll = useFreeEnroll()
@@ -21,10 +23,25 @@ export default function CheckoutScreen() {
   const [cupomCode, setCupomCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<{ codigo: string; valor: number } | null>(null)
 
-  if (isLoading || loadingCustomer) return <LoadingSpinner />
-  if (!course) return null
+  const isLoading = isPacote ? packageQuery.isLoading : courseQuery.isLoading
+  const item = isPacote ? packageQuery.data : courseQuery.data
 
-  const originalPrice = course.preco ?? 0
+  if (isLoading || loadingCustomer) return <LoadingSpinner />
+  if (!item) {
+    return (
+      <SafeAreaView className="flex-1 bg-dark-bg items-center justify-center px-8">
+        <Ionicons name="alert-circle-outline" size={48} color="#f87171" />
+        <Text className="text-base text-darkText-secondary text-center mt-4 mb-6">
+          {isPacote ? 'Pacote não encontrado' : 'Curso não encontrado'}
+        </Text>
+        <TouchableOpacity onPress={() => router.back()} className="bg-primary rounded-2xl px-6 py-3">
+          <Text className="text-darkText-inverse font-semibold">Voltar</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    )
+  }
+
+  const originalPrice = item.preco ?? 0
   const discount = appliedCoupon?.valor ?? 0
   const finalPrice = Math.max(originalPrice - discount, 0)
 
@@ -49,7 +66,7 @@ export default function CheckoutScreen() {
       amount: String(Math.round(finalPrice * 100)),
       curso_id: type === 'curso' ? id! : '',
       pacote_id: type === 'pacote' ? id! : '',
-      course_name: course!.nome,
+      course_name: item.nome,
     }
     if (appliedCoupon) {
       params.cupom_codigo = appliedCoupon.codigo
@@ -73,20 +90,27 @@ export default function CheckoutScreen() {
           <Text className="text-lg font-bold text-darkText">Checkout</Text>
         </View>
 
-        {/* Course summary */}
+        {/* Item summary */}
         <View className="flex-row px-4 py-4 border-b border-darkBorder-subtle">
-          {course.imagem ? (
-            <Image source={{ uri: course.imagem }} className="w-20 h-14 rounded-lg" resizeMode="cover" />
+          {item.imagem ? (
+            <Image source={{ uri: item.imagem }} className="w-20 h-14 rounded-lg" resizeMode="cover" />
           ) : (
             <View className="w-20 h-14 rounded-lg bg-dark-surfaceLight items-center justify-center">
-              <Ionicons name="book-outline" size={20} color="#9ca3af" />
+              <Ionicons name={isPacote ? 'layers-outline' : 'book-outline'} size={20} color="#9ca3af" />
             </View>
           )}
           <View className="flex-1 ml-3 justify-center">
-            <Text className="text-sm font-semibold text-darkText" numberOfLines={2}>{course.nome}</Text>
-            <Text className="text-xs text-darkText-secondary mt-0.5">
-              {(course.professor as any)?.nome_professor}
-            </Text>
+            <Text className="text-sm font-semibold text-darkText" numberOfLines={2}>{item.nome}</Text>
+            {!isPacote && (
+              <Text className="text-xs text-darkText-secondary mt-0.5">
+                {((item as any).professor as any)?.nome_professor}
+              </Text>
+            )}
+            {isPacote && (
+              <Text className="text-xs text-darkText-secondary mt-0.5">
+                Pacote com {(item as any).pacote_cursos?.length ?? 0} cursos
+              </Text>
+            )}
           </View>
         </View>
 
@@ -153,13 +177,20 @@ export default function CheckoutScreen() {
           {finalPrice === 0 ? (
             <TouchableOpacity
               onPress={async () => {
-                if (type === 'curso') {
-                  try {
+                try {
+                  if (isPacote) {
+                    // For free packages, enroll in all courses
+                    const cursos = (item as any).pacote_cursos ?? []
+                    for (const pc of cursos) {
+                      const cursoId = pc.curso_id ?? pc.cursos?.id
+                      if (cursoId) await freeEnroll.mutateAsync({ cursoId })
+                    }
+                  } else {
                     await freeEnroll.mutateAsync({ cursoId: id! })
-                    router.replace('/checkout/success?status=free')
-                  } catch (err: any) {
-                    Alert.alert('Erro', err.message ?? 'Nao foi possivel realizar a inscricao.')
                   }
+                  router.replace('/checkout/success?status=free')
+                } catch (err: any) {
+                  Alert.alert('Erro', err.message ?? 'Nao foi possivel realizar a inscricao.')
                 }
               }}
               disabled={freeEnroll.isPending}

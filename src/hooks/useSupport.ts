@@ -41,3 +41,38 @@ export function useCreateChamado() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['my-chamados'] }),
   })
 }
+
+export function useChamadoMensagens(chamadoId: string | undefined) {
+  return useQuery({
+    queryKey: ['chamado-mensagens', chamadoId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chamado_mensagens')
+        .select('id, chamado_id, user_id, mensagem, created_at')
+        .eq('chamado_id', chamadoId!)
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!chamadoId,
+  })
+}
+
+export function useSendChamadoMensagem() {
+  const { user } = useAuthContext()
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ chamadoId, mensagem }: { chamadoId: string; mensagem: string }) => {
+      if (!user) throw new Error('Not authenticated')
+      const { error } = await supabase.from('chamado_mensagens').insert({
+        chamado_id: chamadoId,
+        user_id: user.id,
+        mensagem,
+      })
+      if (error) throw error
+    },
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ['chamado-mensagens', vars.chamadoId] }),
+  })
+}

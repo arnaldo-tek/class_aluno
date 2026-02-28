@@ -40,6 +40,10 @@ export default function MyCoursesScreen() {
           renderItem={({ item }) => {
             const curso = item.curso as any
             if (!curso) return null
+            const prog = (item as any).progress
+            const percentage = prog?.total_lessons > 0
+              ? (prog.completed_lessons / prog.total_lessons) * 100
+              : null
             return (
               <CourseCard
                 id={curso.id}
@@ -47,6 +51,7 @@ export default function MyCoursesScreen() {
                 imagem={curso.imagem}
                 preco={curso.preco ?? 0}
                 professor_nome={curso.professor?.nome_professor}
+                progress={percentage}
               />
             )
           }}

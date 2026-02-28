@@ -9,7 +9,7 @@ import { t } from '@/i18n'
 import { useOnboardingSlides } from '@/hooks/useOnboarding'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
 export default function OnboardingScreen() {
   const router = useRouter()
@@ -38,8 +38,9 @@ export default function OnboardingScreen() {
   function handleNext() {
     if (!slides?.length) return
     if (currentIndex < slides.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true })
-      setCurrentIndex(currentIndex + 1)
+      const nextIndex = currentIndex + 1
+      flatListRef.current?.scrollToOffset({ offset: nextIndex * SCREEN_WIDTH, animated: true })
+      setCurrentIndex(nextIndex)
     } else {
       handleFinish()
     }
@@ -78,17 +79,16 @@ export default function OnboardingScreen() {
             <TouchableOpacity
               activeOpacity={item.link ? 0.9 : 1}
               onPress={() => handleSlidePress(item.link)}
-              style={{ width: SCREEN_WIDTH }}
-              className="flex-1"
+              style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
             >
               {item.imagem ? (
                 <Image
                   source={{ uri: item.imagem }}
-                  style={{ width: SCREEN_WIDTH, flex: 1 }}
+                  style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
                   resizeMode="cover"
                 />
               ) : (
-                <View className="flex-1 bg-dark-surfaceLight items-center justify-center">
+                <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }} className="bg-dark-surfaceLight items-center justify-center">
                   <Ionicons name="image-outline" size={64} color="#9ca3af" />
                 </View>
               )}

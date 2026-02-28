@@ -35,6 +35,15 @@ export default function FlashcardBlocksScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Breadcrumb */}
+      <View className="flex-row items-center px-4 py-2 bg-dark-bg">
+        <TouchableOpacity onPress={() => router.push('/flashcards')}>
+          <Text className="text-xs text-primary-light">Flashcards</Text>
+        </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={12} color="#9ca3af" style={{ marginHorizontal: 4 }} />
+        <Text className="text-xs text-darkText-muted" numberOfLines={1}>{folder_name ?? 'Pasta'}</Text>
+      </View>
+
       {showInput && (
         <View className="flex-row px-4 py-3 bg-dark-surface border-b border-darkBorder gap-2">
           <TextInput
@@ -72,7 +81,7 @@ export default function FlashcardBlocksScreen() {
             <TouchableOpacity
               onPress={() => router.push({
                 pathname: '/flashcards/cards',
-                params: { block_id: item.id, block_name: item.nome, folder_id: folder_id! },
+                params: { block_id: item.id, block_name: item.nome, folder_id: folder_id!, folder_name: folder_name ?? '' },
               })}
               className="bg-dark-surface rounded-2xl px-4 py-4 mb-3 border border-darkBorder flex-row items-center"
               activeOpacity={0.7}

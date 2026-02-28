@@ -18,11 +18,11 @@ const REASONS = [
 function useRequestRefund() {
   const { user } = useAuthContext()
   return useMutation({
-    mutationFn: async ({ orderId, motivo, detalhes }: { orderId: string; motivo: string; detalhes?: string }) => {
+    mutationFn: async ({ movimentacaoId, motivo, detalhes }: { movimentacaoId: string; motivo: string; detalhes?: string }) => {
       if (!user) throw new Error('Not authenticated')
       const { error } = await supabase.from('solicitacoes_reembolso').insert({
         user_id: user.id,
-        order_id: orderId,
+        movimentacao_id: movimentacaoId,
         motivo,
         detalhes,
       })
@@ -42,7 +42,7 @@ export default function RefundRequestScreen() {
     if (!selectedReason) return
     try {
       await refund.mutateAsync({
-        orderId: id!,
+        movimentacaoId: id!,
         motivo: selectedReason,
         detalhes: details.trim() || undefined,
       })
@@ -61,7 +61,7 @@ export default function RefundRequestScreen() {
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View className="flex-row items-center px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-            <Ionicons name="arrow-back" size={24} color="#e5e5e5" />
+            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
           </TouchableOpacity>
           <Text className="text-lg font-bold text-darkText">Solicitar reembolso</Text>
         </View>

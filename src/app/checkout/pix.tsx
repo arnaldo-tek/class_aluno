@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import QRCode from 'react-native-qrcode-svg'
@@ -27,8 +27,12 @@ export default function PixCheckoutScreen() {
   const amountCents = parseInt(params.amount ?? '0', 10)
   const amountBRL = amountCents / 100
 
-  // Generate PIX on mount
+  // Generate PIX on mount (guard against double-fire in StrictMode)
+  const pixGenerated = useRef(false)
   useEffect(() => {
+    if (pixGenerated.current) return
+    pixGenerated.current = true
+
     async function generatePix() {
       try {
         const result = await checkoutPix.mutateAsync({
