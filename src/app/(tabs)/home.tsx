@@ -175,7 +175,7 @@ function CategoriesSection() {
         {categories.map((cat) => (
           <TouchableOpacity
             key={cat.id}
-            onPress={() => router.push(`/courses?categoria=${cat.id}`)}
+            onPress={() => router.push({ pathname: '/courses', params: { categoria: cat.id } })}
             className="bg-dark-surfaceLight rounded-full px-4 py-2.5 mr-2"
             activeOpacity={0.7}
           >
@@ -231,7 +231,7 @@ function PackagesSection() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() => router.push(`/packages/${item.id}`)}
+            onPress={() => router.push({ pathname: '/packages/[id]', params: { id: item.id } })}
             className="bg-dark-surface rounded-2xl mr-3 overflow-hidden border border-darkBorder-subtle"
             style={{ width: 200 }}
             activeOpacity={0.7}
@@ -268,7 +268,7 @@ function NewsSection() {
       {news.map((item) => (
         <TouchableOpacity
           key={item.id}
-          onPress={() => router.push(`/news/${item.id}`)}
+          onPress={() => router.push({ pathname: '/news/[id]', params: { id: item.id } })}
           className="flex-row bg-dark-surface rounded-2xl mx-4 mb-2.5 overflow-hidden"
         >
           {item.imagem ? (

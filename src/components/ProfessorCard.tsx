@@ -14,7 +14,7 @@ export function ProfessorCard({ id, nome, foto, average_rating }: ProfessorCardP
 
   return (
     <TouchableOpacity
-      onPress={() => router.push(`/professor/${id}`)}
+      onPress={() => router.push({ pathname: '/professor/[id]', params: { id } })}
       className="items-center mr-4 w-20"
       activeOpacity={0.7}
     >

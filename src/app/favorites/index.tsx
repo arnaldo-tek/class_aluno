@@ -147,7 +147,7 @@ export default function FavoritesScreen() {
               if (!prof) return null
               return (
                 <TouchableOpacity
-                  onPress={() => router.push(`/professor/${prof.id}`)}
+                  onPress={() => router.push({ pathname: '/professor/[id]', params: { id: prof.id } })}
                   className="bg-dark-surface rounded-2xl px-4 py-3.5 mb-3 flex-row items-center"
                   activeOpacity={0.7}
                 >
@@ -189,7 +189,7 @@ export default function FavoritesScreen() {
             contentContainerStyle={{ padding: 16 }}
             renderItem={({ item }) => (
               <TouchableOpacity
-                onPress={() => router.push(`/course/${item.id}`)}
+                onPress={() => router.push({ pathname: '/course/[id]', params: { id: item.id } })}
                 className="bg-dark-surface rounded-2xl mb-3 overflow-hidden"
                 activeOpacity={0.7}
               >
@@ -230,7 +230,7 @@ export default function FavoritesScreen() {
             contentContainerStyle={{ padding: 16 }}
             renderItem={({ item }) => (
               <TouchableOpacity
-                onPress={() => router.push(`/news/${item.id}`)}
+                onPress={() => router.push({ pathname: '/news/[id]', params: { id: item.id } })}
                 className="bg-dark-surface rounded-2xl mb-3 overflow-hidden"
                 activeOpacity={0.7}
               >
@@ -260,7 +260,7 @@ export default function FavoritesScreen() {
             contentContainerStyle={{ padding: 16 }}
             renderItem={({ item }) => (
               <TouchableOpacity
-                onPress={() => router.push(`/notices/${item.id}`)}
+                onPress={() => router.push({ pathname: '/notices/[id]', params: { id: item.id } })}
                 className="bg-dark-surface rounded-2xl mb-3 overflow-hidden"
                 activeOpacity={0.7}
               >

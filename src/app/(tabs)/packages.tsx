@@ -69,7 +69,7 @@ export default function PackagesTab() {
           }
           renderItem={({ item }) => (
             <TouchableOpacity
-              onPress={() => router.push(`/packages/${item.id}`)}
+              onPress={() => router.push({ pathname: '/packages/[id]', params: { id: item.id } })}
               className="bg-dark-surface rounded-2xl mb-3 overflow-hidden border border-darkBorder-subtle"
               activeOpacity={0.7}
             >

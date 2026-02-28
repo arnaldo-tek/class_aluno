@@ -22,6 +22,18 @@ export default function CheckoutScreen() {
 
   const [cupomCode, setCupomCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<{ codigo: string; valor: number } | null>(null)
+  const [cpf, setCpf] = useState('')
+
+  function formatCpf(text: string) {
+    const digits = text.replace(/\D/g, '').slice(0, 11)
+    if (digits.length <= 3) return digits
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+  }
+
+  const cpfDigits = cpf.replace(/\D/g, '')
+  const cpfValid = cpfDigits.length === 11
 
   const isLoading = isPacote ? packageQuery.isLoading : courseQuery.isLoading
   const item = isPacote ? packageQuery.data : courseQuery.data
@@ -60,6 +72,10 @@ export default function CheckoutScreen() {
       Alert.alert('Erro', 'Não foi possível criar seu perfil de pagamento. Tente novamente.')
       return
     }
+    if (!cpfValid) {
+      Alert.alert('CPF', 'Digite um CPF válido para continuar.')
+      return
+    }
 
     const params: Record<string, string> = {
       customer_id: customerId,
@@ -67,6 +83,7 @@ export default function CheckoutScreen() {
       curso_id: type === 'curso' ? id! : '',
       pacote_id: type === 'pacote' ? id! : '',
       course_name: item.nome,
+      cpf: cpfDigits,
     }
     if (appliedCoupon) {
       params.cupom_codigo = appliedCoupon.codigo
@@ -152,6 +169,20 @@ export default function CheckoutScreen() {
               </Text>
             </View>
           )}
+        </View>
+
+        {/* CPF */}
+        <View className="px-4 py-4 border-b border-darkBorder-subtle">
+          <Text className="text-sm font-medium text-darkText-secondary mb-2">CPF</Text>
+          <TextInput
+            className="border border-darkBorder rounded-2xl px-3 py-2.5 text-sm bg-dark-surface text-darkText"
+            placeholder="000.000.000-00"
+            placeholderTextColor="#9ca3af"
+            value={cpf}
+            onChangeText={(t) => setCpf(formatCpf(t))}
+            keyboardType="numeric"
+            maxLength={14}
+          />
         </View>
 
         {/* Price summary */}

@@ -68,7 +68,7 @@ export default function ProfessorsListScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
           renderItem={({ item }) => (
             <TouchableOpacity
-              onPress={() => router.push(`/professor/${item.id}`)}
+              onPress={() => router.push({ pathname: '/professor/[id]', params: { id: item.id } })}
               className="bg-dark-surface rounded-2xl px-4 py-3.5 mb-3 flex-row items-center"
               activeOpacity={0.7}
             >

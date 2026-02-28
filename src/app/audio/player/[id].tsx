@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAudioLawDetail } from '@/hooks/useAudio'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { DownloadButton } from '@/components/DownloadButton'
 import { t } from '@/i18n'
 
 // Web-compatible audio player
@@ -156,6 +157,19 @@ export default function AudioPlayerScreen() {
                 </View>
                 {currentIndex === i && (
                   <Ionicons name="musical-notes" size={16} color="#f59e0b" />
+                )}
+                {Platform.OS !== 'web' && (
+                  <View className="ml-2">
+                    <DownloadButton
+                      lessonId={audio.id}
+                      courseId={lei.id ?? ''}
+                      courseTitle={lei.nome ?? ''}
+                      lessonTitle={audio.titulo ?? `Audio ${i + 1}`}
+                      contentType="audio"
+                      remoteUrl={audio.audio_url}
+                      size={28}
+                    />
+                  </View>
                 )}
               </TouchableOpacity>
             ))}

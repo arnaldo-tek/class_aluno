@@ -88,6 +88,30 @@ export function useCustomerId() {
   })
 }
 
+/** Update customer document (CPF) and phone on Pagar.me */
+export function useUpdateCustomerDocument() {
+  return useMutation({
+    mutationFn: async ({ customer_id, document }: { customer_id: string; document: string }) => {
+      const { data, error } = await supabase.functions.invoke('payment-create-customer', {
+        body: {
+          customer_id_update: customer_id,
+          document,
+          document_type: 'CPF',
+          phones: {
+            mobile_phone: {
+              country_code: '55',
+              area_code: '11',
+              number: '999999999',
+            },
+          },
+        },
+      })
+      if (error) throw new Error(error.message ?? 'Failed to update customer')
+      return data
+    },
+  })
+}
+
 /** Checkout with credit card */
 export function useCheckoutCard() {
   const qc = useQueryClient()
@@ -95,9 +119,12 @@ export function useCheckoutCard() {
   return useMutation({
     mutationFn: (params: CheckoutCardParams) =>
       invokeEdgeFunction<OrderResult>('payment-checkout-card', params),
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['my-enrollments'] })
       qc.invalidateQueries({ queryKey: ['purchase-history'] })
+      if (data.status === 'paid') {
+        qc.invalidateQueries({ queryKey: ['enrollment-check'] })
+      }
     },
   })
 }
@@ -151,12 +178,20 @@ export function usePurchaseHistory() {
       if (!user) return []
       const { data, error } = await supabase
         .from('movimentacoes')
-        .select('id, valor, status, created_at, nome_curso, pagarme_order_id')
+        .select(`
+          id, valor, status, created_at, nome_curso, pagarme_order_id,
+          curso:cursos(nome, imagem),
+          pacote:pacotes(nome, imagem)
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return data ?? []
+      return (data ?? []).map((m) => ({
+        ...m,
+        display_name: m.nome_curso || (m.curso as any)?.nome || (m.pacote as any)?.nome || 'Compra',
+        display_image: (m.curso as any)?.imagem || (m.pacote as any)?.imagem || null,
+      }))
     },
     enabled: !!user,
   })

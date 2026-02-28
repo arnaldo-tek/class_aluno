@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
-import { useCheckoutCard } from '@/hooks/usePayment'
+import { useCheckoutCard, useUpdateCustomerDocument } from '@/hooks/usePayment'
 
 export default function CardCheckoutScreen() {
   const params = useLocalSearchParams<{
@@ -13,9 +13,11 @@ export default function CardCheckoutScreen() {
     pacote_id?: string
     cupom_codigo?: string
     course_name?: string
+    cpf?: string
   }>()
   const router = useRouter()
   const checkout = useCheckoutCard()
+  const updateDoc = useUpdateCustomerDocument()
 
   const [cardNumber, setCardNumber] = useState('')
   const [holderName, setHolderName] = useState('')
@@ -58,6 +60,18 @@ export default function CardCheckoutScreen() {
     if (!exp) return
 
     try {
+      // Ensure customer has CPF before checkout (non-blocking)
+      if (params.cpf) {
+        try {
+          await updateDoc.mutateAsync({
+            customer_id: params.customer_id!,
+            document: params.cpf,
+          })
+        } catch (e) {
+          console.warn('Failed to update customer document:', e)
+        }
+      }
+
       const result = await checkout.mutateAsync({
         customer_id: params.customer_id!,
         amount: amountCents,
@@ -76,6 +90,8 @@ export default function CardCheckoutScreen() {
 
       if (result.status === 'paid') {
         router.replace({ pathname: '/checkout/success', params: { course_name: params.course_name } })
+      } else if (result.status === 'failed') {
+        router.replace('/checkout/failed')
       } else {
         router.replace({ pathname: '/checkout/success', params: { course_name: params.course_name, pending: '1' } })
       }

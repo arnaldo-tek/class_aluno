@@ -56,7 +56,7 @@ export default function MyPackagesScreen() {
           return (
             <View className="bg-dark-surface rounded-2xl mb-3 overflow-hidden border border-darkBorder-subtle">
               <TouchableOpacity
-                onPress={() => router.push(`/packages/${item.pacote_id}`)}
+                onPress={() => router.push({ pathname: '/packages/[id]', params: { id: item.pacote_id } })}
                 className="flex-row p-4"
               >
                 {pacote?.imagem ? (

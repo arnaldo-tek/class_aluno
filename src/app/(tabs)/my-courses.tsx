@@ -51,7 +51,7 @@ export default function MyCoursesScreen() {
                 imagem={curso.imagem}
                 preco={curso.preco ?? 0}
                 professor_nome={curso.professor?.nome_professor}
-                progress={percentage}
+                progress={percentage ?? 0}
               />
             )
           }}

@@ -122,7 +122,7 @@ export default function NewsScreen() {
           }
           renderItem={({ item }) => (
             <TouchableOpacity
-              onPress={() => router.push(`/news/${item.id}`)}
+              onPress={() => router.push({ pathname: '/news/[id]', params: { id: item.id } })}
               className="bg-dark-surface rounded-2xl mb-3 overflow-hidden border border-darkBorder-subtle"
               activeOpacity={0.7}
             >

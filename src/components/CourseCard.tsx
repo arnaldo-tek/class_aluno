@@ -22,7 +22,7 @@ export function CourseCard({
   if (horizontal) {
     return (
       <TouchableOpacity
-        onPress={() => router.push(`/course/${id}`)}
+        onPress={() => router.push({ pathname: '/course/[id]', params: { id } })}
         className="w-56 mr-3"
         activeOpacity={0.7}
       >
@@ -61,7 +61,7 @@ export function CourseCard({
   // List mode - horizontal card layout
   return (
     <TouchableOpacity
-      onPress={() => router.push(`/course/${id}`)}
+      onPress={() => router.push({ pathname: '/course/[id]', params: { id } })}
       className="mb-3 mx-4"
       activeOpacity={0.7}
     >

@@ -143,3 +143,48 @@ export function useDeleteFlashcard() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['flashcards'] }),
   })
 }
+
+// --- Flashcards por Aula ---
+
+export function useLessonFlashcards(aulaId: string) {
+  const { user } = useAuthContext()
+
+  return useQuery({
+    queryKey: ['flashcards-aula', aulaId, user?.id],
+    queryFn: async () => {
+      if (!user) return []
+      const { data, error } = await supabase
+        .from('flashcards')
+        .select('id, pergunta, resposta, created_at')
+        .eq('aula_id', aulaId)
+        .eq('aluno_id', user.id)
+        .order('created_at')
+
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!aulaId && !!user,
+  })
+}
+
+export function useCreateLessonFlashcard() {
+  const { user } = useAuthContext()
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (params: { pergunta: string; resposta: string; aula_id: string; curso_id?: string }) => {
+      if (!user) throw new Error('Not authenticated')
+      const { error } = await supabase.from('flashcards').insert({
+        pergunta: params.pergunta,
+        resposta: params.resposta,
+        aula_id: params.aula_id,
+        curso_id: params.curso_id ?? null,
+        aluno_id: user.id,
+      })
+      if (error) throw error
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['flashcards-aula', vars.aula_id] })
+    },
+  })
+}

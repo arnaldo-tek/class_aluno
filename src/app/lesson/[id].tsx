@@ -1,17 +1,21 @@
 import { useState, useRef, useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, Platform, TextInput, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Video, ResizeMode, Audio } from 'expo-av'
+import { Animated as RNAnimated } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useLessonDetail, useLessonTexts, useLessonAudios, useLessonQuestions, useLessonProgress, useMarkLessonComplete } from '@/hooks/useLesson'
+import { useLessonFlashcards, useCreateLessonFlashcard, useDeleteFlashcard } from '@/hooks/useFlashcards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { DownloadButton } from '@/components/DownloadButton'
+import { useOfflineUri } from '@/hooks/useDownloads'
 import { t } from '@/i18n'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
-type Tab = 'video' | 'text' | 'audio' | 'pdf' | 'quiz'
+type Tab = 'video' | 'text' | 'audio' | 'pdf' | 'quiz' | 'flashcards'
 
 export default function LessonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -31,6 +35,7 @@ export default function LessonScreen() {
   if (audios && audios.length > 0) availableTabs.push('audio')
   if (lesson?.pdf) availableTabs.push('pdf')
   if (questions && questions.length > 0) availableTabs.push('quiz')
+  availableTabs.push('flashcards')
 
   const [activeTab, setActiveTab] = useState<Tab>('video')
 
@@ -43,6 +48,7 @@ export default function LessonScreen() {
     audio: 'Audio',
     pdf: 'PDF',
     quiz: 'Questoes',
+    flashcards: 'Flashcards',
   }
 
   const tabIcons: Record<Tab, string> = {
@@ -51,6 +57,7 @@ export default function LessonScreen() {
     audio: 'musical-notes',
     pdf: 'document',
     quiz: 'help-circle',
+    flashcards: 'layers',
   }
 
   return (
@@ -68,6 +75,40 @@ export default function LessonScreen() {
             {(lesson.modulo as any)?.nome} • {(lesson.curso as any)?.nome}
           </Text>
         </View>
+        {Platform.OS !== 'web' && (
+          <View className="flex-row items-center gap-1">
+            {(lesson.video_url || (lesson.imagem_capa && (lesson.imagem_capa.includes('.mp4') || lesson.imagem_capa.includes('video')))) && (
+              <DownloadButton
+                lessonId={id!}
+                courseId={(lesson.curso as any)?.id ?? lesson.curso_id ?? ''}
+                courseTitle={(lesson.curso as any)?.nome ?? ''}
+                lessonTitle={lesson.titulo ?? ''}
+                contentType="video"
+                remoteUrl={lesson.video_url || lesson.imagem_capa}
+              />
+            )}
+            {audios && audios.length > 0 && audios[0]?.audio_url && (
+              <DownloadButton
+                lessonId={id!}
+                courseId={(lesson.curso as any)?.id ?? lesson.curso_id ?? ''}
+                courseTitle={(lesson.curso as any)?.nome ?? ''}
+                lessonTitle={lesson.titulo ?? ''}
+                contentType="audio"
+                remoteUrl={audios[0].audio_url}
+              />
+            )}
+            {lesson.pdf && (
+              <DownloadButton
+                lessonId={id!}
+                courseId={(lesson.curso as any)?.id ?? lesson.curso_id ?? ''}
+                courseTitle={(lesson.curso as any)?.nome ?? ''}
+                lessonTitle={lesson.titulo ?? ''}
+                contentType="pdf"
+                remoteUrl={lesson.pdf}
+              />
+            )}
+          </View>
+        )}
       </View>
 
       {/* Tabs */}
@@ -98,7 +139,7 @@ export default function LessonScreen() {
 
       {/* Content */}
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        {activeTab === 'video' && <VideoTab lesson={lesson} />}
+        {activeTab === 'video' && <VideoTab lesson={lesson} lessonId={id!} />}
         {activeTab === 'text' && <TextTab texts={texts ?? []} mainText={lesson.texto_aula} />}
         {activeTab === 'audio' && <AudioTab audios={audios ?? []} />}
         {activeTab === 'pdf' && lesson.pdf && <PdfTab url={lesson.pdf} />}
@@ -111,6 +152,12 @@ export default function LessonScreen() {
               Iniciar Questoes ({questions?.length ?? 0})
             </Text>
           </TouchableOpacity>
+        )}
+        {activeTab === 'flashcards' && (
+          <FlashcardsTab
+            aulaId={id!}
+            cursoId={(lesson.curso as any)?.id ?? lesson.curso_id}
+          />
         )}
 
         {/* Mark as complete */}
@@ -142,11 +189,12 @@ export default function LessonScreen() {
 
 // --- Video Tab ---
 
-function VideoTab({ lesson }: { lesson: any }) {
+function VideoTab({ lesson, lessonId }: { lesson: any; lessonId: string }) {
   const videoRef = useRef<Video>(null)
+  const { data: offlineVideoUri } = useOfflineUri(lessonId, 'video')
 
-  const videoUrl = lesson.imagem_capa
-  const hasVideo = videoUrl && (videoUrl.includes('.mp4') || videoUrl.includes('video') || videoUrl.includes('youtube') || videoUrl.includes('vimeo'))
+  const videoUrl = offlineVideoUri ?? lesson.video_url ?? lesson.imagem_capa
+  const hasVideo = videoUrl && (videoUrl.includes('.mp4') || videoUrl.includes('video') || videoUrl.includes('youtube') || videoUrl.includes('vimeo') || videoUrl.startsWith('file://'))
 
   return (
     <View>
@@ -310,5 +358,184 @@ function PdfTab({ url }: { url: string }) {
         renderLoading={() => <LoadingSpinner />}
       />
     </View>
+  )
+}
+
+// --- Flashcards Tab ---
+
+function FlashcardsTab({ aulaId, cursoId }: { aulaId: string; cursoId?: string }) {
+  const { data: cards = [], isLoading } = useLessonFlashcards(aulaId)
+  const createCard = useCreateLessonFlashcard()
+  const deleteCard = useDeleteFlashcard()
+
+  const [showForm, setShowForm] = useState(false)
+  const [pergunta, setPergunta] = useState('')
+  const [resposta, setResposta] = useState('')
+
+  function handleCreate() {
+    if (!pergunta.trim() || !resposta.trim()) return
+    createCard.mutate(
+      { pergunta: pergunta.trim(), resposta: resposta.trim(), aula_id: aulaId, curso_id: cursoId },
+      {
+        onSuccess: () => {
+          setPergunta('')
+          setResposta('')
+          setShowForm(false)
+        },
+      },
+    )
+  }
+
+  function handleDelete(id: string) {
+    Alert.alert('Remover flashcard', 'Tem certeza?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Remover', style: 'destructive', onPress: () => deleteCard.mutate(id) },
+    ])
+  }
+
+  if (isLoading) return <LoadingSpinner />
+
+  return (
+    <View className="px-4 pt-5">
+      {/* Header */}
+      <View className="flex-row items-center justify-between mb-4">
+        <Text className="text-sm font-bold text-darkText">
+          Flashcards ({cards.length})
+        </Text>
+        <TouchableOpacity
+          onPress={() => setShowForm(!showForm)}
+          className="flex-row items-center bg-primary rounded-full px-4 py-2"
+        >
+          <Ionicons name={showForm ? 'close' : 'add'} size={16} color="white" />
+          <Text className="text-white text-xs font-semibold ml-1">
+            {showForm ? 'Fechar' : 'Criar'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Create form */}
+      {showForm && (
+        <View className="bg-dark-surface rounded-2xl p-4 mb-4 border border-darkBorder-subtle">
+          <View className="flex-row items-center mb-3">
+            <Ionicons name="add-circle" size={18} color="#2563eb" />
+            <Text className="text-sm font-semibold text-darkText ml-2">Novo Flashcard</Text>
+          </View>
+          <TextInput
+            value={pergunta}
+            onChangeText={setPergunta}
+            placeholder="Frente - Pergunta ou conceito"
+            placeholderTextColor="#9ca3af"
+            className="bg-dark-surfaceLight rounded-xl px-4 py-3 text-sm text-darkText mb-3"
+            multiline
+          />
+          <TextInput
+            value={resposta}
+            onChangeText={setResposta}
+            placeholder="Verso - Resposta ou definicao"
+            placeholderTextColor="#9ca3af"
+            className="bg-dark-surfaceLight rounded-xl px-4 py-3 text-sm text-darkText mb-3"
+            multiline
+          />
+          <TouchableOpacity
+            onPress={handleCreate}
+            disabled={createCard.isPending || !pergunta.trim() || !resposta.trim()}
+            className={`rounded-xl py-3 items-center ${pergunta.trim() && resposta.trim() ? 'bg-primary' : 'bg-dark-surfaceLight'}`}
+          >
+            <Text className={`font-bold text-sm ${pergunta.trim() && resposta.trim() ? 'text-white' : 'text-darkText-muted'}`}>
+              {createCard.isPending ? 'Salvando...' : 'Adicionar flashcard'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Empty state */}
+      {cards.length === 0 && !showForm ? (
+        <View className="items-center py-12">
+          <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
+            <Ionicons name="layers-outline" size={32} color="#2563eb" />
+          </View>
+          <Text className="text-base font-semibold text-darkText">Nenhum flashcard</Text>
+          <Text className="text-sm text-darkText-muted mt-1 text-center px-8">
+            Crie flashcards para revisar o conteudo desta aula
+          </Text>
+        </View>
+      ) : (
+        <>
+          {/* Flip cards */}
+          {cards.map((card) => (
+            <FlipCard
+              key={card.id}
+              pergunta={card.pergunta}
+              resposta={card.resposta}
+              onDelete={() => handleDelete(card.id)}
+            />
+          ))}
+        </>
+      )}
+    </View>
+  )
+}
+
+function FlipCard({ pergunta, resposta, onDelete }: { pergunta: string; resposta: string; onDelete: () => void }) {
+  const [isFlipped, setIsFlipped] = useState(false)
+  const animValue = useRef(new RNAnimated.Value(0)).current
+
+  const flip = useCallback(() => {
+    RNAnimated.timing(animValue, {
+      toValue: isFlipped ? 0 : 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start()
+    setIsFlipped(!isFlipped)
+  }, [isFlipped, animValue])
+
+  const frontRotate = animValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  })
+
+  const backRotate = animValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['180deg', '360deg'],
+  })
+
+  return (
+    <TouchableOpacity onPress={flip} onLongPress={onDelete} activeOpacity={0.95} className="mb-3" style={{ height: 160 }}>
+      <View className="flex-1 relative">
+        {/* Front */}
+        <RNAnimated.View style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: frontRotate }] }}>
+          <View className="flex-1 bg-dark-surface rounded-2xl border border-darkBorder-subtle p-5 justify-center">
+            <View className="flex-row items-center mb-2">
+              <View className="w-5 h-5 rounded-full bg-primary/15 items-center justify-center">
+                <Text className="text-[10px] font-bold text-primary">P</Text>
+              </View>
+              <Text className="text-[10px] font-bold text-primary ml-1.5 tracking-wider">PERGUNTA</Text>
+            </View>
+            <Text className="text-sm text-darkText leading-5" numberOfLines={4}>{pergunta}</Text>
+            <View className="flex-row items-center mt-auto pt-2">
+              <Ionicons name="sync-outline" size={12} color="#9ca3af" />
+              <Text className="text-[10px] text-darkText-muted ml-1">Toque para virar</Text>
+            </View>
+          </View>
+        </RNAnimated.View>
+
+        {/* Back */}
+        <RNAnimated.View style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: backRotate }] }}>
+          <View className="flex-1 bg-primary rounded-2xl p-5 justify-center">
+            <View className="flex-row items-center mb-2">
+              <View className="w-5 h-5 rounded-full bg-white/20 items-center justify-center">
+                <Text className="text-[10px] font-bold text-white">R</Text>
+              </View>
+              <Text className="text-[10px] font-bold text-white/80 ml-1.5 tracking-wider">RESPOSTA</Text>
+            </View>
+            <Text className="text-sm text-white leading-5" numberOfLines={4}>{resposta}</Text>
+            <View className="flex-row items-center mt-auto pt-2">
+              <Ionicons name="sync-outline" size={12} color="rgba(255,255,255,0.5)" />
+              <Text className="text-[10px] text-white/50 ml-1">Toque para virar</Text>
+            </View>
+          </View>
+        </RNAnimated.View>
+      </View>
+    </TouchableOpacity>
   )
 }

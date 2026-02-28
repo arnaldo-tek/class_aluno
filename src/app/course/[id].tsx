@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Alert } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Alert, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -10,6 +10,7 @@ import { useSubmitReview } from '@/hooks/useFavorites'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
+import { DownloadAllButton } from '@/components/DownloadAllButton'
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -58,7 +59,7 @@ export default function CourseDetailScreen() {
           {/* Professor */}
           {professor && (
             <TouchableOpacity
-              onPress={() => router.push(`/professor/${professor.id}`)}
+              onPress={() => router.push({ pathname: '/professor/[id]', params: { id: professor.id } })}
               className="flex-row items-center mt-3"
             >
               {professor.foto_perfil ? (
@@ -101,13 +102,34 @@ export default function CourseDetailScreen() {
               <Badge variant="success">{t('courses.enrolled')}</Badge>
             ) : (
               <TouchableOpacity
-                onPress={() => router.push({ pathname: `/checkout/${id}`, params: { type: 'curso' } })}
+                onPress={() => router.push({ pathname: '/checkout/[id]', params: { id: id!, type: 'curso' } })}
                 className="bg-accent rounded-2xl px-7 py-3.5"
               >
                 <Text className="text-darkText-inverse font-bold">{t('courses.enroll')}</Text>
               </TouchableOpacity>
             )}
           </View>
+
+          {/* Download all */}
+          {Platform.OS !== 'web' && isEnrolled && modules && modules.length > 0 && (
+            <View className="mt-4">
+              <DownloadAllButton
+                courseId={id!}
+                courseTitle={course.nome ?? ''}
+                lessons={
+                  modules.flatMap((mod) =>
+                    ((mod.aulas as any[]) ?? []).map((aula: any) => ({
+                      lessonId: aula.id,
+                      lessonTitle: aula.titulo ?? '',
+                      videoUrl: aula.imagem_capa?.includes('.mp4') || aula.imagem_capa?.includes('video') ? aula.imagem_capa : undefined,
+                      audioUrl: undefined,
+                      pdfUrl: aula.pdf ?? undefined,
+                    }))
+                  )
+                }
+              />
+            </View>
+          )}
         </View>
 
         {/* Tabs */}
@@ -148,7 +170,7 @@ export default function CourseDetailScreen() {
                       return (
                       <TouchableOpacity
                         key={aula.id}
-                        onPress={() => canAccess && router.push(`/lesson/${aula.id}`)}
+                        onPress={() => canAccess && router.push({ pathname: '/lesson/[id]', params: { id: aula.id } })}
                         disabled={!canAccess}
                         className="flex-row items-center py-3 pl-4 border-l-2 border-darkBorder ml-2"
                       >

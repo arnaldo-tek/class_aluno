@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import QRCode from 'react-native-qrcode-svg'
-import { useCheckoutPix } from '@/hooks/usePayment'
+import { useCheckoutPix, useUpdateCustomerDocument } from '@/hooks/usePayment'
 
 export default function PixCheckoutScreen() {
   const params = useLocalSearchParams<{
@@ -15,9 +15,11 @@ export default function PixCheckoutScreen() {
     pacote_id?: string
     cupom_codigo?: string
     course_name?: string
+    cpf?: string
   }>()
   const router = useRouter()
   const checkoutPix = useCheckoutPix()
+  const updateDoc = useUpdateCustomerDocument()
 
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
@@ -35,6 +37,18 @@ export default function PixCheckoutScreen() {
 
     async function generatePix() {
       try {
+        // Ensure customer has CPF before checkout (non-blocking)
+        if (params.cpf) {
+          try {
+            await updateDoc.mutateAsync({
+              customer_id: params.customer_id!,
+              document: params.cpf,
+            })
+          } catch (e) {
+            console.warn('Failed to update customer document:', e)
+          }
+        }
+
         const result = await checkoutPix.mutateAsync({
           customer_id: params.customer_id!,
           amount: amountCents,

@@ -48,7 +48,7 @@ function CommunityItem({ item }: { item: any }) {
   return (
     <View className="bg-dark-surface rounded-2xl mb-3 overflow-hidden border border-darkBorder">
       <TouchableOpacity
-        onPress={() => router.push(`/community/${item.id}`)}
+        onPress={() => router.push({ pathname: '/community/[id]', params: { id: item.id } })}
         className="flex-row p-4"
       >
         {item.imagem ? (
@@ -78,7 +78,7 @@ function CommunityItem({ item }: { item: any }) {
         </TouchableOpacity>
         {item.regras && (
           <TouchableOpacity
-            onPress={() => router.push(`/community/rules/${item.id}`)}
+            onPress={() => router.push({ pathname: '/community/rules/[id]', params: { id: item.id } })}
             className="flex-1 py-3.5 items-center border-l border-darkBorder-subtle"
           >
             <Text className="text-sm font-medium text-darkText-secondary">{t('community.rules')}</Text>

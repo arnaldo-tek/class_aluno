@@ -82,7 +82,7 @@ export default function PackageDetailScreen() {
           <Badge variant="success">{t('packages.subscribed')}</Badge>
         ) : (
           <TouchableOpacity
-            onPress={() => router.push(`/checkout/${id}?type=pacote`)}
+            onPress={() => router.push({ pathname: '/checkout/[id]', params: { id: id!, type: 'pacote' } })}
             className="bg-primary rounded-2xl py-4 items-center"
           >
             <Text className="text-white font-bold text-base">{t('packages.subscribe')}</Text>

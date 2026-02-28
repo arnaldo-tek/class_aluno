@@ -106,7 +106,7 @@ export default function NoticesScreen() {
               }
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  onPress={() => router.push(`/notices/${item.id}`)}
+                  onPress={() => router.push({ pathname: '/notices/[id]', params: { id: item.id } })}
                   className="bg-dark-surface rounded-2xl mb-3 p-4"
                 >
                   <Text className="text-base font-semibold text-darkText" numberOfLines={2}>

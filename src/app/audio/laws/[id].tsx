@@ -40,7 +40,7 @@ export default function AudioLawsScreen() {
         }
         renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() => router.push(`/audio/player/${item.id}`)}
+            onPress={() => router.push({ pathname: '/audio/player/[id]', params: { id: item.id } })}
             className="flex-row bg-dark-surface rounded-2xl mb-3 p-4 border border-darkBorder items-center"
           >
             <View className="w-10 h-10 bg-primary-50 rounded-full items-center justify-center mr-3">

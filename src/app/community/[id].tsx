@@ -48,7 +48,7 @@ export default function CommunityChatScreen() {
           {community?.nome ?? t('community.title')}
         </Text>
         {community?.regras && (
-          <TouchableOpacity onPress={() => router.push(`/community/rules/${id}`)}>
+          <TouchableOpacity onPress={() => router.push({ pathname: '/community/rules/[id]', params: { id: id! } })}>
             <Ionicons name="information-circle-outline" size={24} color="#6b7280" />
           </TouchableOpacity>
         )}

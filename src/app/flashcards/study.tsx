@@ -1,11 +1,8 @@
-import { useState, useCallback } from 'react'
-import { View, Text, TouchableOpacity, Dimensions } from 'react-native'
+import { useState, useCallback, useRef } from 'react'
+import { View, Text, TouchableOpacity, Dimensions, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, interpolate,
-} from 'react-native-reanimated'
 import { useFlashcards } from '@/hooks/useFlashcards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
@@ -18,43 +15,45 @@ export default function FlashcardStudyScreen() {
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
-  const flipProgress = useSharedValue(0)
+  const animValue = useRef(new Animated.Value(0)).current
 
   const flip = useCallback(() => {
-    const toValue = isFlipped ? 0 : 1
-    flipProgress.value = withTiming(toValue, { duration: 400 })
+    Animated.timing(animValue, {
+      toValue: isFlipped ? 0 : 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start()
     setIsFlipped(!isFlipped)
-  }, [isFlipped, flipProgress])
+  }, [isFlipped, animValue])
 
   const goNext = useCallback(() => {
     if (!cards || currentIndex >= cards.length - 1) return
-    flipProgress.value = 0
+    animValue.setValue(0)
     setIsFlipped(false)
     setCurrentIndex((i) => i + 1)
-  }, [cards, currentIndex, flipProgress])
+  }, [cards, currentIndex, animValue])
 
   const goPrev = useCallback(() => {
     if (currentIndex <= 0) return
-    flipProgress.value = 0
+    animValue.setValue(0)
     setIsFlipped(false)
     setCurrentIndex((i) => i - 1)
-  }, [currentIndex, flipProgress])
+  }, [currentIndex, animValue])
 
-  const frontStyle = useAnimatedStyle(() => ({
-    transform: [{ rotateY: `${interpolate(flipProgress.value, [0, 1], [0, 180])}deg` }],
-    backfaceVisibility: 'hidden' as const,
-  }))
+  const frontRotate = animValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  })
 
-  const backStyle = useAnimatedStyle(() => ({
-    transform: [{ rotateY: `${interpolate(flipProgress.value, [0, 1], [180, 360])}deg` }],
-    backfaceVisibility: 'hidden' as const,
-  }))
+  const backRotate = animValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['180deg', '360deg'],
+  })
 
   if (isLoading) return <LoadingSpinner />
   if (!cards?.length) return null
 
   const card = cards[currentIndex]
-  const isFinished = currentIndex >= cards.length
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
@@ -86,7 +85,7 @@ export default function FlashcardStudyScreen() {
         <View className="flex-1 relative">
           {/* Front (Question) */}
           <Animated.View
-            style={[frontStyle, { position: 'absolute', width: '100%', height: '100%' }]}
+            style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: frontRotate }] }}
           >
             <View className="flex-1 bg-dark-surface rounded-2xl border border-darkBorder items-center justify-center px-8">
               <Ionicons name="help-circle-outline" size={32} color="#60a5fa" />
@@ -99,7 +98,7 @@ export default function FlashcardStudyScreen() {
 
           {/* Back (Answer) */}
           <Animated.View
-            style={[backStyle, { position: 'absolute', width: '100%', height: '100%' }]}
+            style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: backRotate }] }}
           >
             <View className="flex-1 bg-primary rounded-2xl items-center justify-center px-8">
               <Ionicons name="bulb-outline" size={32} color="#f7f6f3" />

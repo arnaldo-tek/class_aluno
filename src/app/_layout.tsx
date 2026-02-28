@@ -75,6 +75,8 @@ export default function RootLayout() {
           <Stack.Screen name="professors/index" options={{ presentation: 'card' }} />
           {/* Refund */}
           <Stack.Screen name="refund/[id]" options={{ presentation: 'card' }} />
+          {/* Downloads */}
+          <Stack.Screen name="downloads" options={{ presentation: 'card' }} />
           {/* Simple screens */}
           <Stack.Screen name="terms" options={{ presentation: 'card' }} />
           <Stack.Screen name="faq" options={{ presentation: 'card' }} />
