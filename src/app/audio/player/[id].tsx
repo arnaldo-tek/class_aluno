@@ -68,12 +68,12 @@ export default function AudioPlayerScreen() {
   const { lei } = data
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100">
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1" numberOfLines={1}>
+        <Text className="text-base font-bold text-darkText flex-1" numberOfLines={1}>
           {lei.nome}
         </Text>
       </View>
@@ -82,33 +82,35 @@ export default function AudioPlayerScreen() {
         {/* Audio player */}
         {audios.length > 0 && (
           <View className="px-4 pt-4">
-            <Text className="text-sm font-semibold text-gray-900 mb-3">
+            <Text className="text-sm font-semibold text-darkText mb-3">
               {t('audio.title')} ({audios.length})
             </Text>
             {audios.map((audio, i) => (
               <TouchableOpacity
                 key={audio.id}
                 onPress={() => togglePlayPause(i)}
-                className={`flex-row items-center px-4 py-3 mb-2 rounded-xl border ${
-                  currentIndex === i ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white'
+                className={`flex-row items-center px-4 py-3 mb-2 rounded-2xl border ${
+                  currentIndex === i
+                    ? 'border-primary bg-primary-50'
+                    : 'border-darkBorder bg-dark-surface'
                 }`}
               >
                 <View className={`w-10 h-10 rounded-full items-center justify-center ${
-                  currentIndex === i && isPlaying ? 'bg-blue-600' : 'bg-gray-100'
+                  currentIndex === i && isPlaying ? 'bg-primary' : 'bg-dark-surfaceLight'
                 }`}>
                   <Ionicons
                     name={currentIndex === i && isPlaying ? 'pause' : 'play'}
                     size={18}
-                    color={currentIndex === i && isPlaying ? 'white' : '#2563eb'}
+                    color={currentIndex === i && isPlaying ? '#1a1a2e' : '#60a5fa'}
                   />
                 </View>
                 <View className="flex-1 ml-3">
-                  <Text className="text-sm font-medium text-gray-900">
+                  <Text className="text-sm font-medium text-darkText">
                     {audio.titulo ?? `${t('audio.title')} ${i + 1}`}
                   </Text>
                 </View>
                 {currentIndex === i && (
-                  <Ionicons name="musical-notes" size={16} color="#2563eb" />
+                  <Ionicons name="musical-notes" size={16} color="#f59e0b" />
                 )}
               </TouchableOpacity>
             ))}
@@ -116,9 +118,9 @@ export default function AudioPlayerScreen() {
             {audios.length > 1 && (
               <TouchableOpacity
                 onPress={() => playAudio(0)}
-                className="mt-2 bg-blue-600 rounded-xl py-3 items-center"
+                className="mt-2 bg-primary rounded-2xl py-3.5 items-center"
               >
-                <Text className="text-white font-semibold text-sm">
+                <Text className="text-darkText-inverse font-semibold text-sm">
                   Reproduzir todos sequencialmente
                 </Text>
               </TouchableOpacity>
@@ -129,8 +131,8 @@ export default function AudioPlayerScreen() {
         {/* Law text */}
         {lei.texto && (
           <View className="px-4 pt-6">
-            <Text className="text-sm font-semibold text-gray-900 mb-2">{lei.nome}</Text>
-            <Text className="text-sm text-gray-700 leading-6">{lei.texto}</Text>
+            <Text className="text-sm font-semibold text-darkText mb-2">{lei.nome}</Text>
+            <Text className="text-sm text-darkText-secondary leading-6">{lei.texto}</Text>
           </View>
         )}
       </ScrollView>

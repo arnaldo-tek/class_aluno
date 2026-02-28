@@ -1,24 +1,21 @@
-import { useRef, useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Dimensions } from 'react-native'
+import { useRef, useState, useEffect } from 'react'
+import { View, Text, FlatList, TouchableOpacity, Dimensions, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import * as SecureStore from 'expo-secure-store'
-import { Platform } from 'react-native'
+import { Platform, Linking } from 'react-native'
 import { t } from '@/i18n'
+import { useOnboardingSlides } from '@/hooks/useOnboarding'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
-const SLIDES = [
-  { icon: 'school-outline' as const, key: 'slide1', color: '#2563eb' },
-  { icon: 'time-outline' as const, key: 'slide2', color: '#7c3aed' },
-  { icon: 'trophy-outline' as const, key: 'slide3', color: '#059669' },
-]
 
 export default function OnboardingScreen() {
   const router = useRouter()
   const flatListRef = useRef<FlatList>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const { data: slides, isLoading } = useOnboardingSlides()
 
   async function handleFinish() {
     try {
@@ -31,8 +28,16 @@ export default function OnboardingScreen() {
     router.replace('/(auth)/login')
   }
 
+  // If no slides configured, skip onboarding
+  useEffect(() => {
+    if (!isLoading && (!slides || slides.length === 0)) {
+      handleFinish()
+    }
+  }, [isLoading, slides])
+
   function handleNext() {
-    if (currentIndex < SLIDES.length - 1) {
+    if (!slides?.length) return
+    if (currentIndex < slides.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true })
       setCurrentIndex(currentIndex + 1)
     } else {
@@ -40,60 +45,82 @@ export default function OnboardingScreen() {
     }
   }
 
+  function handleSlidePress(link: string | null) {
+    if (link) {
+      Linking.openURL(link).catch(() => {})
+    }
+  }
+
+  if (isLoading || !slides || slides.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-dark-bg">
+        <LoadingSpinner />
+      </SafeAreaView>
+    )
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-dark-bg" edges={['bottom']}>
       <View className="flex-1">
         <FlatList
           ref={flatListRef}
-          data={SLIDES}
+          data={slides}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          scrollEnabled={false}
+          scrollEnabled
           onMomentumScrollEnd={(e) => {
             const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH)
             setCurrentIndex(idx)
           }}
-          keyExtractor={(_, i) => String(i)}
+          keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View style={{ width: SCREEN_WIDTH }} className="flex-1 items-center justify-center px-8">
-              <View className="w-32 h-32 rounded-full items-center justify-center mb-8" style={{ backgroundColor: `${item.color}15` }}>
-                <Ionicons name={item.icon} size={64} color={item.color} />
-              </View>
-              <Text className="text-2xl font-bold text-gray-900 text-center mb-4">
-                {t('onboarding.welcome')}
-              </Text>
-              <Text className="text-base text-gray-500 text-center leading-7">
-                {t(`onboarding.${item.key}`)}
-              </Text>
-            </View>
+            <TouchableOpacity
+              activeOpacity={item.link ? 0.9 : 1}
+              onPress={() => handleSlidePress(item.link)}
+              style={{ width: SCREEN_WIDTH }}
+              className="flex-1"
+            >
+              {item.imagem ? (
+                <Image
+                  source={{ uri: item.imagem }}
+                  style={{ width: SCREEN_WIDTH, flex: 1 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View className="flex-1 bg-dark-surfaceLight items-center justify-center">
+                  <Ionicons name="image-outline" size={64} color="#9ca3af" />
+                </View>
+              )}
+            </TouchableOpacity>
           )}
         />
 
-        {/* Dots */}
-        <View className="flex-row justify-center mb-6">
-          {SLIDES.map((_, i) => (
-            <View
-              key={i}
-              className={`w-2.5 h-2.5 rounded-full mx-1.5 ${i === currentIndex ? 'bg-blue-600' : 'bg-gray-300'}`}
-            />
-          ))}
-        </View>
+        {/* Overlay bottom with dots + buttons */}
+        <View className="absolute bottom-0 left-0 right-0 pb-8 pt-16 px-6" style={{ backgroundColor: 'rgba(247,246,243,0.95)' }}>
+          {/* Dots */}
+          <View className="flex-row justify-center mb-5">
+            {slides.map((_, i) => (
+              <View
+                key={i}
+                className={`h-2 rounded-full mx-1 ${i === currentIndex ? 'w-7 bg-primary' : 'w-2 bg-darkBorder-light'}`}
+              />
+            ))}
+          </View>
 
-        {/* Buttons */}
-        <View className="px-6 pb-8">
+          {/* Buttons */}
           <TouchableOpacity
             onPress={handleNext}
-            className="bg-blue-600 rounded-xl py-4 items-center mb-3"
+            className="bg-primary rounded-2xl py-4 items-center mb-3"
           >
             <Text className="text-white font-bold text-base">
-              {currentIndex === SLIDES.length - 1 ? t('onboarding.start') : t('common.next')}
+              {currentIndex === slides.length - 1 ? t('onboarding.start') : t('common.next')}
             </Text>
           </TouchableOpacity>
 
-          {currentIndex < SLIDES.length - 1 && (
+          {currentIndex < slides.length - 1 && (
             <TouchableOpacity onPress={handleFinish} className="py-3 items-center">
-              <Text className="text-sm text-gray-400">Pular</Text>
+              <Text className="text-sm text-darkText-muted">{t('common.skip') ?? 'Pular'}</Text>
             </TouchableOpacity>
           )}
         </View>

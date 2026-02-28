@@ -41,13 +41,13 @@ export default function ChatListScreen() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       {/* Header */}
-      <View className="flex-row items-center px-4 py-3 border-b border-gray-100">
+      <View className="flex-row items-center px-4 py-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900 flex-1">Conversas</Text>
+        <Text className="text-xl font-bold text-darkText flex-1">Conversas</Text>
       </View>
 
       {!chats || chats.length === 0 ? (
@@ -67,14 +67,14 @@ export default function ChatListScreen() {
             return (
               <TouchableOpacity
                 onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id, name: other.name, photo: other.photo ?? '' } })}
-                className="flex-row items-center px-4 py-3 border-b border-gray-50"
+                className="flex-row items-center px-4 py-3 border-b border-darkBorder-subtle"
               >
                 {/* Avatar */}
                 {other.photo ? (
                   <Image source={{ uri: other.photo }} className="w-12 h-12 rounded-full" />
                 ) : (
-                  <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center">
-                    <Text className="text-lg font-bold text-blue-600">
+                  <View className="w-12 h-12 rounded-full bg-primary-50 items-center justify-center">
+                    <Text className="text-lg font-bold text-primary-light">
                       {other.name[0].toUpperCase()}
                     </Text>
                   </View>
@@ -83,22 +83,22 @@ export default function ChatListScreen() {
                 {/* Content */}
                 <View className="flex-1 ml-3">
                   <View className="flex-row items-center justify-between">
-                    <Text className={`text-base ${isUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-900'}`}>
+                    <Text className={`text-base ${isUnread ? 'font-bold text-darkText' : 'font-medium text-darkText'}`}>
                       {other.name}
                     </Text>
-                    <Text className="text-xs text-gray-400">
+                    <Text className="text-xs text-darkText-muted">
                       {formatTime(item.last_message_time)}
                     </Text>
                   </View>
                   <View className="flex-row items-center mt-0.5">
                     <Text
-                      className={`text-sm flex-1 ${isUnread ? 'font-semibold text-gray-800' : 'text-gray-500'}`}
+                      className={`text-sm flex-1 ${isUnread ? 'font-semibold text-darkText-secondary' : 'text-darkText-muted'}`}
                       numberOfLines={1}
                     >
                       {item.last_message ?? 'Nenhuma mensagem ainda'}
                     </Text>
                     {isUnread && (
-                      <View className="w-2.5 h-2.5 rounded-full bg-blue-600 ml-2" />
+                      <View className="w-2.5 h-2.5 rounded-full bg-primary ml-2" />
                     )}
                   </View>
                 </View>

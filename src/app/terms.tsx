@@ -10,29 +10,29 @@ export default function TermsScreen() {
   const [activeTab, setActiveTab] = useState<'terms' | 'privacy'>('terms')
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">{t('terms.title')}</Text>
+        <Text className="text-base font-bold text-darkText flex-1">{t('terms.title')}</Text>
       </View>
 
       {/* Tab toggle */}
-      <View className="flex-row mx-4 mt-4 bg-gray-100 rounded-xl p-1">
+      <View className="flex-row mx-4 mt-4 bg-dark-surfaceLight rounded-2xl p-1">
         <TouchableOpacity
           onPress={() => setActiveTab('terms')}
-          className={`flex-1 py-2 rounded-lg items-center ${activeTab === 'terms' ? 'bg-white' : ''}`}
+          className={`flex-1 py-2 rounded-xl items-center ${activeTab === 'terms' ? 'bg-dark-surface' : ''}`}
         >
-          <Text className={`text-sm font-medium ${activeTab === 'terms' ? 'text-gray-900' : 'text-gray-500'}`}>
+          <Text className={`text-sm font-medium ${activeTab === 'terms' ? 'text-darkText' : 'text-darkText-muted'}`}>
             {t('terms.termsOfUse')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setActiveTab('privacy')}
-          className={`flex-1 py-2 rounded-lg items-center ${activeTab === 'privacy' ? 'bg-white' : ''}`}
+          className={`flex-1 py-2 rounded-xl items-center ${activeTab === 'privacy' ? 'bg-dark-surface' : ''}`}
         >
-          <Text className={`text-sm font-medium ${activeTab === 'privacy' ? 'text-gray-900' : 'text-gray-500'}`}>
+          <Text className={`text-sm font-medium ${activeTab === 'privacy' ? 'text-darkText' : 'text-darkText-muted'}`}>
             {t('terms.privacyPolicy')}
           </Text>
         </TouchableOpacity>
@@ -40,11 +40,11 @@ export default function TermsScreen() {
 
       <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
         {activeTab === 'terms' ? (
-          <Text className="text-sm text-gray-700 leading-6">
+          <Text className="text-sm text-darkText-secondary leading-6">
             {TERMS_OF_USE}
           </Text>
         ) : (
-          <Text className="text-sm text-gray-700 leading-6">
+          <Text className="text-sm text-darkText-secondary leading-6">
             {PRIVACY_POLICY}
           </Text>
         )}

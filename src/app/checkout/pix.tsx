@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
+import QRCode from 'react-native-qrcode-svg'
 import { useCheckoutPix } from '@/hooks/usePayment'
 
 export default function PixCheckoutScreen() {
@@ -68,67 +69,66 @@ export default function PixCheckoutScreen() {
 
   if (checkoutPix.isPending && !qrCode) {
     return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text className="text-sm text-gray-500 mt-4">Gerando código PIX...</Text>
+      <SafeAreaView className="flex-1 bg-dark-bg items-center justify-center">
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text className="text-sm text-darkText-secondary mt-4">Gerando código PIX...</Text>
       </SafeAreaView>
     )
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
-        <View className="flex-row items-center px-4 pt-4 pb-3 border-b border-gray-100">
+        <View className="flex-row items-center px-4 pt-4 pb-3 border-b border-darkBorder-subtle">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Ionicons name="arrow-back" size={24} color="#111827" />
+            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
           </TouchableOpacity>
-          <Text className="text-lg font-bold text-gray-900">Pagamento PIX</Text>
+          <Text className="text-lg font-bold text-darkText">Pagamento PIX</Text>
         </View>
 
         {qrCode && (
           <View className="items-center px-4 pt-6">
             {/* Timer */}
             <View className="flex-row items-center mb-4">
-              <Ionicons name="time-outline" size={18} color={timeLeft < 300 ? '#dc2626' : '#6b7280'} />
-              <Text className={`text-sm font-medium ml-1 ${timeLeft < 300 ? 'text-red-600' : 'text-gray-600'}`}>
+              <Ionicons name="time-outline" size={18} color={timeLeft < 300 ? '#f87171' : '#6b7280'} />
+              <Text className={`text-sm font-medium ml-1 ${timeLeft < 300 ? 'text-error' : 'text-darkText-secondary'}`}>
                 Expira em {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
               </Text>
             </View>
 
             {/* Amount */}
-            <Text className="text-2xl font-bold text-gray-900 mb-6">R$ {amountBRL.toFixed(2)}</Text>
+            <Text className="text-2xl font-bold text-darkText mb-6">R$ {amountBRL.toFixed(2)}</Text>
 
-            {/* QR Code placeholder - in production use a QR code library */}
-            <View className="w-64 h-64 border-2 border-gray-200 rounded-2xl items-center justify-center bg-gray-50 mb-6">
-              <Ionicons name="qr-code" size={120} color="#111827" />
-              <Text className="text-xs text-gray-400 mt-2">QR Code PIX</Text>
+            {/* QR Code */}
+            <View className="w-64 h-64 border-2 border-darkBorder rounded-2xl items-center justify-center bg-white mb-6">
+              <QRCode value={qrCode} size={220} backgroundColor="#ffffff" />
             </View>
 
             {/* Copy code */}
-            <Text className="text-sm text-gray-500 text-center mb-3">
+            <Text className="text-sm text-darkText-secondary text-center mb-3">
               Ou copie o código PIX abaixo e cole no app do seu banco:
             </Text>
 
-            <View className="w-full bg-gray-50 rounded-xl px-4 py-3 mb-3">
-              <Text className="text-xs text-gray-600 font-mono" numberOfLines={3}>
+            <View className="w-full bg-dark-surface rounded-2xl px-4 py-3 mb-3 border border-darkBorder-subtle">
+              <Text className="text-xs text-darkText-secondary font-mono" numberOfLines={3}>
                 {qrCode}
               </Text>
             </View>
 
             <TouchableOpacity
               onPress={handleCopy}
-              className="w-full bg-blue-600 rounded-xl py-3.5 flex-row items-center justify-center mb-6"
+              className="w-full bg-primary rounded-2xl py-3.5 flex-row items-center justify-center mb-6"
             >
-              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">
+              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={20} color="#1a1a2e" />
+              <Text className="text-darkText-inverse font-semibold ml-2">
                 {copied ? 'Código copiado!' : 'Copiar código PIX'}
               </Text>
             </TouchableOpacity>
 
             {/* Instructions */}
-            <View className="w-full bg-blue-50 rounded-xl px-4 py-3">
-              <Text className="text-sm font-semibold text-blue-900 mb-2">Como pagar:</Text>
+            <View className="w-full bg-primary-50 rounded-2xl px-4 py-3 border border-darkBorder-subtle">
+              <Text className="text-sm font-semibold text-primary-light mb-2">Como pagar:</Text>
               <Step n={1} text="Abra o app do seu banco ou carteira digital" />
               <Step n={2} text="Escolha pagar com PIX usando QR Code ou código copia e cola" />
               <Step n={3} text="Confirme o pagamento" />
@@ -144,10 +144,10 @@ export default function PixCheckoutScreen() {
 function Step({ n, text }: { n: number; text: string }) {
   return (
     <View className="flex-row items-start mb-1.5">
-      <View className="w-5 h-5 rounded-full bg-blue-600 items-center justify-center mr-2 mt-0.5">
-        <Text className="text-[10px] font-bold text-white">{n}</Text>
+      <View className="w-5 h-5 rounded-full bg-primary items-center justify-center mr-2 mt-0.5">
+        <Text className="text-[10px] font-bold text-darkText-inverse">{n}</Text>
       </View>
-      <Text className="text-sm text-blue-800 flex-1">{text}</Text>
+      <Text className="text-sm text-darkText-secondary flex-1">{text}</Text>
     </View>
   )
 }

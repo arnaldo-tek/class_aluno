@@ -1,15 +1,17 @@
 import { Redirect, Tabs } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthContext } from '@/contexts/AuthContext'
+import { useSessionGuard } from '@/hooks/useSessionGuard'
 import { View, ActivityIndicator } from 'react-native'
 import { t } from '@/i18n'
 
 export default function TabsLayout() {
   const { user, isLoading } = useAuthContext()
+  useSessionGuard()
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-dark-bg">
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
     )
@@ -26,14 +28,17 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: '#9ca3af',
         tabBarStyle: {
+          backgroundColor: '#ffffff',
           borderTopWidth: 1,
-          borderTopColor: '#e5e7eb',
-          paddingBottom: 4,
-          height: 56,
+          borderTopColor: '#e5e4e1',
+          paddingBottom: 6,
+          paddingTop: 4,
+          height: 60,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
+          fontSize: 11,
+          fontWeight: '600',
+          letterSpacing: 0.2,
         },
       }}
     >
@@ -41,8 +46,8 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: t('tabs.home'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -50,8 +55,8 @@ export default function TabsLayout() {
         name="courses"
         options={{
           title: t('tabs.courses'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'book' : 'book-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -59,8 +64,8 @@ export default function TabsLayout() {
         name="my-courses"
         options={{
           title: t('tabs.myCourses'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="school-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'school' : 'school-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -68,8 +73,8 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: t('tabs.profile'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
           ),
         }}
       />

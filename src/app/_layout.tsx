@@ -71,10 +71,15 @@ export default function RootLayout() {
           <Stack.Screen name="audio/folders/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="audio/laws/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="audio/player/[id]" options={{ presentation: 'card' }} />
+          {/* Professors */}
+          <Stack.Screen name="professors/index" options={{ presentation: 'card' }} />
+          {/* Refund */}
+          <Stack.Screen name="refund/[id]" options={{ presentation: 'card' }} />
           {/* Simple screens */}
           <Stack.Screen name="terms" options={{ presentation: 'card' }} />
           <Stack.Screen name="faq" options={{ presentation: 'card' }} />
           <Stack.Screen name="settings" options={{ presentation: 'card' }} />
+          <Stack.Screen name="suggestion" options={{ presentation: 'card' }} />
           {/* Community */}
           <Stack.Screen name="community/index" options={{ presentation: 'card' }} />
           <Stack.Screen name="community/[id]" options={{ presentation: 'card' }} />

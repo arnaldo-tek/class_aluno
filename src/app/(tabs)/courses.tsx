@@ -29,40 +29,41 @@ export default function CoursesScreen() {
   }, [refetch])
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="px-4 pt-4 pb-2">
-        <Text className="text-2xl font-bold text-gray-900">{t('courses.title')}</Text>
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="bg-dark-surface px-4 pt-4 pb-3 border-b border-darkBorder-subtle">
+        <Text className="text-2xl font-bold text-darkText mb-3">{t('courses.title')}</Text>
+        <SearchInput value={search} onChangeText={(v) => { setSearch(v); setPage(1) }} />
       </View>
-
-      <SearchInput value={search} onChangeText={(v) => { setSearch(v); setPage(1) }} />
 
       {/* Category chips */}
       {categories && categories.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
-        >
-          <TouchableOpacity
-            onPress={() => { setSelectedCategory(undefined); setPage(1) }}
-            className={`rounded-full px-3 py-1.5 mr-2 ${!selectedCategory ? 'bg-blue-600' : 'bg-white border border-gray-200'}`}
+        <View className="bg-dark-surface border-b border-darkBorder-subtle">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
           >
-            <Text className={`text-sm font-medium ${!selectedCategory ? 'text-white' : 'text-gray-700'}`}>
-              Todos
-            </Text>
-          </TouchableOpacity>
-          {categories.map((cat) => (
             <TouchableOpacity
-              key={cat.id}
-              onPress={() => { setSelectedCategory(cat.id === selectedCategory ? undefined : cat.id); setPage(1) }}
-              className={`rounded-full px-3 py-1.5 mr-2 ${selectedCategory === cat.id ? 'bg-blue-600' : 'bg-white border border-gray-200'}`}
+              onPress={() => { setSelectedCategory(undefined); setPage(1) }}
+              className={`rounded-full px-4 py-2 mr-2 border ${!selectedCategory ? 'bg-primary border-primary' : 'bg-dark-surface border-darkBorder'}`}
             >
-              <Text className={`text-sm font-medium ${selectedCategory === cat.id ? 'text-white' : 'text-gray-700'}`}>
-                {cat.nome}
+              <Text className={`text-sm font-semibold ${!selectedCategory ? 'text-white' : 'text-darkText-secondary'}`}>
+                Todos
               </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                onPress={() => { setSelectedCategory(cat.id === selectedCategory ? undefined : cat.id); setPage(1) }}
+                className={`rounded-full px-4 py-2 mr-2 border ${selectedCategory === cat.id ? 'bg-primary border-primary' : 'bg-dark-surface border-darkBorder'}`}
+              >
+                <Text className={`text-sm font-semibold ${selectedCategory === cat.id ? 'text-white' : 'text-darkText-secondary'}`}>
+                  {cat.nome}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       )}
 
       {isLoading ? (
@@ -76,8 +77,15 @@ export default function CoursesScreen() {
         <FlatList
           data={data.courses}
           keyExtractor={(item) => item.id}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />}
-          contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={handleRefresh}
+              tintColor="#2563eb"
+              colors={['#2563eb']}
+            />
+          }
+          contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 }}
           renderItem={({ item }) => (
             <CourseCard
               id={item.id}

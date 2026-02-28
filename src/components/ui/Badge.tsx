@@ -1,17 +1,17 @@
 import { Text, View } from 'react-native'
 
 const variants = {
-  default: 'bg-gray-100',
-  primary: 'bg-blue-100',
-  success: 'bg-green-100',
-  warning: 'bg-yellow-100',
+  default: 'bg-dark-surfaceLight',
+  primary: 'bg-primary-50',
+  success: 'bg-success-dark',
+  warning: 'bg-warning-dark',
 } as const
 
 const textVariants = {
-  default: 'text-gray-700',
-  primary: 'text-blue-700',
-  success: 'text-green-700',
-  warning: 'text-yellow-700',
+  default: 'text-darkText-secondary',
+  primary: 'text-primary-light',
+  success: 'text-success',
+  warning: 'text-warning',
 } as const
 
 interface BadgeProps {
@@ -21,8 +21,8 @@ interface BadgeProps {
 
 export function Badge({ children, variant = 'default' }: BadgeProps) {
   return (
-    <View className={`px-2 py-0.5 rounded-full ${variants[variant]}`}>
-      <Text className={`text-xs font-medium ${textVariants[variant]}`}>{children}</Text>
+    <View className={`px-2.5 py-1 rounded-full ${variants[variant]}`}>
+      <Text className={`text-xs font-semibold ${textVariants[variant]}`}>{children}</Text>
     </View>
   )
 }

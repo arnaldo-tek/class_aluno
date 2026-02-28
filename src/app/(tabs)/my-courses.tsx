@@ -11,9 +11,9 @@ export default function MyCoursesScreen() {
   const { data: enrollments, isLoading, refetch, isRefetching } = useMyEnrollments()
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="px-4 pt-4 pb-4">
-        <Text className="text-2xl font-bold text-gray-900">{t('tabs.myCourses')}</Text>
+        <Text className="text-2xl font-bold text-darkText">{t('tabs.myCourses')}</Text>
       </View>
 
       {isLoading ? (
@@ -21,14 +21,21 @@ export default function MyCoursesScreen() {
       ) : !enrollments?.length ? (
         <EmptyState
           title="Nenhum curso matriculado"
-          description="Explore o catálogo e matricule-se em cursos."
+          description="Explore o catalogo e matricule-se em cursos."
           icon={<Ionicons name="school-outline" size={48} color="#9ca3af" />}
         />
       ) : (
         <FlatList
           data={enrollments}
           keyExtractor={(item) => item.id}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              tintColor="#2563eb"
+              colors={['#2563eb']}
+            />
+          }
           contentContainerStyle={{ paddingBottom: 24 }}
           renderItem={({ item }) => {
             const curso = item.curso as any

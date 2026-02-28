@@ -10,44 +10,44 @@ export default function CheckoutSuccessScreen() {
   const isPending = pending === '1'
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-1 items-center justify-center px-8">
-        <View className={`w-20 h-20 rounded-full items-center justify-center mb-6 ${isPending ? 'bg-yellow-50' : 'bg-green-50'}`}>
+        <View className={`w-20 h-20 rounded-full items-center justify-center mb-6 ${isPending ? 'bg-warning-dark' : 'bg-success-dark'}`}>
           <Ionicons
             name={isPending ? 'time-outline' : 'checkmark-circle'}
             size={48}
-            color={isPending ? '#f59e0b' : '#16a34a'}
+            color={isPending ? '#fbbf24' : '#34d399'}
           />
         </View>
 
-        <Text className="text-2xl font-bold text-gray-900 text-center mb-2">
+        <Text className="text-2xl font-bold text-darkText text-center mb-2">
           {isPending ? 'Pagamento em processamento' : 'Pagamento confirmado!'}
         </Text>
 
-        <Text className="text-base text-gray-500 text-center mb-2">
+        <Text className="text-base text-darkText-secondary text-center mb-2">
           {isPending
             ? 'Seu pagamento está sendo processado. Você receberá uma notificação quando for confirmado.'
             : 'Seu acesso ao curso foi liberado.'}
         </Text>
 
         {course_name && (
-          <Text className="text-sm font-medium text-blue-600 text-center mb-8">
+          <Text className="text-sm font-medium text-primary-light text-center mb-8">
             {course_name}
           </Text>
         )}
 
         <TouchableOpacity
           onPress={() => router.replace('/(tabs)/my-courses')}
-          className="w-full bg-blue-600 rounded-xl py-4 items-center mb-3"
+          className="w-full bg-primary rounded-2xl py-4 items-center mb-3"
         >
-          <Text className="text-white font-bold text-base">Ver meus cursos</Text>
+          <Text className="text-darkText-inverse font-bold text-base">Ver meus cursos</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => router.replace('/(tabs)/home')}
-          className="w-full bg-gray-100 rounded-xl py-4 items-center"
+          className="w-full bg-dark-surfaceLight rounded-2xl py-4 items-center border border-darkBorder"
         >
-          <Text className="text-gray-700 font-semibold text-base">Voltar ao início</Text>
+          <Text className="text-darkText-secondary font-semibold text-base">Voltar ao início</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

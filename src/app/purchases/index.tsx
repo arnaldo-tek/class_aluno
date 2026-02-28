@@ -21,13 +21,13 @@ export default function PurchaseHistoryScreen() {
   const { data: purchases, isLoading, refetch, isRefetching } = usePurchaseHistory()
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       {/* Header */}
-      <View className="flex-row items-center px-4 pt-4 pb-3 bg-white border-b border-gray-100">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+      <View className="flex-row items-center px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-lg font-bold text-gray-900">Minhas compras</Text>
+        <Text className="text-lg font-bold text-darkText">Minhas compras</Text>
       </View>
 
       {isLoading ? (
@@ -42,26 +42,40 @@ export default function PurchaseHistoryScreen() {
         <FlatList
           data={purchases}
           keyExtractor={(item) => item.id}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              tintColor="#6b7280"
+            />
+          }
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => {
             const s = STATUS_MAP[item.status ?? 'pending'] ?? STATUS_MAP.pending
             return (
-              <View className="bg-white rounded-xl p-4 mb-3 border border-gray-100">
+              <View className="bg-dark-surface rounded-2xl p-4 mb-3 border border-darkBorder">
                 <View className="flex-row items-start justify-between mb-2">
-                  <Text className="text-sm font-semibold text-gray-900 flex-1 mr-2" numberOfLines={2}>
+                  <Text className="text-sm font-semibold text-darkText flex-1 mr-2" numberOfLines={2}>
                     {item.nome_curso ?? 'Compra'}
                   </Text>
                   <Badge variant={s.variant}>{s.label}</Badge>
                 </View>
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-base font-bold text-blue-600">
+                  <Text className="text-base font-bold text-primary-light">
                     R$ {(item.valor ?? 0).toFixed(2)}
                   </Text>
-                  <Text className="text-xs text-gray-400">
+                  <Text className="text-xs text-darkText-muted">
                     {item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '—'}
                   </Text>
                 </View>
+                {item.status === 'paid' && (
+                  <TouchableOpacity
+                    onPress={() => router.push({ pathname: `/refund/${item.id}`, params: { nome: item.nome_curso ?? 'Compra' } })}
+                    className="mt-2 pt-2 border-t border-darkBorder-subtle"
+                  >
+                    <Text className="text-xs text-error text-center">Solicitar reembolso</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )
           }}

@@ -30,28 +30,27 @@ export default function NotificationsScreen() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Header */}
-      <View className="flex-row items-center px-4 py-3 border-b border-gray-100">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 py-3 border-b border-darkBorder-subtle">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900 flex-1">Notificações</Text>
+        <Text className="text-xl font-bold text-darkText flex-1">Notificacoes</Text>
         {(unreadCount ?? 0) > 0 && (
           <TouchableOpacity
             onPress={() => markAllRead.mutate()}
             disabled={markAllRead.isPending}
           >
-            <Text className="text-sm font-medium text-blue-600">Marcar todas</Text>
+            <Text className="text-sm font-semibold text-accent">Marcar todas</Text>
           </TouchableOpacity>
         )}
       </View>
 
       {!notifications || notifications.length === 0 ? (
         <EmptyState
-          icon="notifications-outline"
-          title="Nenhuma notificação"
-          description="Você será notificado sobre novidades e atualizações"
+          icon={<Ionicons name="notifications-outline" size={48} color="#9ca3af" />}
+          title="Nenhuma notificacao"
+          description="Voce sera notificado sobre novidades e atualizacoes"
         />
       ) : (
         <FlatList
@@ -62,44 +61,41 @@ export default function NotificationsScreen() {
               onPress={() => {
                 if (!item.is_read) markRead.mutate(item.id)
               }}
-              className={`flex-row px-4 py-3.5 border-b border-gray-50 ${
-                !item.is_read ? 'bg-blue-50/50' : ''
+              className={`flex-row px-4 py-4 border-b border-darkBorder-subtle ${
+                !item.is_read ? 'bg-primary-50' : ''
               }`}
             >
-              {/* Icon */}
               <View className={`w-10 h-10 rounded-full items-center justify-center ${
-                !item.is_read ? 'bg-blue-100' : 'bg-gray-100'
+                !item.is_read ? 'bg-primary-200' : 'bg-dark-surfaceLight'
               }`}>
                 <Ionicons
                   name="notifications"
                   size={18}
-                  color={!item.is_read ? '#2563eb' : '#9ca3af'}
+                  color={!item.is_read ? '#60a5fa' : '#9ca3af'}
                 />
               </View>
 
-              {/* Content */}
               <View className="flex-1 ml-3">
                 <View className="flex-row items-start justify-between">
                   <Text
                     className={`text-sm flex-1 mr-2 ${
-                      !item.is_read ? 'font-bold text-gray-900' : 'font-medium text-gray-700'
+                      !item.is_read ? 'font-bold text-darkText' : 'font-medium text-darkText-secondary'
                     }`}
                     numberOfLines={1}
                   >
-                    {item.titulo ?? 'Notificação'}
+                    {item.titulo ?? 'Notificacao'}
                   </Text>
-                  <Text className="text-xs text-gray-400">{formatTime(item.created_at ?? '')}</Text>
+                  <Text className="text-xs text-darkText-muted">{formatTime(item.created_at ?? '')}</Text>
                 </View>
                 {item.descricao && (
-                  <Text className="text-sm text-gray-500 mt-0.5" numberOfLines={2}>
+                  <Text className="text-sm text-darkText-muted mt-0.5" numberOfLines={2}>
                     {item.descricao}
                   </Text>
                 )}
               </View>
 
-              {/* Unread dot */}
               {!item.is_read && (
-                <View className="w-2.5 h-2.5 rounded-full bg-blue-600 ml-2 mt-1" />
+                <View className="w-2.5 h-2.5 rounded-full bg-accent ml-2 mt-1" />
               )}
             </TouchableOpacity>
           )}

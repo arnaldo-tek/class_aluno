@@ -57,22 +57,22 @@ export default function FlashcardStudyScreen() {
   const isFinished = currentIndex >= cards.length
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-3">
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color="#111827" />
+          <Ionicons name="close" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-sm font-medium text-gray-600">
+        <Text className="text-sm font-medium text-darkText-secondary">
           {currentIndex + 1} / {cards.length}
         </Text>
         <View className="w-6" />
       </View>
 
       {/* Progress */}
-      <View className="h-1 bg-gray-200 mx-4 rounded-full mb-6">
+      <View className="h-1 bg-dark-surfaceLight mx-4 rounded-full mb-6">
         <View
-          className="h-1 bg-blue-600 rounded-full"
+          className="h-1 bg-primary rounded-full"
           style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
         />
       </View>
@@ -88,12 +88,12 @@ export default function FlashcardStudyScreen() {
           <Animated.View
             style={[frontStyle, { position: 'absolute', width: '100%', height: '100%' }]}
           >
-            <View className="flex-1 bg-white rounded-2xl border border-gray-200 items-center justify-center px-8 shadow-sm">
-              <Ionicons name="help-circle-outline" size={32} color="#2563eb" />
-              <Text className="text-lg font-semibold text-gray-900 text-center mt-4 leading-7">
+            <View className="flex-1 bg-dark-surface rounded-2xl border border-darkBorder items-center justify-center px-8">
+              <Ionicons name="help-circle-outline" size={32} color="#60a5fa" />
+              <Text className="text-lg font-semibold text-darkText text-center mt-4 leading-7">
                 {card.pergunta}
               </Text>
-              <Text className="text-xs text-gray-400 mt-6">Toque para virar</Text>
+              <Text className="text-xs text-darkText-muted mt-6">Toque para virar</Text>
             </View>
           </Animated.View>
 
@@ -101,12 +101,12 @@ export default function FlashcardStudyScreen() {
           <Animated.View
             style={[backStyle, { position: 'absolute', width: '100%', height: '100%' }]}
           >
-            <View className="flex-1 bg-blue-600 rounded-2xl items-center justify-center px-8 shadow-sm">
-              <Ionicons name="bulb-outline" size={32} color="white" />
-              <Text className="text-lg font-semibold text-white text-center mt-4 leading-7">
+            <View className="flex-1 bg-primary rounded-2xl items-center justify-center px-8">
+              <Ionicons name="bulb-outline" size={32} color="#f7f6f3" />
+              <Text className="text-lg font-semibold text-darkText-inverse text-center mt-4 leading-7">
                 {card.resposta}
               </Text>
-              <Text className="text-xs text-blue-200 mt-6">Toque para virar</Text>
+              <Text className="text-xs text-darkText-inverse opacity-60 mt-6">Toque para virar</Text>
             </View>
           </Animated.View>
         </View>
@@ -117,26 +117,26 @@ export default function FlashcardStudyScreen() {
         <TouchableOpacity
           onPress={goPrev}
           disabled={currentIndex === 0}
-          className={`w-14 h-14 rounded-full items-center justify-center ${currentIndex === 0 ? 'bg-gray-100' : 'bg-gray-200'}`}
+          className={`w-14 h-14 rounded-full items-center justify-center ${currentIndex === 0 ? 'bg-dark-surfaceLight' : 'bg-dark-surface border border-darkBorder-light'}`}
         >
-          <Ionicons name="arrow-back" size={24} color={currentIndex === 0 ? '#d1d5db' : '#374151'} />
+          <Ionicons name="arrow-back" size={24} color={currentIndex === 0 ? '#e5e4e1' : '#6b7280'} />
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={flip}
-          className="w-14 h-14 rounded-full bg-blue-100 items-center justify-center"
+          className="w-14 h-14 rounded-full bg-primary-50 border border-darkBorder items-center justify-center"
         >
-          <Ionicons name="sync-outline" size={24} color="#2563eb" />
+          <Ionicons name="sync-outline" size={24} color="#60a5fa" />
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={currentIndex === cards.length - 1 ? () => router.back() : goNext}
-          className="w-14 h-14 rounded-full bg-blue-600 items-center justify-center"
+          className="w-14 h-14 rounded-full bg-primary items-center justify-center"
         >
           <Ionicons
             name={currentIndex === cards.length - 1 ? 'checkmark' : 'arrow-forward'}
             size={24}
-            color="white"
+            color="#f7f6f3"
           />
         </TouchableOpacity>
       </View>

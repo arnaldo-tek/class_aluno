@@ -39,12 +39,12 @@ export default function AudioScreen() {
   }, [bannerIndex, banners?.length])
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100 bg-white">
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">{t('audio.title')}</Text>
+        <Text className="text-base font-bold text-darkText flex-1">{t('audio.title')}</Text>
       </View>
 
       {/* Banner carousel */}
@@ -63,12 +63,12 @@ export default function AudioScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12 }}
             renderItem={({ item }) => (
-              <View style={{ width: SCREEN_WIDTH - 32 }} className="h-32 rounded-xl overflow-hidden mr-3">
+              <View style={{ width: SCREEN_WIDTH - 32 }} className="h-32 rounded-2xl overflow-hidden mr-3">
                 {item.imagem ? (
                   <Image source={{ uri: item.imagem }} className="w-full h-full" resizeMode="cover" />
                 ) : (
-                  <View className="w-full h-full bg-blue-50 items-center justify-center">
-                    <Ionicons name="musical-notes-outline" size={32} color="#2563eb" />
+                  <View className="w-full h-full bg-primary-50 items-center justify-center">
+                    <Ionicons name="musical-notes-outline" size={32} color="#60a5fa" />
                   </View>
                 )}
               </View>
@@ -79,7 +79,7 @@ export default function AudioScreen() {
               {banners.map((_, i) => (
                 <View
                   key={i}
-                  className={`w-2 h-2 rounded-full mx-1 ${i === bannerIndex ? 'bg-blue-600' : 'bg-gray-300'}`}
+                  className={`w-2 h-2 rounded-full mx-1 ${i === bannerIndex ? 'bg-accent' : 'bg-darkBorder'}`}
                 />
               ))}
             </View>
@@ -98,11 +98,13 @@ export default function AudioScreen() {
           <TouchableOpacity
             onPress={() => setActiveTab(item.tipo)}
             className={`px-4 py-2 mr-2 rounded-full border ${
-              activeTab === item.tipo ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200'
+              activeTab === item.tipo
+                ? 'bg-primary border-primary'
+                : 'bg-dark-surfaceLight border-darkBorder'
             }`}
           >
             <Text className={`text-sm font-medium ${
-              activeTab === item.tipo ? 'text-white' : 'text-gray-700'
+              activeTab === item.tipo ? 'text-darkText-inverse' : 'text-darkText-secondary'
             }`}>
               {t(item.key)}
             </Text>
@@ -127,13 +129,13 @@ export default function AudioScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => router.push(`/audio/folders/${item.id}`)}
-              className="flex-row bg-white rounded-xl mb-3 p-4 border border-gray-100 items-center"
+              className="flex-row bg-dark-surface rounded-2xl mb-3 p-4 border border-darkBorder items-center"
             >
-              <View className="w-12 h-12 bg-blue-50 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="folder-outline" size={24} color="#2563eb" />
+              <View className="w-12 h-12 bg-primary-50 rounded-2xl items-center justify-center mr-3">
+                <Ionicons name="folder-outline" size={24} color="#60a5fa" />
               </View>
-              <Text className="flex-1 text-base font-medium text-gray-900">{item.nome}</Text>
-              <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
+              <Text className="flex-1 text-base font-medium text-darkText">{item.nome}</Text>
+              <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
             </TouchableOpacity>
           )}
         />

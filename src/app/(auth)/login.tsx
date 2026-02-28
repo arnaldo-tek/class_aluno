@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView,
-  Platform, ActivityIndicator, Image,
+  Platform, ActivityIndicator, Image, Alert,
 } from 'react-native'
 import { Link, useRouter } from 'expo-router'
-import { signIn } from '@/lib/auth'
+import { signIn, signOut } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import { t } from '@/i18n'
 
 export default function LoginScreen() {
@@ -20,7 +21,24 @@ export default function LoginScreen() {
     setLoading(true)
 
     try {
-      await signIn(email, password)
+      const data = await signIn(email, password)
+
+      // Check if user is suspended
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_suspended')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profile?.is_suspended) {
+        await signOut()
+        Alert.alert(
+          'Conta suspensa',
+          'Sua conta foi suspensa. Entre em contato com o suporte para mais informacoes.',
+        )
+        return
+      }
+
       router.replace('/(tabs)/home')
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.loginError'))
@@ -32,7 +50,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
+      className="flex-1 bg-dark-bg"
     >
       <View className="flex-1 justify-center px-6">
         <Image
@@ -40,18 +58,19 @@ export default function LoginScreen() {
           style={{ width: 192, height: 56, alignSelf: 'center', marginBottom: 24 }}
           resizeMode="contain"
         />
-        <Text className="text-base text-center text-gray-500 mb-8">
+        <Text className="text-base text-center text-darkText-secondary mb-8">
           {t('auth.login')}
         </Text>
 
         <View className="space-y-4">
           <View>
-            <Text className="text-sm font-medium text-gray-700 mb-1">
+            <Text className="text-sm font-medium text-darkText-secondary mb-1.5">
               {t('auth.email')}
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText"
               placeholder="seu@email.com"
+              placeholderTextColor="#9ca3af"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -61,12 +80,13 @@ export default function LoginScreen() {
           </View>
 
           <View>
-            <Text className="text-sm font-medium text-gray-700 mb-1">
+            <Text className="text-sm font-medium text-darkText-secondary mb-1.5">
               {t('auth.password')}
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText"
               placeholder="Sua senha"
+              placeholderTextColor="#9ca3af"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -75,18 +95,18 @@ export default function LoginScreen() {
           </View>
 
           {error ? (
-            <Text className="text-sm text-red-600">{error}</Text>
+            <Text className="text-sm text-error">{error}</Text>
           ) : null}
 
           <TouchableOpacity
             onPress={handleLogin}
             disabled={loading}
-            className="bg-blue-600 rounded-lg py-3.5 items-center mt-2"
+            className="bg-primary rounded-2xl py-4 items-center mt-2"
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text className="text-white font-semibold text-base">
+              <Text className="text-white font-bold text-base">
                 {t('auth.login')}
               </Text>
             )}
@@ -94,17 +114,17 @@ export default function LoginScreen() {
 
           <Link href="/(auth)/forgot-password" asChild>
             <TouchableOpacity className="items-center py-2">
-              <Text className="text-blue-600 text-sm">
+              <Text className="text-primary-light text-sm">
                 {t('auth.forgotPassword')}
               </Text>
             </TouchableOpacity>
           </Link>
 
           <View className="flex-row justify-center items-center gap-1 mt-4">
-            <Text className="text-gray-500 text-sm">{t('auth.noAccount')}</Text>
+            <Text className="text-darkText-muted text-sm">{t('auth.noAccount')}</Text>
             <Link href="/(auth)/register" asChild>
               <TouchableOpacity>
-                <Text className="text-blue-600 font-medium text-sm">
+                <Text className="text-accent font-semibold text-sm">
                   {t('auth.register')}
                 </Text>
               </TouchableOpacity>

@@ -91,22 +91,22 @@ export default function CardCheckoutScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
         {/* Header */}
-        <View className="flex-row items-center px-4 pt-4 pb-3 border-b border-gray-100">
+        <View className="flex-row items-center px-4 pt-4 pb-3 border-b border-darkBorder-subtle">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Ionicons name="arrow-back" size={24} color="#111827" />
+            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
           </TouchableOpacity>
-          <Text className="text-lg font-bold text-gray-900">Cartão de Crédito</Text>
+          <Text className="text-lg font-bold text-darkText">Cartão de Crédito</Text>
         </View>
 
         <View className="px-4 pt-4">
           {/* Card Number */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-1">Número do cartão</Text>
+            <Text className="text-sm font-medium text-darkText-secondary mb-1">Número do cartão</Text>
             <TextInput
-              className="border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50"
+              className="border border-darkBorder rounded-2xl px-4 py-3 text-base bg-dark-surface text-darkText"
               placeholder="0000 0000 0000 0000"
               placeholderTextColor="#9ca3af"
               value={cardNumber}
@@ -118,9 +118,9 @@ export default function CardCheckoutScreen() {
 
           {/* Holder Name */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-1">Nome no cartão</Text>
+            <Text className="text-sm font-medium text-darkText-secondary mb-1">Nome no cartão</Text>
             <TextInput
-              className="border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50"
+              className="border border-darkBorder rounded-2xl px-4 py-3 text-base bg-dark-surface text-darkText"
               placeholder="NOME COMO IMPRESSO NO CARTÃO"
               placeholderTextColor="#9ca3af"
               value={holderName}
@@ -132,9 +132,9 @@ export default function CardCheckoutScreen() {
           {/* Expiry + CVV */}
           <View className="flex-row gap-3 mb-4">
             <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Validade</Text>
+              <Text className="text-sm font-medium text-darkText-secondary mb-1">Validade</Text>
               <TextInput
-                className="border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50"
+                className="border border-darkBorder rounded-2xl px-4 py-3 text-base bg-dark-surface text-darkText"
                 placeholder="MM/AA"
                 placeholderTextColor="#9ca3af"
                 value={expiry}
@@ -144,9 +144,9 @@ export default function CardCheckoutScreen() {
               />
             </View>
             <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-1">CVV</Text>
+              <Text className="text-sm font-medium text-darkText-secondary mb-1">CVV</Text>
               <TextInput
-                className="border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50"
+                className="border border-darkBorder rounded-2xl px-4 py-3 text-base bg-dark-surface text-darkText"
                 placeholder="123"
                 placeholderTextColor="#9ca3af"
                 value={cvv}
@@ -160,21 +160,21 @@ export default function CardCheckoutScreen() {
 
           {/* Installments */}
           <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Parcelas</Text>
+            <Text className="text-sm font-medium text-darkText-secondary mb-2">Parcelas</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {installmentOptions.map((opt) => (
                 <TouchableOpacity
                   key={opt.count}
                   onPress={() => setInstallments(opt.count)}
-                  className={`rounded-xl px-4 py-2.5 mr-2 border ${
+                  className={`rounded-2xl px-4 py-2.5 mr-2 border ${
                     installments === opt.count
-                      ? 'bg-blue-600 border-blue-600'
-                      : 'bg-white border-gray-200'
+                      ? 'bg-primary border-primary'
+                      : 'bg-dark-surface border-darkBorder'
                   }`}
                 >
                   <Text
                     className={`text-sm font-medium ${
-                      installments === opt.count ? 'text-white' : 'text-gray-700'
+                      installments === opt.count ? 'text-darkText-inverse' : 'text-darkText-secondary'
                     }`}
                   >
                     {opt.label}
@@ -185,13 +185,13 @@ export default function CardCheckoutScreen() {
           </View>
 
           {/* Total */}
-          <View className="bg-gray-50 rounded-xl px-4 py-3 mb-4">
+          <View className="bg-dark-surface rounded-2xl px-4 py-3 mb-4 border border-darkBorder-subtle">
             <View className="flex-row justify-between">
-              <Text className="text-sm text-gray-600">Total</Text>
-              <Text className="text-lg font-bold text-blue-600">R$ {amountBRL.toFixed(2)}</Text>
+              <Text className="text-sm text-darkText-secondary">Total</Text>
+              <Text className="text-lg font-bold text-primary-light">R$ {amountBRL.toFixed(2)}</Text>
             </View>
             {installments > 1 && (
-              <Text className="text-xs text-gray-500 text-right mt-0.5">
+              <Text className="text-xs text-darkText-muted text-right mt-0.5">
                 {installments}x de R$ {(amountBRL / installments).toFixed(2)}
               </Text>
             )}
@@ -201,14 +201,16 @@ export default function CardCheckoutScreen() {
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={!isValid || checkout.isPending}
-            className={`rounded-xl py-4 items-center mb-8 ${
-              isValid && !checkout.isPending ? 'bg-blue-600' : 'bg-gray-300'
+            className={`rounded-2xl py-4 items-center mb-8 ${
+              isValid && !checkout.isPending ? 'bg-primary' : 'bg-dark-surfaceLight'
             }`}
           >
             {checkout.isPending ? (
-              <ActivityIndicator color="white" />
+              <ActivityIndicator color="#1a1a2e" />
             ) : (
-              <Text className="text-white font-bold text-base">Pagar R$ {amountBRL.toFixed(2)}</Text>
+              <Text className={`font-bold text-base ${isValid ? 'text-darkText-inverse' : 'text-darkText-muted'}`}>
+                Pagar R$ {amountBRL.toFixed(2)}
+              </Text>
             )}
           </TouchableOpacity>
         </View>

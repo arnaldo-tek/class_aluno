@@ -50,12 +50,12 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">
+        <Text className="text-base font-bold text-darkText flex-1">
           {t('profile.editProfile')}
         </Text>
       </View>
@@ -67,25 +67,25 @@ export default function EditProfileScreen() {
             {photoUrl ? (
               <Image source={{ uri: photoUrl }} className="w-24 h-24 rounded-full" />
             ) : (
-              <View className="w-24 h-24 bg-blue-100 rounded-full items-center justify-center">
-                <Text className="text-3xl text-blue-600 font-bold">
+              <View className="w-24 h-24 bg-primary-50 rounded-full items-center justify-center">
+                <Text className="text-3xl text-primary-light font-bold">
                   {(displayName || 'U')[0].toUpperCase()}
                 </Text>
               </View>
             )}
-            <View className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full items-center justify-center">
-              <Ionicons name="camera" size={16} color="white" />
+            <View className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full items-center justify-center">
+              <Ionicons name="camera" size={16} color="#1a1a2e" />
             </View>
           </TouchableOpacity>
           {uploadAvatar.isPending && (
-            <Text className="text-xs text-gray-400 mt-2">{t('common.loading')}</Text>
+            <Text className="text-xs text-darkText-muted mt-2">{t('common.loading')}</Text>
           )}
         </View>
 
         {/* Name */}
-        <Text className="text-sm font-medium text-gray-700 mb-2">{t('auth.name')}</Text>
+        <Text className="text-sm font-medium text-darkText-secondary mb-2">{t('auth.name')}</Text>
         <TextInput
-          className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 mb-6"
+          className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText mb-6"
           value={displayName}
           onChangeText={setDisplayName}
           placeholder={t('auth.name')}
@@ -93,18 +93,18 @@ export default function EditProfileScreen() {
         />
 
         {/* Email (read-only) */}
-        <Text className="text-sm font-medium text-gray-700 mb-2">{t('auth.email')}</Text>
-        <View className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 mb-6">
-          <Text className="text-base text-gray-500">{user?.email}</Text>
+        <Text className="text-sm font-medium text-darkText-secondary mb-2">{t('auth.email')}</Text>
+        <View className="bg-dark-elevated border border-darkBorder rounded-2xl px-4 py-3.5 mb-6">
+          <Text className="text-base text-darkText-muted">{user?.email}</Text>
         </View>
 
         {/* Save button */}
         <TouchableOpacity
           onPress={handleSave}
           disabled={updateProfile.isPending}
-          className="bg-blue-600 rounded-xl py-4 items-center"
+          className="bg-primary rounded-2xl py-4 items-center"
         >
-          <Text className="text-white font-bold text-base">
+          <Text className="text-darkText-inverse font-bold text-base">
             {updateProfile.isPending ? t('common.loading') : t('common.save')}
           </Text>
         </TouchableOpacity>

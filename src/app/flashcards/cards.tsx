@@ -34,12 +34,12 @@ export default function FlashcardsListScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center justify-between px-4 pt-4 pb-3 bg-white border-b border-gray-100">
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center justify-between px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="flex-1 text-lg font-bold text-gray-900" numberOfLines={1}>{block_name ?? 'Cards'}</Text>
+        <Text className="flex-1 text-lg font-bold text-darkText" numberOfLines={1}>{block_name ?? 'Cards'}</Text>
         <View className="flex-row gap-2">
           {cards && cards.length > 0 && (
             <TouchableOpacity
@@ -48,19 +48,19 @@ export default function FlashcardsListScreen() {
                 params: { block_id: block_id! },
               })}
             >
-              <Ionicons name="play-circle-outline" size={28} color="#16a34a" />
+              <Ionicons name="play-circle-outline" size={28} color="#34d399" />
             </TouchableOpacity>
           )}
           <TouchableOpacity onPress={() => setShowForm(!showForm)}>
-            <Ionicons name="add-circle-outline" size={28} color="#2563eb" />
+            <Ionicons name="add-circle-outline" size={28} color="#60a5fa" />
           </TouchableOpacity>
         </View>
       </View>
 
       {showForm && (
-        <View className="px-4 py-3 bg-white border-b border-gray-100 gap-2">
+        <View className="px-4 py-3 bg-dark-surface border-b border-darkBorder gap-2">
           <TextInput
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"
+            className="border border-darkBorder rounded-2xl px-3 py-2 text-sm bg-dark-surfaceLight text-darkText"
             placeholder="Pergunta"
             placeholderTextColor="#9ca3af"
             value={pergunta}
@@ -68,7 +68,7 @@ export default function FlashcardsListScreen() {
             multiline
           />
           <TextInput
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50"
+            className="border border-darkBorder rounded-2xl px-3 py-2 text-sm bg-dark-surfaceLight text-darkText"
             placeholder="Resposta"
             placeholderTextColor="#9ca3af"
             value={resposta}
@@ -78,9 +78,9 @@ export default function FlashcardsListScreen() {
           <TouchableOpacity
             onPress={handleCreate}
             disabled={createCard.isPending}
-            className="bg-blue-600 rounded-xl py-2.5 items-center"
+            className="bg-primary rounded-2xl py-3.5 items-center"
           >
-            <Text className="text-white font-semibold text-sm">Adicionar card</Text>
+            <Text className="text-darkText-inverse font-semibold text-sm">Adicionar card</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -99,11 +99,11 @@ export default function FlashcardsListScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => (
-            <View className="bg-white rounded-xl px-4 py-3 mb-3 border border-gray-100">
+            <View className="bg-dark-surface rounded-2xl px-4 py-3 mb-3 border border-darkBorder">
               <View className="flex-row items-start justify-between">
                 <View className="flex-1">
-                  <Text className="text-sm font-semibold text-gray-900 mb-1">{item.pergunta}</Text>
-                  <Text className="text-sm text-gray-500">{item.resposta}</Text>
+                  <Text className="text-sm font-semibold text-darkText mb-1">{item.pergunta}</Text>
+                  <Text className="text-sm text-darkText-secondary">{item.resposta}</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => Alert.alert('Excluir', 'Excluir este flashcard?', [

@@ -2,6 +2,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/contexts/AuthContext'
 
+export function useFreeEnroll() {
+  const { user } = useAuthContext()
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ cursoId }: { cursoId: string }) => {
+      if (!user) throw new Error('Not authenticated')
+      const { error } = await supabase.from('enrollments').insert({
+        user_id: user.id,
+        curso_id: cursoId,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-enrollments'] })
+      qc.invalidateQueries({ queryKey: ['enrollment-check'] })
+    },
+  })
+}
+
 export function useMyEnrollments() {
   const { user } = useAuthContext()
 

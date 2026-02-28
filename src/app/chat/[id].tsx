@@ -70,22 +70,22 @@ export default function ChatScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-dark-bg" edges={['top']}>
       {/* Header */}
-      <View className="flex-row items-center px-4 py-3 bg-white border-b border-gray-100">
+      <View className="flex-row items-center px-4 py-3 bg-dark-surface border-b border-darkBorder">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
         {photo ? (
           <Image source={{ uri: photo }} className="w-9 h-9 rounded-full" />
         ) : (
-          <View className="w-9 h-9 rounded-full bg-blue-100 items-center justify-center">
-            <Text className="text-sm font-bold text-blue-600">
+          <View className="w-9 h-9 rounded-full bg-primary-50 items-center justify-center">
+            <Text className="text-sm font-bold text-primary-light">
               {(name ?? 'U')[0].toUpperCase()}
             </Text>
           </View>
         )}
-        <Text className="text-base font-semibold text-gray-900 ml-2">{name ?? 'Chat'}</Text>
+        <Text className="text-base font-semibold text-darkText ml-2">{name ?? 'Chat'}</Text>
       </View>
 
       {/* Messages */}
@@ -104,7 +104,7 @@ export default function ChatScreen() {
             if (entry.type === 'separator') {
               return (
                 <View className="items-center my-3">
-                  <Text className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                  <Text className="text-xs text-darkText-muted bg-dark-surfaceLight px-3 py-1 rounded-full">
                     {formatDateSeparator(entry.date)}
                   </Text>
                 </View>
@@ -119,8 +119,8 @@ export default function ChatScreen() {
                 <View
                   className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl ${
                     isMine
-                      ? 'bg-blue-600 rounded-br-md'
-                      : 'bg-white rounded-bl-md border border-gray-100'
+                      ? 'bg-primary rounded-br-md'
+                      : 'bg-dark-surface rounded-bl-md border border-darkBorder'
                   }`}
                 >
                   {msg.image && (
@@ -131,11 +131,11 @@ export default function ChatScreen() {
                     />
                   )}
                   {msg.text && (
-                    <Text className={`text-sm ${isMine ? 'text-white' : 'text-gray-900'}`}>
+                    <Text className={`text-sm ${isMine ? 'text-darkText-inverse' : 'text-darkText'}`}>
                       {msg.text}
                     </Text>
                   )}
-                  <Text className={`text-[10px] mt-1 ${isMine ? 'text-blue-200' : 'text-gray-400'}`}>
+                  <Text className={`text-[10px] mt-1 ${isMine ? 'text-blue-200' : 'text-darkText-muted'}`}>
                     {formatTime(msg.created_at)}
                   </Text>
                 </View>
@@ -145,13 +145,13 @@ export default function ChatScreen() {
         />
 
         {/* Input */}
-        <View className="flex-row items-end px-4 py-2 bg-white border-t border-gray-100">
+        <View className="flex-row items-end px-4 py-2 bg-dark-surface border-t border-darkBorder">
           <TextInput
             value={text}
             onChangeText={setText}
             placeholder="Escreva uma mensagem..."
             placeholderTextColor="#9ca3af"
-            className="flex-1 bg-gray-100 rounded-2xl px-4 py-2.5 text-sm text-gray-900 max-h-24"
+            className="flex-1 bg-dark-surfaceLight rounded-2xl px-4 py-2.5 text-sm text-darkText max-h-24"
             multiline
             onSubmitEditing={handleSend}
           />
@@ -159,13 +159,13 @@ export default function ChatScreen() {
             onPress={handleSend}
             disabled={!text.trim() || sendMessage.isPending}
             className={`ml-2 w-10 h-10 rounded-full items-center justify-center ${
-              text.trim() ? 'bg-blue-600' : 'bg-gray-200'
+              text.trim() ? 'bg-primary' : 'bg-dark-surfaceLight'
             }`}
           >
-            <Ionicons name="send" size={18} color={text.trim() ? 'white' : '#9ca3af'} />
+            <Ionicons name="send" size={18} color={text.trim() ? '#1a1a2e' : '#9ca3af'} />
           </TouchableOpacity>
         </View>
-        <SafeAreaView edges={['bottom']} className="bg-white" />
+        <SafeAreaView edges={['bottom']} className="bg-dark-surface" />
       </KeyboardAvoidingView>
     </SafeAreaView>
   )

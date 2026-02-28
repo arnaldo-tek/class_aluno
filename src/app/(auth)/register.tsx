@@ -19,7 +19,7 @@ export default function RegisterScreen() {
   async function handleRegister() {
     if (!name || !email || !password) return
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem')
+      setError('As senhas nao coincidem')
       return
     }
     setError('')
@@ -27,14 +27,12 @@ export default function RegisterScreen() {
 
     try {
       const data = await signUp(email, password, name)
-      // Se o Supabase retornou sessão, o email não precisa de confirmação
       if (data.session) {
         router.replace('/(tabs)/home')
       } else {
-        // Email de confirmação enviado — informar o usuário
         Alert.alert(
           'Verifique seu email',
-          'Enviamos um link de confirmação para o seu email. Confirme para acessar o app.',
+          'Enviamos um link de confirmacao para o seu email. Confirme para acessar o app.',
           [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }],
         )
       }
@@ -48,7 +46,7 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
+      className="flex-1 bg-dark-bg"
     >
       <ScrollView contentContainerClassName="flex-grow justify-center px-6 py-12">
         <Image
@@ -56,18 +54,19 @@ export default function RegisterScreen() {
           style={{ width: 192, height: 56, alignSelf: 'center', marginBottom: 24 }}
           resizeMode="contain"
         />
-        <Text className="text-base text-center text-gray-500 mb-8">
+        <Text className="text-base text-center text-darkText-secondary mb-8">
           {t('auth.register')}
         </Text>
 
         <View className="space-y-4">
           <View>
-            <Text className="text-sm font-medium text-gray-700 mb-1">
+            <Text className="text-sm font-medium text-darkText-secondary mb-1.5">
               {t('auth.name')}
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText"
               placeholder="Seu nome completo"
+              placeholderTextColor="#9ca3af"
               value={name}
               onChangeText={setName}
               autoComplete="name"
@@ -75,12 +74,13 @@ export default function RegisterScreen() {
           </View>
 
           <View>
-            <Text className="text-sm font-medium text-gray-700 mb-1">
+            <Text className="text-sm font-medium text-darkText-secondary mb-1.5">
               {t('auth.email')}
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText"
               placeholder="seu@email.com"
+              placeholderTextColor="#9ca3af"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -90,12 +90,13 @@ export default function RegisterScreen() {
           </View>
 
           <View>
-            <Text className="text-sm font-medium text-gray-700 mb-1">
+            <Text className="text-sm font-medium text-darkText-secondary mb-1.5">
               {t('auth.password')}
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText"
               placeholder="Sua senha"
+              placeholderTextColor="#9ca3af"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -103,12 +104,13 @@ export default function RegisterScreen() {
           </View>
 
           <View>
-            <Text className="text-sm font-medium text-gray-700 mb-1">
+            <Text className="text-sm font-medium text-darkText-secondary mb-1.5">
               {t('auth.confirmPassword')}
             </Text>
             <TextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText"
               placeholder="Confirme sua senha"
+              placeholderTextColor="#9ca3af"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
@@ -116,28 +118,28 @@ export default function RegisterScreen() {
           </View>
 
           {error ? (
-            <Text className="text-sm text-red-600">{error}</Text>
+            <Text className="text-sm text-error">{error}</Text>
           ) : null}
 
           <TouchableOpacity
             onPress={handleRegister}
             disabled={loading}
-            className="bg-blue-600 rounded-lg py-3.5 items-center mt-2"
+            className="bg-primary rounded-2xl py-4 items-center mt-2"
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text className="text-white font-semibold text-base">
+              <Text className="text-white font-bold text-base">
                 {t('auth.register')}
               </Text>
             )}
           </TouchableOpacity>
 
           <View className="flex-row justify-center items-center gap-1 mt-4">
-            <Text className="text-gray-500 text-sm">{t('auth.hasAccount')}</Text>
+            <Text className="text-darkText-muted text-sm">{t('auth.hasAccount')}</Text>
             <Link href="/(auth)/login" asChild>
               <TouchableOpacity>
-                <Text className="text-blue-600 font-medium text-sm">
+                <Text className="text-accent font-semibold text-sm">
                   {t('auth.login')}
                 </Text>
               </TouchableOpacity>

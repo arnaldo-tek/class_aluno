@@ -15,18 +15,18 @@ export default function CommunityRulesScreen() {
   if (!community) return null
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100">
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">
+        <Text className="text-base font-bold text-darkText flex-1">
           {t('community.rules')} - {community.nome}
         </Text>
       </View>
 
       <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
-        <Text className="text-sm text-gray-700 leading-6">
+        <Text className="text-sm text-darkText-secondary leading-6">
           {community.regras ?? 'Nenhuma regra definida.'}
         </Text>
       </ScrollView>

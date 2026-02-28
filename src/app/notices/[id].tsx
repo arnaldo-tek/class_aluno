@@ -29,28 +29,28 @@ export default function NoticeDetailScreen() {
   const hasPdf = !!(notice as any).pdf
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1" numberOfLines={1}>
+        <Text className="text-base font-bold text-darkText flex-1" numberOfLines={1}>
           {t('notices.title')}
         </Text>
-        <TouchableOpacity onPress={handleToggleFavorite}>
+        <TouchableOpacity onPress={handleToggleFavorite} className="p-1">
           <Ionicons
             name={isFavorite ? 'heart' : 'heart-outline'}
             size={24}
-            color={isFavorite ? '#dc2626' : '#6b7280'}
+            color={isFavorite ? '#f87171' : '#6b7280'}
           />
         </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="px-4 pt-4">
-          <Text className="text-xl font-bold text-gray-900">{notice.titulo}</Text>
+        <View className="px-4 pt-5">
+          <Text className="text-xl font-bold text-darkText">{notice.titulo}</Text>
 
-          <View className="flex-row items-center mt-2 flex-wrap gap-2">
+          <View className="flex-row items-center mt-3 flex-wrap gap-2">
             {(notice as any).categorias?.nome && (
               <Badge>{(notice as any).categorias.nome}</Badge>
             )}
@@ -59,45 +59,44 @@ export default function NoticeDetailScreen() {
           </View>
 
           {(notice as any).professor_profiles?.nome_professor && (
-            <Text className="text-sm text-gray-500 mt-2">
+            <Text className="text-sm text-darkText-secondary mt-2">
               {t('notices.professor')}: {(notice as any).professor_profiles.nome_professor}
             </Text>
           )}
 
           {/* Toggle Resumo / Completo */}
           {notice.resumo && notice.descricao && (
-            <View className="flex-row mt-4 bg-gray-100 rounded-xl p-1">
+            <View className="flex-row mt-5 bg-dark-surfaceLight rounded-2xl p-1">
               <TouchableOpacity
                 onPress={() => setViewMode('summary')}
-                className={`flex-1 py-2 rounded-lg items-center ${viewMode === 'summary' ? 'bg-white' : ''}`}
+                className={`flex-1 py-2.5 rounded-xl items-center ${viewMode === 'summary' ? 'bg-dark-surface' : ''}`}
               >
-                <Text className={`text-sm font-medium ${viewMode === 'summary' ? 'text-gray-900' : 'text-gray-500'}`}>
+                <Text className={`text-sm font-semibold ${viewMode === 'summary' ? 'text-darkText' : 'text-darkText-muted'}`}>
                   {t('notices.summary')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setViewMode('complete')}
-                className={`flex-1 py-2 rounded-lg items-center ${viewMode === 'complete' ? 'bg-white' : ''}`}
+                className={`flex-1 py-2.5 rounded-xl items-center ${viewMode === 'complete' ? 'bg-dark-surface' : ''}`}
               >
-                <Text className={`text-sm font-medium ${viewMode === 'complete' ? 'text-gray-900' : 'text-gray-500'}`}>
+                <Text className={`text-sm font-semibold ${viewMode === 'complete' ? 'text-darkText' : 'text-darkText-muted'}`}>
                   {t('notices.complete')}
                 </Text>
               </TouchableOpacity>
             </View>
           )}
 
-          <Text className="text-sm text-gray-700 leading-6 mt-4">
+          <Text className="text-base text-darkText-secondary leading-7 mt-5">
             {viewMode === 'summary' ? (notice.resumo ?? notice.descricao) : (notice.descricao ?? notice.resumo)}
           </Text>
 
-          {/* PDF */}
           {hasPdf && (
             <View className="mt-6">
-              <Text className="text-sm font-semibold text-gray-900 mb-2">{t('notices.downloadPdf')}</Text>
+              <Text className="text-sm font-bold text-darkText mb-2">{t('notices.downloadPdf')}</Text>
               <View style={{ height: 600 }}>
                 <WebView
                   source={{ uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent((notice as any).pdf)}` }}
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, backgroundColor: '#f7f6f3' }}
                   startInLoadingState
                   renderLoading={() => <LoadingSpinner />}
                 />

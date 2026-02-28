@@ -47,29 +47,29 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">{t('settings.title')}</Text>
+        <Text className="text-base font-bold text-darkText flex-1">{t('settings.title')}</Text>
       </View>
 
       <View className="px-4 pt-4">
         {/* Language selector */}
-        <Text className="text-sm font-semibold text-gray-900 mb-3">{t('settings.language')}</Text>
-        <View className="bg-white rounded-2xl overflow-hidden">
+        <Text className="text-sm font-semibold text-darkText mb-3">{t('settings.language')}</Text>
+        <View className="bg-dark-surfaceLight rounded-2xl overflow-hidden">
           {LANGUAGES.map((lang, i) => (
             <TouchableOpacity
               key={lang.code}
               onPress={() => handleLanguageChange(lang.code)}
               className={`flex-row items-center px-4 py-3.5 ${
-                i < LANGUAGES.length - 1 ? 'border-b border-gray-50' : ''
+                i < LANGUAGES.length - 1 ? 'border-b border-darkBorder-subtle' : ''
               }`}
             >
-              <Text className="flex-1 text-base text-gray-900">{lang.label}</Text>
+              <Text className="flex-1 text-base text-darkText">{lang.label}</Text>
               {selectedLanguage === lang.code && (
-                <Ionicons name="checkmark-circle" size={22} color="#2563eb" />
+                <Ionicons name="checkmark-circle" size={22} color="#60a5fa" />
               )}
             </TouchableOpacity>
           ))}
@@ -78,11 +78,11 @@ export default function SettingsScreen() {
         {/* Change password */}
         <TouchableOpacity
           onPress={() => router.push('/profile/change-password')}
-          className="flex-row items-center bg-white rounded-2xl px-4 py-3.5 mt-4"
+          className="flex-row items-center bg-dark-surfaceLight rounded-2xl px-4 py-3.5 mt-4"
         >
           <Ionicons name="lock-closed-outline" size={20} color="#6b7280" />
-          <Text className="flex-1 text-base text-gray-900 ml-3">{t('profile.changePassword')}</Text>
-          <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
+          <Text className="flex-1 text-base text-darkText ml-3">{t('profile.changePassword')}</Text>
+          <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>

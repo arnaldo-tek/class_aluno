@@ -31,12 +31,12 @@ export default function MyPackagesScreen() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">{t('packages.myPackages')}</Text>
+        <Text className="text-base font-bold text-darkText flex-1">{t('packages.myPackages')}</Text>
       </View>
 
       <FlatList
@@ -54,7 +54,7 @@ export default function MyPackagesScreen() {
           const isExpired = item.access_expire_date && new Date(item.access_expire_date) < new Date()
 
           return (
-            <View className="bg-white rounded-xl mb-3 overflow-hidden border border-gray-100">
+            <View className="bg-dark-surface rounded-2xl mb-3 overflow-hidden border border-darkBorder-subtle">
               <TouchableOpacity
                 onPress={() => router.push(`/packages/${item.pacote_id}`)}
                 className="flex-row p-4"
@@ -62,14 +62,14 @@ export default function MyPackagesScreen() {
                 {pacote?.imagem ? (
                   <Image source={{ uri: pacote.imagem }} className="w-16 h-16 rounded-lg" resizeMode="cover" />
                 ) : (
-                  <View className="w-16 h-16 bg-blue-50 rounded-lg items-center justify-center">
-                    <Ionicons name="cube-outline" size={24} color="#2563eb" />
+                  <View className="w-16 h-16 bg-primary-50 rounded-lg items-center justify-center">
+                    <Ionicons name="cube-outline" size={24} color="#60a5fa" />
                   </View>
                 )}
                 <View className="flex-1 ml-3 justify-center">
-                  <Text className="text-base font-semibold text-gray-900">{pacote?.nome}</Text>
+                  <Text className="text-base font-semibold text-darkText">{pacote?.nome}</Text>
                   {item.access_expire_date && (
-                    <Text className={`text-xs mt-1 ${isExpired ? 'text-red-500' : 'text-gray-400'}`}>
+                    <Text className={`text-xs mt-1 ${isExpired ? 'text-error' : 'text-darkText-muted'}`}>
                       {t('packages.activeUntil')} {format(new Date(item.access_expire_date), 'dd/MM/yyyy')}
                     </Text>
                   )}
@@ -80,9 +80,9 @@ export default function MyPackagesScreen() {
                 <TouchableOpacity
                   onPress={() => handleCancel(item.pacote_id)}
                   disabled={cancelSubscription.isPending}
-                  className="border-t border-gray-100 py-3 items-center"
+                  className="border-t border-darkBorder-subtle py-3 items-center"
                 >
-                  <Text className="text-sm text-red-500 font-medium">
+                  <Text className="text-sm text-error font-medium">
                     {t('packages.cancelSubscription')}
                   </Text>
                 </TouchableOpacity>

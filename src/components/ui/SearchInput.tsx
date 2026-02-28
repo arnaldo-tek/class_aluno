@@ -10,10 +10,10 @@ interface SearchInputProps {
 
 export function SearchInput({ value, onChangeText, placeholder }: SearchInputProps) {
   return (
-    <View className="flex-row items-center bg-gray-100 rounded-xl px-3 py-2 mx-4 mb-4">
+    <View className="flex-row items-center bg-dark-surfaceLight rounded-2xl px-4 py-3 mx-4 mb-4">
       <Ionicons name="search" size={20} color="#9ca3af" />
       <TextInput
-        className="flex-1 ml-2 text-base text-gray-900"
+        className="flex-1 ml-3 text-base text-darkText"
         placeholder={placeholder ?? t('common.search')}
         placeholderTextColor="#9ca3af"
         value={value}

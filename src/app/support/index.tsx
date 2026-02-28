@@ -60,18 +60,18 @@ export default function SupportScreen() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       {/* Header */}
-      <View className="flex-row items-center px-4 py-3 bg-white border-b border-gray-100">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+      <View className="flex-row items-center px-4 py-3 bg-dark-surface border-b border-darkBorder">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900 flex-1">Suporte</Text>
+        <Text className="text-xl font-bold text-darkText flex-1">Suporte</Text>
         <TouchableOpacity
           onPress={() => setShowForm(!showForm)}
-          className="w-9 h-9 rounded-full bg-blue-600 items-center justify-center"
+          className="w-9 h-9 rounded-full bg-primary items-center justify-center"
         >
-          <Ionicons name={showForm ? 'close' : 'add'} size={22} color="white" />
+          <Ionicons name={showForm ? 'close' : 'add'} size={22} color="#1a1a2e" />
         </TouchableOpacity>
       </View>
 
@@ -81,26 +81,26 @@ export default function SupportScreen() {
       >
         {/* New ticket form */}
         {showForm && (
-          <View className="mx-4 mt-4 bg-white rounded-2xl p-4">
-            <Text className="text-sm font-semibold text-gray-900 mb-2">Novo chamado</Text>
+          <View className="mx-4 mt-4 bg-dark-surface rounded-2xl p-4 border border-darkBorder">
+            <Text className="text-sm font-semibold text-darkText mb-2">Novo chamado</Text>
             <TextInput
               value={descricao}
               onChangeText={setDescricao}
               placeholder="Descreva seu problema ou dúvida..."
               placeholderTextColor="#9ca3af"
-              className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-900 min-h-[100px]"
+              className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-sm text-darkText min-h-[100px]"
               multiline
               textAlignVertical="top"
             />
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={!descricao.trim() || createChamado.isPending}
-              className={`mt-3 py-3 rounded-xl items-center ${
-                descricao.trim() ? 'bg-blue-600' : 'bg-gray-200'
+              className={`mt-3 py-3.5 rounded-2xl items-center ${
+                descricao.trim() ? 'bg-primary' : 'bg-dark-surfaceLight'
               }`}
             >
               <Text className={`text-sm font-semibold ${
-                descricao.trim() ? 'text-white' : 'text-gray-400'
+                descricao.trim() ? 'text-darkText-inverse' : 'text-darkText-muted'
               }`}>
                 {createChamado.isPending ? 'Enviando...' : 'Enviar chamado'}
               </Text>
@@ -121,16 +121,16 @@ export default function SupportScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ padding: 16 }}
             renderItem={({ item }) => (
-              <View className="bg-white rounded-xl p-4 mb-3">
+              <View className="bg-dark-surface rounded-2xl p-4 mb-3 border border-darkBorder">
                 <View className="flex-row items-start justify-between mb-2">
                   <Badge variant={getStatusVariant(item.status ?? 'aberto')}>
                     {getStatusLabel(item.status ?? 'aberto')}
                   </Badge>
-                  <Text className="text-xs text-gray-400">
+                  <Text className="text-xs text-darkText-muted">
                     {formatDate(item.created_at ?? '')}
                   </Text>
                 </View>
-                <Text className="text-sm text-gray-700 leading-5" numberOfLines={4}>
+                <Text className="text-sm text-darkText-secondary leading-5" numberOfLines={4}>
                   {item.descricao}
                 </Text>
               </View>

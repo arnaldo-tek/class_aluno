@@ -13,6 +13,7 @@ export default {
     search: 'Cerca',
     seeAll: 'Vedi tutto',
     noResults: 'Nessun risultato trovato',
+    skip: 'Salta',
   },
   auth: {
     login: 'Accedi',

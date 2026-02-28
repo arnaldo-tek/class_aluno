@@ -20,24 +20,24 @@ export default function HomeScreen() {
   const { data: unreadChats } = useUnreadChatsCount()
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="flex-row items-center px-4 pt-4 pb-2">
-          <Text className="text-2xl font-bold text-gray-900 flex-1">{t('home.title')}</Text>
-          <TouchableOpacity onPress={() => router.push('/chat')} className="relative mr-4">
-            <Ionicons name="chatbubbles-outline" size={24} color="#374151" />
+        <View className="flex-row items-center px-4 pt-4 pb-3">
+          <Text className="text-2xl font-bold text-darkText flex-1">{t('home.title')}</Text>
+          <TouchableOpacity onPress={() => router.push('/chat')} className="relative mr-4 p-1">
+            <Ionicons name="chatbubbles-outline" size={24} color="#6b7280" />
             {(unreadChats ?? 0) > 0 && (
-              <View className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 items-center justify-center">
-                <Text className="text-[10px] font-bold text-white">{unreadChats}</Text>
+              <View className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent items-center justify-center">
+                <Text className="text-[10px] font-bold text-darkText-inverse">{unreadChats}</Text>
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/notifications')} className="relative">
-            <Ionicons name="notifications-outline" size={24} color="#374151" />
+          <TouchableOpacity onPress={() => router.push('/notifications')} className="relative p-1">
+            <Ionicons name="notifications-outline" size={24} color="#6b7280" />
             {(unreadNotifications ?? 0) > 0 && (
-              <View className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 items-center justify-center">
-                <Text className="text-[10px] font-bold text-white">{unreadNotifications}</Text>
+              <View className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent items-center justify-center">
+                <Text className="text-[10px] font-bold text-darkText-inverse">{unreadNotifications}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -82,7 +82,7 @@ function BannerCarousel() {
   if (!banners?.length) return null
 
   return (
-    <View className="mb-4">
+    <View className="mb-5">
       <FlatList
         ref={flatListRef}
         data={banners}
@@ -96,23 +96,23 @@ function BannerCarousel() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: 16 }}
         renderItem={({ item }) => (
-          <View style={{ width: SCREEN_WIDTH - 32 }} className="h-40 rounded-xl overflow-hidden mr-3">
+          <View style={{ width: SCREEN_WIDTH - 32 }} className="h-44 rounded-2xl overflow-hidden mr-3">
             {item.imagem ? (
               <Image source={{ uri: item.imagem }} className="w-full h-full" resizeMode="cover" />
             ) : (
-              <View className="w-full h-full bg-blue-100 items-center justify-center">
-                <Ionicons name="megaphone-outline" size={32} color="#2563eb" />
+              <View className="w-full h-full bg-primary-50 items-center justify-center">
+                <Ionicons name="megaphone-outline" size={32} color="#3b82f6" />
               </View>
             )}
           </View>
         )}
       />
       {banners.length > 1 && (
-        <View className="flex-row justify-center mt-2">
+        <View className="flex-row justify-center mt-3">
           {banners.map((_, i) => (
             <View
               key={i}
-              className={`w-2 h-2 rounded-full mx-1 ${i === currentIndex ? 'bg-blue-600' : 'bg-gray-300'}`}
+              className={`h-1.5 rounded-full mx-1 ${i === currentIndex ? 'w-6 bg-accent' : 'w-1.5 bg-darkBorder-light'}`}
             />
           ))}
         </View>
@@ -128,7 +128,7 @@ function FeaturedSection() {
   if (!courses?.length) return null
 
   return (
-    <View className="mb-4">
+    <View className="mb-5">
       <SectionHeader
         title={t('home.featured')}
         onSeeAll={() => router.push('/courses')}
@@ -162,17 +162,17 @@ function CategoriesSection() {
   if (!categories?.length) return null
 
   return (
-    <View className="mb-4">
+    <View className="mb-5">
       <SectionHeader title={t('home.categories')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
         {categories.map((cat) => (
           <TouchableOpacity
             key={cat.id}
             onPress={() => router.push(`/courses?categoria=${cat.id}`)}
-            className="bg-white border border-gray-200 rounded-full px-4 py-2 mr-2"
+            className="bg-dark-surfaceLight rounded-full px-4 py-2.5 mr-2"
             activeOpacity={0.7}
           >
-            <Text className="text-sm font-medium text-gray-700">{cat.nome}</Text>
+            <Text className="text-sm font-medium text-darkText-secondary">{cat.nome}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -186,7 +186,7 @@ function ProfessorsSection() {
   if (!professors?.length) return null
 
   return (
-    <View className="mb-4">
+    <View className="mb-5">
       <SectionHeader title={t('home.professors')} />
       <FlatList
         data={professors}
@@ -220,21 +220,21 @@ function NewsSection() {
         <TouchableOpacity
           key={item.id}
           onPress={() => router.push(`/news/${item.id}`)}
-          className="flex-row bg-white rounded-xl mx-4 mb-2 overflow-hidden border border-gray-100"
+          className="flex-row bg-dark-surface rounded-2xl mx-4 mb-2.5 overflow-hidden"
         >
           {item.imagem ? (
             <Image source={{ uri: item.imagem }} className="w-20 h-20" resizeMode="cover" />
           ) : (
-            <View className="w-20 h-20 bg-gray-100 items-center justify-center">
+            <View className="w-20 h-20 bg-dark-surfaceLight items-center justify-center">
               <Ionicons name="newspaper-outline" size={20} color="#9ca3af" />
             </View>
           )}
-          <View className="flex-1 p-3 justify-center">
-            <Text className="text-sm font-semibold text-gray-900" numberOfLines={2}>
+          <View className="flex-1 p-3.5 justify-center">
+            <Text className="text-sm font-semibold text-darkText" numberOfLines={2}>
               {item.titulo}
             </Text>
             {item.descricao && (
-              <Text className="text-xs text-gray-500 mt-1" numberOfLines={1}>
+              <Text className="text-xs text-darkText-muted mt-1" numberOfLines={1}>
                 {item.descricao}
               </Text>
             )}

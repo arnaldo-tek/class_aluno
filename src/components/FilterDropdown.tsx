@@ -18,28 +18,29 @@ export function FilterDropdown({ label, value, options, onChange }: FilterDropdo
     <>
       <TouchableOpacity
         onPress={() => setVisible(true)}
-        className={`flex-row items-center px-3 py-2 mr-2 rounded-full border ${
-          value ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'
+        className={`flex-row items-center px-3.5 py-2 mr-2 rounded-full ${
+          value ? 'bg-primary-50 border border-primary' : 'bg-dark-surfaceLight border border-darkBorder'
         }`}
       >
-        <Text className={`text-sm mr-1 ${value ? 'text-blue-700 font-medium' : 'text-gray-600'}`}>
+        <Text className={`text-sm mr-1 ${value ? 'text-primary-light font-semibold' : 'text-darkText-secondary'}`}>
           {selectedLabel ?? label}
         </Text>
-        <Ionicons name="chevron-down" size={14} color={value ? '#1d4ed8' : '#9ca3af'} />
+        <Ionicons name="chevron-down" size={14} color={value ? '#60a5fa' : '#9ca3af'} />
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="fade">
         <TouchableOpacity
-          className="flex-1 bg-black/40 justify-end"
+          className="flex-1 bg-black/60 justify-end"
           activeOpacity={1}
           onPress={() => setVisible(false)}
         >
-          <View className="bg-white rounded-t-2xl max-h-[60%]">
-            <View className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100">
-              <Text className="text-base font-bold text-gray-900">{label}</Text>
+          <View className="bg-dark-surface rounded-t-3xl max-h-[60%]">
+            <View className="w-10 h-1 bg-darkBorder rounded-full self-center mt-3 mb-2" />
+            <View className="flex-row items-center justify-between px-5 py-4 border-b border-darkBorder">
+              <Text className="text-base font-bold text-darkText">{label}</Text>
               {value && (
                 <TouchableOpacity onPress={() => { onChange(null); setVisible(false) }}>
-                  <Text className="text-sm text-red-500">Limpar</Text>
+                  <Text className="text-sm text-error font-medium">Limpar</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -49,15 +50,15 @@ export function FilterDropdown({ label, value, options, onChange }: FilterDropdo
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => { onChange(item.value); setVisible(false) }}
-                  className={`flex-row items-center px-4 py-3.5 border-b border-gray-50 ${
-                    item.value === value ? 'bg-blue-50' : ''
+                  className={`flex-row items-center px-5 py-4 border-b border-darkBorder-subtle ${
+                    item.value === value ? 'bg-primary-50' : ''
                   }`}
                 >
-                  <Text className={`flex-1 text-base ${item.value === value ? 'text-blue-700 font-medium' : 'text-gray-900'}`}>
+                  <Text className={`flex-1 text-base ${item.value === value ? 'text-primary-light font-semibold' : 'text-darkText'}`}>
                     {item.label}
                   </Text>
                   {item.value === value && (
-                    <Ionicons name="checkmark" size={20} color="#2563eb" />
+                    <Ionicons name="checkmark-circle" size={20} color="#60a5fa" />
                   )}
                 </TouchableOpacity>
               )}

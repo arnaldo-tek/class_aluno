@@ -33,22 +33,22 @@ export default function ChangePasswordScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">
+        <Text className="text-base font-bold text-darkText flex-1">
           {t('profile.changePassword')}
         </Text>
       </View>
 
       <View className="flex-1 px-4 pt-6">
-        <Text className="text-sm font-medium text-gray-700 mb-2">
+        <Text className="text-sm font-medium text-darkText-secondary mb-2">
           {t('profile.newPassword')}
         </Text>
         <TextInput
-          className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 mb-4"
+          className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText mb-4"
           value={newPassword}
           onChangeText={setNewPassword}
           placeholder={t('profile.newPassword')}
@@ -56,11 +56,11 @@ export default function ChangePasswordScreen() {
           secureTextEntry
         />
 
-        <Text className="text-sm font-medium text-gray-700 mb-2">
+        <Text className="text-sm font-medium text-darkText-secondary mb-2">
           {t('profile.confirmPassword')}
         </Text>
         <TextInput
-          className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 mb-6"
+          className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText mb-6"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           placeholder={t('profile.confirmPassword')}
@@ -71,9 +71,9 @@ export default function ChangePasswordScreen() {
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={changePassword.isPending}
-          className="bg-blue-600 rounded-xl py-4 items-center"
+          className="bg-primary rounded-2xl py-4 items-center"
         >
-          <Text className="text-white font-bold text-base">
+          <Text className="text-darkText-inverse font-bold text-base">
             {changePassword.isPending ? t('common.loading') : t('common.save')}
           </Text>
         </TouchableOpacity>

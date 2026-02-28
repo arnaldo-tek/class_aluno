@@ -12,7 +12,7 @@ export default function ProfileScreen() {
   const { data: profile } = useProfile(user?.id)
   const router = useRouter()
 
-  const displayName = profile?.display_name ?? user?.user_metadata?.display_name ?? 'Usuário'
+  const displayName = profile?.display_name ?? user?.user_metadata?.display_name ?? 'Usuario'
   const photoUrl = profile?.photo_url ?? null
 
   async function handleLogout() {
@@ -21,70 +21,82 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
-        <Text className="text-2xl font-bold text-gray-900 mb-6">
+        <Text className="text-2xl font-bold text-darkText mb-6">
           {t('profile.title')}
         </Text>
 
         {/* Avatar + info */}
-        <View className="items-center mb-6 bg-white rounded-2xl py-6 px-4">
+        <View className="items-center mb-6 bg-dark-surface rounded-2xl py-6 px-4">
           {photoUrl ? (
-            <Image source={{ uri: photoUrl }} className="w-20 h-20 rounded-full mb-3" />
+            <View className="rounded-full border-2 border-accent/40">
+              <Image source={{ uri: photoUrl }} className="w-20 h-20 rounded-full" />
+            </View>
           ) : (
-            <View className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center mb-3">
-              <Text className="text-2xl text-blue-600 font-bold">
+            <View className="w-20 h-20 bg-primary-50 rounded-full items-center justify-center border-2 border-accent/40">
+              <Text className="text-2xl text-primary-light font-bold">
                 {displayName[0].toUpperCase()}
               </Text>
             </View>
           )}
-          <Text className="text-lg font-semibold text-gray-900">{displayName}</Text>
-          <Text className="text-sm text-gray-500">{user?.email}</Text>
+          <Text className="text-lg font-semibold text-darkText mt-3">{displayName}</Text>
+          <Text className="text-sm text-darkText-secondary">{user?.email}</Text>
         </View>
 
-        {/* Menu items */}
-        <View className="bg-white rounded-2xl overflow-hidden mb-4">
-          <MenuItem icon="person-outline" label={t('profile.editProfile')} onPress={() => router.push('/profile/edit')} />
-          <MenuItem icon="cart-outline" label={t('profile.myPurchases')} onPress={() => router.push('/purchases')} />
-          <MenuItem icon="cube-outline" label={t('packages.title')} onPress={() => router.push('/packages')} />
-          <MenuItem icon="heart-outline" label={t('profile.favorites')} onPress={() => router.push('/favorites')} />
-          <MenuItem icon="layers-outline" label="Flashcards" onPress={() => router.push('/flashcards')} />
-          <MenuItem icon="chatbubbles-outline" label="Conversas" onPress={() => router.push('/chat')} last />
+        {/* Menu items - Content */}
+        <View className="bg-dark-surface rounded-2xl overflow-hidden mb-4">
+          <MenuItem icon="person-outline" iconColor="#60a5fa" label={t('profile.editProfile')} onPress={() => router.push('/profile/edit')} />
+          <MenuItem icon="cart-outline" iconColor="#60a5fa" label={t('profile.myPurchases')} onPress={() => router.push('/purchases')} />
+          <MenuItem icon="cube-outline" iconColor="#60a5fa" label={t('packages.title')} onPress={() => router.push('/packages')} />
+          <MenuItem icon="heart-outline" iconColor="#f87171" label={t('profile.favorites')} onPress={() => router.push('/favorites')} />
+          <MenuItem icon="layers-outline" iconColor="#fbbf24" label="Flashcards" onPress={() => router.push('/flashcards')} />
+          <MenuItem icon="chatbubbles-outline" iconColor="#34d399" label="Conversas" onPress={() => router.push('/chat')} last />
         </View>
 
-        <View className="bg-white rounded-2xl overflow-hidden mb-4">
-          <MenuItem icon="musical-notes-outline" label={t('audio.title')} onPress={() => router.push('/audio')} />
-          <MenuItem icon="newspaper-outline" label={t('news.title')} onPress={() => router.push('/news')} />
-          <MenuItem icon="document-text-outline" label={t('notices.title')} onPress={() => router.push('/notices')} />
-          <MenuItem icon="people-outline" label={t('community.title')} onPress={() => router.push('/community')} last />
+        {/* Menu items - Media */}
+        <View className="bg-dark-surface rounded-2xl overflow-hidden mb-4">
+          <MenuItem icon="musical-notes-outline" iconColor="#c084fc" label={t('audio.title')} onPress={() => router.push('/audio')} />
+          <MenuItem icon="newspaper-outline" iconColor="#fbbf24" label={t('news.title')} onPress={() => router.push('/news')} />
+          <MenuItem icon="document-text-outline" iconColor="#60a5fa" label={t('notices.title')} onPress={() => router.push('/notices')} />
+          <MenuItem icon="people-outline" iconColor="#34d399" label={t('community.title')} onPress={() => router.push('/community')} last />
         </View>
 
-        <View className="bg-white rounded-2xl overflow-hidden mb-4">
-          <MenuItem icon="notifications-outline" label="Notificações" onPress={() => router.push('/notifications')} />
-          <MenuItem icon="help-circle-outline" label={t('faq.title')} onPress={() => router.push('/faq')} />
-          <MenuItem icon="settings-outline" label={t('profile.settings')} onPress={() => router.push('/settings')} />
-          <MenuItem icon="document-outline" label={t('terms.title')} onPress={() => router.push('/terms')} />
-          <MenuItem icon="headset-outline" label={t('profile.support')} onPress={() => router.push('/support')} last />
+        {/* Menu items - Discover */}
+        <View className="bg-dark-surface rounded-2xl overflow-hidden mb-4">
+          <MenuItem icon="school-outline" iconColor="#c084fc" label="Todos os professores" onPress={() => router.push('/professors')} last />
+        </View>
+
+        {/* Menu items - Settings */}
+        <View className="bg-dark-surface rounded-2xl overflow-hidden mb-4">
+          <MenuItem icon="notifications-outline" iconColor="#fbbf24" label="Notificacoes" onPress={() => router.push('/notifications')} />
+          <MenuItem icon="bulb-outline" iconColor="#fbbf24" label="Enviar sugestao" onPress={() => router.push('/suggestion')} />
+          <MenuItem icon="help-circle-outline" iconColor="#6b7280" label={t('faq.title')} onPress={() => router.push('/faq')} />
+          <MenuItem icon="settings-outline" iconColor="#6b7280" label={t('profile.settings')} onPress={() => router.push('/settings')} />
+          <MenuItem icon="document-outline" iconColor="#6b7280" label={t('terms.title')} onPress={() => router.push('/terms')} />
+          <MenuItem icon="headset-outline" iconColor="#60a5fa" label={t('profile.support')} onPress={() => router.push('/support')} last />
         </View>
 
         <TouchableOpacity
           onPress={handleLogout}
-          className="mb-8 bg-red-50 rounded-2xl py-3.5 flex-row items-center justify-center"
+          className="mb-8 bg-error-dark rounded-2xl py-3.5 flex-row items-center justify-center"
         >
-          <Ionicons name="log-out-outline" size={20} color="#dc2626" />
-          <Text className="text-red-600 font-semibold ml-2">{t('auth.logout')}</Text>
+          <Ionicons name="log-out-outline" size={20} color="#f87171" />
+          <Text className="text-error font-semibold ml-2">{t('auth.logout')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   )
 }
 
-function MenuItem({ icon, label, last, onPress }: { icon: string; label: string; last?: boolean; onPress?: () => void }) {
+function MenuItem({ icon, iconColor, label, last, onPress }: { icon: string; iconColor: string; label: string; last?: boolean; onPress?: () => void }) {
   return (
-    <TouchableOpacity onPress={onPress} className={`flex-row items-center px-4 py-3.5 ${last ? '' : 'border-b border-gray-50'}`}>
-      <Ionicons name={icon as any} size={20} color="#6b7280" />
-      <Text className="flex-1 text-base text-gray-900 ml-3">{label}</Text>
-      <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
+    <TouchableOpacity onPress={onPress} className={`flex-row items-center px-4 py-3.5 ${last ? '' : 'border-b border-darkBorder-subtle'}`}>
+      <View className="w-8 h-8 rounded-lg bg-dark-surfaceLight items-center justify-center mr-3">
+        <Ionicons name={icon as any} size={18} color={iconColor} />
+      </View>
+      <Text className="flex-1 text-base text-darkText">{label}</Text>
+      <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
     </TouchableOpacity>
   )
 }

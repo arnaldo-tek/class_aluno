@@ -13,6 +13,7 @@ export default {
     search: 'Buscar',
     seeAll: 'Ver todo',
     noResults: 'No se encontraron resultados',
+    skip: 'Omitir',
   },
   auth: {
     login: 'Iniciar sesión',

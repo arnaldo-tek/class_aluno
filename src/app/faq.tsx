@@ -32,12 +32,12 @@ export default function FaqScreen() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle bg-dark-surface">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">{t('faq.title')}</Text>
+        <Text className="text-base font-bold text-darkText flex-1">{t('faq.title')}</Text>
       </View>
 
       <FlatList
@@ -55,10 +55,10 @@ export default function FaqScreen() {
           return (
             <TouchableOpacity
               onPress={() => setExpandedId(isExpanded ? null : item.id)}
-              className="bg-white rounded-xl mb-3 border border-gray-100 overflow-hidden"
+              className="bg-dark-surface rounded-2xl mb-3 overflow-hidden"
             >
               <View className="flex-row items-center px-4 py-4">
-                <Text className="flex-1 text-base font-medium text-gray-900">{item.pergunta}</Text>
+                <Text className="flex-1 text-base font-medium text-darkText">{item.pergunta}</Text>
                 <Ionicons
                   name={isExpanded ? 'chevron-up' : 'chevron-down'}
                   size={18}
@@ -66,8 +66,8 @@ export default function FaqScreen() {
                 />
               </View>
               {isExpanded && (
-                <View className="px-4 pb-4 border-t border-gray-50">
-                  <Text className="text-sm text-gray-600 leading-6 pt-3">{item.resposta}</Text>
+                <View className="px-4 pb-4 border-t border-darkBorder-subtle">
+                  <Text className="text-sm text-darkText-secondary leading-6 pt-3">{item.resposta}</Text>
                 </View>
               )}
             </TouchableOpacity>

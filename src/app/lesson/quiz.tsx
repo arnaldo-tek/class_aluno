@@ -67,25 +67,25 @@ export default function QuizScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-dark-bg">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-2 pb-3 border-b border-gray-100">
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color="#111827" />
+      <View className="flex-row items-center justify-between px-4 pt-2 pb-3 border-b border-darkBorder-subtle">
+        <TouchableOpacity onPress={() => router.back()} className="p-1">
+          <Ionicons name="close" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-sm font-medium text-gray-600">
+        <Text className="text-sm font-semibold text-darkText-secondary">
           {currentIndex + 1} / {questions.length}
         </Text>
         <View className="flex-row items-center">
-          <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
-          <Text className="text-sm font-medium text-gray-600 ml-1">{score.correct}</Text>
+          <Ionicons name="checkmark-circle" size={16} color="#34d399" />
+          <Text className="text-sm font-semibold text-success ml-1">{score.correct}</Text>
         </View>
       </View>
 
       {/* Progress bar */}
-      <View className="h-1 bg-gray-100">
+      <View className="h-1 bg-dark-surfaceLight">
         <View
-          className="h-1 bg-blue-600"
+          className="h-1 bg-accent"
           style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
         />
       </View>
@@ -94,60 +94,64 @@ export default function QuizScreen() {
         {/* Finished state */}
         {isFinished ? (
           <View className="items-center pt-12">
-            <View className="w-20 h-20 rounded-full bg-blue-50 items-center justify-center mb-4">
-              <Ionicons name="trophy" size={40} color="#2563eb" />
+            <View className="w-20 h-20 rounded-full bg-accent-muted items-center justify-center mb-4">
+              <Ionicons name="trophy" size={40} color="#fbbf24" />
             </View>
-            <Text className="text-2xl font-bold text-gray-900 mb-2">Resultado</Text>
-            <Text className="text-4xl font-bold text-blue-600 mb-1">
+            <Text className="text-2xl font-bold text-darkText mb-2">Resultado</Text>
+            <Text className="text-4xl font-bold text-accent mb-1">
               {score.correct}/{score.total}
             </Text>
-            <Text className="text-sm text-gray-500 mb-8">
+            <Text className="text-sm text-darkText-secondary mb-8">
               {Math.round((score.correct / score.total) * 100)}% de acertos
             </Text>
 
             <TouchableOpacity
               onPress={handleRestart}
-              className="w-full bg-blue-600 rounded-xl py-4 items-center mb-3"
+              className="w-full bg-primary rounded-2xl py-4 items-center mb-3"
             >
               <Text className="text-white font-bold">Refazer</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.back()}
-              className="w-full bg-gray-100 rounded-xl py-4 items-center"
+              className="w-full bg-dark-surfaceLight rounded-2xl py-4 items-center"
             >
-              <Text className="text-gray-700 font-semibold">Voltar à aula</Text>
+              <Text className="text-darkText-secondary font-semibold">Voltar a aula</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
             {/* Question */}
-            <Text className="text-base font-semibold text-gray-900 mb-6 leading-6">
+            <Text className="text-base font-semibold text-darkText mb-6 leading-7">
               {question.pergunta}
             </Text>
 
             {/* Alternatives */}
             {(question.alternativas ?? []).map((alt: string, i: number) => {
-              const letter = String.fromCharCode(65 + i) // A, B, C, D...
+              const letter = String.fromCharCode(65 + i)
               const isSelected = selectedAnswer === alt
               const isCorrectAnswer = alt === question.resposta
 
-              let bgClass = 'bg-white border-gray-200'
-              let textClass = 'text-gray-900'
-              let letterBg = 'bg-gray-100'
+              let bgClass = 'bg-dark-surface border-darkBorder'
+              let textClass = 'text-darkText'
+              let letterBg = 'bg-dark-surfaceLight'
+              let letterText = 'text-darkText-secondary'
 
               if (showResult) {
                 if (isCorrectAnswer) {
-                  bgClass = 'bg-green-50 border-green-400'
-                  letterBg = 'bg-green-500'
-                  textClass = 'text-green-900'
+                  bgClass = 'bg-success-dark border-success/40'
+                  letterBg = 'bg-success'
+                  textClass = 'text-success'
+                  letterText = 'text-darkText-inverse'
                 } else if (isSelected && !isCorrectAnswer) {
-                  bgClass = 'bg-red-50 border-red-400'
-                  letterBg = 'bg-red-500'
-                  textClass = 'text-red-900'
+                  bgClass = 'bg-error-dark border-error/40'
+                  letterBg = 'bg-error'
+                  textClass = 'text-error'
+                  letterText = 'text-darkText-inverse'
                 }
               } else if (isSelected) {
-                bgClass = 'bg-blue-50 border-blue-400'
-                letterBg = 'bg-blue-600'
+                bgClass = 'bg-primary-50 border-primary/40'
+                letterBg = 'bg-primary'
+                letterText = 'text-white'
               }
 
               return (
@@ -155,19 +159,19 @@ export default function QuizScreen() {
                   key={i}
                   onPress={() => handleSelectAnswer(alt)}
                   disabled={showResult}
-                  className={`flex-row items-center px-4 py-3.5 mb-3 rounded-xl border ${bgClass}`}
+                  className={`flex-row items-center px-4 py-4 mb-3 rounded-2xl border ${bgClass}`}
                 >
-                  <View className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${letterBg}`}>
-                    <Text className={`text-sm font-bold ${isSelected || (showResult && isCorrectAnswer) ? 'text-white' : 'text-gray-600'}`}>
+                  <View className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${letterBg}`}>
+                    <Text className={`text-sm font-bold ${letterText}`}>
                       {letter}
                     </Text>
                   </View>
-                  <Text className={`flex-1 text-sm ${textClass}`}>{alt}</Text>
+                  <Text className={`flex-1 text-sm font-medium ${textClass}`}>{alt}</Text>
                   {showResult && isCorrectAnswer && (
-                    <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+                    <Ionicons name="checkmark-circle" size={20} color="#34d399" />
                   )}
                   {showResult && isSelected && !isCorrectAnswer && (
-                    <Ionicons name="close-circle" size={20} color="#dc2626" />
+                    <Ionicons name="close-circle" size={20} color="#f87171" />
                   )}
                 </TouchableOpacity>
               )
@@ -176,10 +180,10 @@ export default function QuizScreen() {
             {/* Video explanation */}
             {showResult && question.video && (
               <View className="mt-4">
-                <Text className="text-sm font-semibold text-gray-700 mb-2">Explicação em vídeo:</Text>
+                <Text className="text-sm font-bold text-darkText mb-2">Explicacao em video:</Text>
                 <Video
                   source={{ uri: question.video }}
-                  style={{ width: SCREEN_WIDTH - 32, height: (SCREEN_WIDTH - 32) * 9 / 16, borderRadius: 12 }}
+                  style={{ width: SCREEN_WIDTH - 32, height: (SCREEN_WIDTH - 32) * 9 / 16, borderRadius: 16, backgroundColor: '#000' }}
                   resizeMode={ResizeMode.CONTAIN}
                   useNativeControls
                 />
@@ -190,18 +194,18 @@ export default function QuizScreen() {
             {showResult && !isLastQuestion && (
               <TouchableOpacity
                 onPress={handleNext}
-                className="mt-6 bg-blue-600 rounded-xl py-4 items-center"
+                className="mt-6 bg-primary rounded-2xl py-4 items-center"
               >
-                <Text className="text-white font-bold">Próxima questão</Text>
+                <Text className="text-white font-bold">Proxima questao</Text>
               </TouchableOpacity>
             )}
 
             {showResult && isLastQuestion && (
               <TouchableOpacity
                 onPress={handleFinish}
-                className="mt-6 bg-blue-600 rounded-xl py-4 items-center"
+                className="mt-6 bg-accent rounded-2xl py-4 items-center"
               >
-                <Text className="text-white font-bold">Ver resultado</Text>
+                <Text className="text-darkText-inverse font-bold">Ver resultado</Text>
               </TouchableOpacity>
             )}
           </>

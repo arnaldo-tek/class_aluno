@@ -30,38 +30,37 @@ export default function NewsDetailScreen() {
   const hasPdf = !!(news as any).pdf
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1" numberOfLines={1}>
+        <Text className="text-base font-bold text-darkText flex-1" numberOfLines={1}>
           {t('news.title')}
         </Text>
-        <TouchableOpacity onPress={handleToggleFavorite} className="mr-3">
+        <TouchableOpacity onPress={handleToggleFavorite} className="mr-3 p-1">
           <Ionicons
             name={isFavorite ? 'heart' : 'heart-outline'}
             size={24}
-            color={isFavorite ? '#dc2626' : '#6b7280'}
+            color={isFavorite ? '#f87171' : '#6b7280'}
           />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleShare}>
+        <TouchableOpacity onPress={handleShare} className="p-1">
           <Ionicons name="share-outline" size={24} color="#6b7280" />
         </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Hero image */}
         {news.imagem && (
           <Image source={{ uri: news.imagem }} className="w-full h-52" resizeMode="cover" />
         )}
 
-        <View className="px-4 pt-4">
-          <Text className="text-xl font-bold text-gray-900">{news.titulo}</Text>
+        <View className="px-4 pt-5">
+          <Text className="text-xl font-bold text-darkText">{news.titulo}</Text>
 
-          <View className="flex-row items-center mt-2 flex-wrap gap-2">
+          <View className="flex-row items-center mt-3 flex-wrap gap-2">
             {news.created_at && (
-              <Text className="text-xs text-gray-400">
+              <Text className="text-xs text-darkText-muted">
                 {format(new Date(news.created_at), 'dd/MM/yyyy')}
               </Text>
             )}
@@ -74,17 +73,16 @@ export default function NewsDetailScreen() {
           </View>
 
           {news.descricao && (
-            <Text className="text-sm text-gray-700 leading-6 mt-4">{news.descricao}</Text>
+            <Text className="text-base text-darkText-secondary leading-7 mt-5">{news.descricao}</Text>
           )}
 
-          {/* PDF viewer */}
           {hasPdf && (
             <View className="mt-6">
-              <Text className="text-sm font-semibold text-gray-900 mb-2">{t('news.viewPdf')}</Text>
+              <Text className="text-sm font-bold text-darkText mb-2">{t('news.viewPdf')}</Text>
               <View style={{ height: 600 }}>
                 <WebView
                   source={{ uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent((news as any).pdf)}` }}
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, backgroundColor: '#f7f6f3' }}
                   startInLoadingState
                   renderLoading={() => <LoadingSpinner />}
                 />

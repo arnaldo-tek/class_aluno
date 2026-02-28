@@ -25,7 +25,6 @@ export default function NewsScreen() {
     search, categoriaId: selectedCategory, estado, cidade, orgao, disciplina,
   })
 
-  // Find selected category to check which filters are enabled
   const selectedCat = categories?.find((c) => c.id === selectedCategory)
 
   const { data: estadoOptions } = useNewsFilterOptions('estado')
@@ -34,12 +33,12 @@ export default function NewsScreen() {
   const { data: disciplinaOptions } = useNewsFilterOptions('disciplina')
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle bg-dark-surface">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">{t('news.title')}</Text>
+        <Text className="text-base font-bold text-darkText flex-1">{t('news.title')}</Text>
       </View>
 
       <SearchInput value={search} onChangeText={setSearch} />
@@ -49,11 +48,11 @@ export default function NewsScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 pb-2">
           <TouchableOpacity
             onPress={() => setSelectedCategory(null)}
-            className={`px-4 py-2 mr-2 rounded-full border ${
-              !selectedCategory ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200'
+            className={`px-4 py-2 mr-2 rounded-full ${
+              !selectedCategory ? 'bg-primary' : 'bg-dark-surfaceLight'
             }`}
           >
-            <Text className={`text-sm font-medium ${!selectedCategory ? 'text-white' : 'text-gray-700'}`}>
+            <Text className={`text-sm font-semibold ${!selectedCategory ? 'text-white' : 'text-darkText-secondary'}`}>
               {t('common.seeAll')}
             </Text>
           </TouchableOpacity>
@@ -61,12 +60,12 @@ export default function NewsScreen() {
             <TouchableOpacity
               key={cat.id}
               onPress={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 mr-2 rounded-full border ${
-                selectedCategory === cat.id ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200'
+              className={`px-4 py-2 mr-2 rounded-full ${
+                selectedCategory === cat.id ? 'bg-primary' : 'bg-dark-surfaceLight'
               }`}
             >
-              <Text className={`text-sm font-medium ${
-                selectedCategory === cat.id ? 'text-white' : 'text-gray-700'
+              <Text className={`text-sm font-semibold ${
+                selectedCategory === cat.id ? 'text-white' : 'text-darkText-secondary'
               }`}>
                 {cat.nome}
               </Text>
@@ -107,26 +106,26 @@ export default function NewsScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => router.push(`/news/${item.id}`)}
-              className="flex-row bg-white rounded-xl mb-3 overflow-hidden border border-gray-100"
+              className="flex-row bg-dark-surface rounded-2xl mb-3 overflow-hidden"
             >
               {item.imagem ? (
                 <Image source={{ uri: item.imagem }} className="w-24 h-24" resizeMode="cover" />
               ) : (
-                <View className="w-24 h-24 bg-gray-100 items-center justify-center">
+                <View className="w-24 h-24 bg-dark-surfaceLight items-center justify-center">
                   <Ionicons name="newspaper-outline" size={24} color="#9ca3af" />
                 </View>
               )}
-              <View className="flex-1 p-3 justify-center">
-                <Text className="text-sm font-semibold text-gray-900" numberOfLines={2}>
+              <View className="flex-1 p-3.5 justify-center">
+                <Text className="text-sm font-semibold text-darkText" numberOfLines={2}>
                   {item.titulo}
                 </Text>
                 {item.descricao && (
-                  <Text className="text-xs text-gray-500 mt-1" numberOfLines={1}>
+                  <Text className="text-xs text-darkText-muted mt-1" numberOfLines={1}>
                     {item.descricao}
                   </Text>
                 )}
                 {item.created_at && (
-                  <Text className="text-xs text-gray-400 mt-1">
+                  <Text className="text-xs text-darkText-muted mt-1">
                     {format(new Date(item.created_at), 'dd/MM/yyyy')}
                   </Text>
                 )}

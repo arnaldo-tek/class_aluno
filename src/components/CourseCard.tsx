@@ -18,39 +18,86 @@ export function CourseCard({
 }: CourseCardProps) {
   const router = useRouter()
 
+  if (horizontal) {
+    return (
+      <TouchableOpacity
+        onPress={() => router.push(`/course/${id}`)}
+        className="w-56 mr-3"
+        activeOpacity={0.7}
+      >
+        <View className="bg-dark-surface rounded-2xl overflow-hidden" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 }}>
+          <View className="relative">
+            {imagem ? (
+              <Image source={{ uri: imagem }} className="w-full h-32" resizeMode="cover" />
+            ) : (
+              <View className="w-full h-32 bg-dark-surfaceLight items-center justify-center">
+                <Ionicons name="book-outline" size={28} color="#9ca3af" />
+              </View>
+            )}
+            <View className="absolute bottom-2 right-2 bg-accent rounded-lg px-2.5 py-1">
+              <Text className="text-xs font-bold text-white">
+                {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
+              </Text>
+            </View>
+          </View>
+          <View className="p-3">
+            <Text className="text-sm font-semibold text-darkText mb-1" numberOfLines={2}>{nome}</Text>
+            {professor_nome && (
+              <Text className="text-xs text-darkText-muted" numberOfLines={1}>{professor_nome}</Text>
+            )}
+            {average_rating != null && average_rating > 0 && (
+              <View className="flex-row items-center mt-1.5">
+                <Ionicons name="star" size={12} color="#f59e0b" />
+                <Text className="text-xs text-darkText-secondary ml-1 font-medium">{average_rating.toFixed(1)}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    )
+  }
+
+  // List mode - horizontal card layout
   return (
     <TouchableOpacity
       onPress={() => router.push(`/course/${id}`)}
-      className={horizontal ? 'w-56 mr-3' : 'mb-3 mx-4'}
+      className="mb-3 mx-4"
       activeOpacity={0.7}
     >
-      <View className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
-        {imagem ? (
-          <Image source={{ uri: imagem }} className="w-full h-32" resizeMode="cover" />
-        ) : (
-          <View className="w-full h-32 bg-gray-200 items-center justify-center">
-            <Ionicons name="book-outline" size={32} color="#9ca3af" />
-          </View>
-        )}
-        <View className="p-3">
-          <Text className="text-sm font-semibold text-gray-900 mb-1" numberOfLines={2}>
-            {nome}
-          </Text>
-          {professor_nome && (
-            <Text className="text-xs text-gray-500 mb-1" numberOfLines={1}>
-              {professor_nome}
-            </Text>
+      <View
+        className="bg-dark-surface rounded-2xl overflow-hidden flex-row"
+        style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 }}
+      >
+        <View className="relative">
+          {imagem ? (
+            <Image source={{ uri: imagem }} className="w-28 h-28" resizeMode="cover" />
+          ) : (
+            <View className="w-28 h-28 bg-dark-surfaceLight items-center justify-center">
+              <Ionicons name="book-outline" size={28} color="#9ca3af" />
+            </View>
           )}
-          <View className="flex-row items-center justify-between">
-            <Text className="text-sm font-bold text-blue-600">
-              {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
-            </Text>
-            {average_rating != null && average_rating > 0 && (
+        </View>
+        <View className="flex-1 p-3.5 justify-between">
+          <View>
+            <Text className="text-sm font-bold text-darkText mb-1" numberOfLines={2}>{nome}</Text>
+            {professor_nome && (
+              <Text className="text-xs text-darkText-muted" numberOfLines={1}>{professor_nome}</Text>
+            )}
+          </View>
+          <View className="flex-row items-center justify-between mt-2">
+            {average_rating != null && average_rating > 0 ? (
               <View className="flex-row items-center">
                 <Ionicons name="star" size={12} color="#f59e0b" />
-                <Text className="text-xs text-gray-600 ml-1">{average_rating.toFixed(1)}</Text>
+                <Text className="text-xs text-darkText-secondary ml-1 font-medium">{average_rating.toFixed(1)}</Text>
               </View>
+            ) : (
+              <View />
             )}
+            <View className="bg-accent rounded-lg px-2.5 py-1">
+              <Text className="text-xs font-bold text-white">
+                {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
+              </Text>
+            </View>
           </View>
         </View>
       </View>

@@ -17,14 +17,14 @@ export default function PackagesScreen() {
   const { data: packages, isLoading } = usePackages({ search, categoriaId: selectedCategory })
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-gray-100 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text className="text-base font-bold text-gray-900 flex-1">{t('packages.title')}</Text>
+        <Text className="text-base font-bold text-darkText flex-1">{t('packages.title')}</Text>
         <TouchableOpacity onPress={() => router.push('/packages/my')}>
-          <Text className="text-sm font-medium text-blue-600">{t('packages.myPackages')}</Text>
+          <Text className="text-sm font-medium text-primary-light">{t('packages.myPackages')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -42,11 +42,13 @@ export default function PackagesScreen() {
               <TouchableOpacity
                 onPress={() => setSelectedCategory(item.id)}
                 className={`px-4 py-2 mr-2 rounded-full border ${
-                  selectedCategory === item.id ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200'
+                  selectedCategory === item.id
+                    ? 'bg-primary border-primary'
+                    : 'bg-dark-surfaceLight border-darkBorder'
                 }`}
               >
                 <Text className={`text-sm font-medium ${
-                  selectedCategory === item.id ? 'text-white' : 'text-gray-700'
+                  selectedCategory === item.id ? 'text-white' : 'text-darkText-secondary'
                 }`}>
                   {item.nome}
                 </Text>
@@ -72,25 +74,25 @@ export default function PackagesScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => router.push(`/packages/${item.id}`)}
-              className="bg-white rounded-xl mb-3 overflow-hidden border border-gray-100"
+              className="bg-dark-surface rounded-2xl mb-3 overflow-hidden border border-darkBorder-subtle"
             >
               {item.imagem ? (
                 <Image source={{ uri: item.imagem }} className="w-full h-40" resizeMode="cover" />
               ) : (
-                <View className="w-full h-40 bg-blue-50 items-center justify-center">
-                  <Ionicons name="cube-outline" size={40} color="#2563eb" />
+                <View className="w-full h-40 bg-primary-50 items-center justify-center">
+                  <Ionicons name="cube-outline" size={40} color="#60a5fa" />
                 </View>
               )}
               <View className="p-4">
-                <Text className="text-base font-bold text-gray-900">{item.nome}</Text>
+                <Text className="text-base font-bold text-darkText">{item.nome}</Text>
                 {item.descricao && (
-                  <Text className="text-sm text-gray-500 mt-1" numberOfLines={2}>{item.descricao}</Text>
+                  <Text className="text-sm text-darkText-secondary mt-1" numberOfLines={2}>{item.descricao}</Text>
                 )}
                 <View className="flex-row items-center justify-between mt-3">
-                  <Text className="text-lg font-bold text-blue-600">
+                  <Text className="text-lg font-bold text-primary-light">
                     R$ {((item.preco ?? 0) / 100).toFixed(2)}{t('packages.perMonth')}
                   </Text>
-                  <Text className="text-xs text-gray-400">
+                  <Text className="text-xs text-darkText-muted">
                     {(item as any).pacote_cursos?.length ?? 0} {t('courses.title').toLowerCase()}
                   </Text>
                 </View>
