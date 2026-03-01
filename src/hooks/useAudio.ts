@@ -83,6 +83,23 @@ export function useAudioLawDetail(id: string) {
   })
 }
 
+export function useAudioLawQuestions(leiId: string) {
+  return useQuery({
+    queryKey: ['audio-law-questions', leiId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('questoes_leis')
+        .select('id, pergunta, resposta, alternativas, video')
+        .eq('lei_id', leiId)
+        .order('created_at')
+
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!leiId,
+  })
+}
+
 export function useAudioBanners() {
   return useQuery({
     queryKey: ['audio-banners'],
