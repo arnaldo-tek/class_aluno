@@ -1,14 +1,17 @@
 import { useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Linking } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Linking, Dimensions, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { Video, ResizeMode } from 'expo-av'
+import { WebView } from 'react-native-webview'
 import { supabase } from '@/lib/supabase'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { t } from '@/i18n'
+
+const SCREEN_WIDTH = Dimensions.get('window').width
 
 function useFaq() {
   return useQuery({
@@ -71,12 +74,7 @@ export default function FaqScreen() {
                   <Text className="text-sm text-darkText-secondary leading-6 pt-3">{item.resposta}</Text>
                   {item.video && (
                     <View className="mt-3 rounded-xl overflow-hidden">
-                      <Video
-                        source={{ uri: item.video }}
-                        useNativeControls
-                        resizeMode={ResizeMode.CONTAIN}
-                        style={{ width: '100%', height: 200 }}
-                      />
+                      <FaqVideo url={item.video} />
                     </View>
                   )}
                 </View>
@@ -86,5 +84,51 @@ export default function FaqScreen() {
         }}
       />
     </SafeAreaView>
+  )
+}
+
+function isEmbeddable(url: string) {
+  return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')
+}
+
+function getEmbedUrl(url: string): string {
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/)
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/)
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`
+  return url
+}
+
+function FaqVideo({ url }: { url: string }) {
+  const videoHeight = (SCREEN_WIDTH - 48) * 9 / 16
+
+  if (isEmbeddable(url)) {
+    if (Platform.OS === 'web') {
+      return (
+        <iframe
+          src={getEmbedUrl(url)}
+          style={{ width: '100%', height: videoHeight, border: 'none', borderRadius: 12 }}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      )
+    }
+    return (
+      <WebView
+        source={{ uri: getEmbedUrl(url) }}
+        style={{ width: '100%', height: videoHeight }}
+        allowsFullscreenVideo
+        javaScriptEnabled
+      />
+    )
+  }
+
+  return (
+    <Video
+      source={{ uri: url }}
+      useNativeControls
+      resizeMode={ResizeMode.CONTAIN}
+      style={{ width: '100%', height: videoHeight }}
+    />
   )
 }
