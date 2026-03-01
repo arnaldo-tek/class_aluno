@@ -51,6 +51,22 @@ export function useTopProfessors() {
   })
 }
 
+export function useAreaAlunoBanners() {
+  return useQuery({
+    queryKey: ['area-aluno-banners'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('publicidade_area_aluno')
+        .select('id, imagem, link, is_active')
+        .eq('is_active', true)
+        .order('created_at')
+
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
 export function useRecentNews() {
   return useQuery({
     queryKey: ['recent-news'],

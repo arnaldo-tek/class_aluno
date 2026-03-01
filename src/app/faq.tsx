@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
+import { Video, ResizeMode } from 'expo-av'
 import { supabase } from '@/lib/supabase'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -15,7 +16,7 @@ function useFaq() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('faq')
-        .select('id, pergunta, resposta')
+        .select('id, pergunta, resposta, video')
         .order('sort_order')
 
       if (error) throw error
@@ -68,6 +69,16 @@ export default function FaqScreen() {
               {isExpanded && (
                 <View className="px-4 pb-4 border-t border-darkBorder-subtle">
                   <Text className="text-sm text-darkText-secondary leading-6 pt-3">{item.resposta}</Text>
+                  {item.video && (
+                    <View className="mt-3 rounded-xl overflow-hidden">
+                      <Video
+                        source={{ uri: item.video }}
+                        useNativeControls
+                        resizeMode={ResizeMode.CONTAIN}
+                        style={{ width: '100%', height: 200 }}
+                      />
+                    </View>
+                  )}
                 </View>
               )}
             </TouchableOpacity>

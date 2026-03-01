@@ -1,9 +1,9 @@
-import { View, Text, ScrollView, FlatList, Image, TouchableOpacity, Dimensions } from 'react-native'
+import { View, Text, ScrollView, FlatList, Image, TouchableOpacity, Dimensions, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useRef, useEffect, useState } from 'react'
 import { t } from '@/i18n'
-import { useBanners, useCategories, useTopProfessors, useRecentNews } from '@/hooks/useHome'
+import { useBanners, useCategories, useTopProfessors, useRecentNews, useAreaAlunoBanners } from '@/hooks/useHome'
 import { useFeaturedCourses } from '@/hooks/useCourses'
 import { usePackages } from '@/hooks/usePackages'
 import { useUnreadNotificationsCount } from '@/hooks/useNotifications'
@@ -46,6 +46,9 @@ export default function HomeScreen() {
 
         {/* Banners */}
         <BannerCarousel />
+
+        {/* Area do Aluno Banners */}
+        <AreaAlunoBanners />
 
         {/* Featured Courses */}
         <FeaturedSection />
@@ -103,7 +106,14 @@ function BannerCarousel() {
         }}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={{ width: BANNER_WIDTH }} className="h-44 rounded-2xl overflow-hidden">
+          <TouchableOpacity
+            activeOpacity={item.redirecionamento ? 0.8 : 1}
+            onPress={() => {
+              if (item.redirecionamento) Linking.openURL(item.redirecionamento)
+            }}
+            style={{ width: BANNER_WIDTH }}
+            className="h-44 rounded-2xl overflow-hidden"
+          >
             {item.imagem ? (
               <Image source={{ uri: item.imagem }} className="w-full h-full" resizeMode="cover" />
             ) : (
@@ -111,7 +121,7 @@ function BannerCarousel() {
                 <Ionicons name="megaphone-outline" size={32} color="#3b82f6" />
               </View>
             )}
-          </View>
+          </TouchableOpacity>
         )}
       />
       {banners.length > 1 && (
@@ -124,6 +134,41 @@ function BannerCarousel() {
           ))}
         </View>
       )}
+    </View>
+  )
+}
+
+function AreaAlunoBanners() {
+  const { data: banners } = useAreaAlunoBanners()
+
+  if (!banners?.length) return null
+
+  return (
+    <View className="mb-5 px-4">
+      <FlatList
+        data={banners}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            activeOpacity={item.link ? 0.8 : 1}
+            onPress={() => {
+              if (item.link) Linking.openURL(item.link)
+            }}
+            className="mr-3 rounded-2xl overflow-hidden"
+            style={{ width: SCREEN_WIDTH - 64 }}
+          >
+            {item.imagem ? (
+              <Image source={{ uri: item.imagem }} className="w-full h-32" resizeMode="cover" />
+            ) : (
+              <View className="w-full h-32 bg-dark-surfaceLight items-center justify-center">
+                <Ionicons name="image-outline" size={28} color="#6b7280" />
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+      />
     </View>
   )
 }
