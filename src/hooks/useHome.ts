@@ -75,7 +75,7 @@ export function useRecentNews() {
         .from('noticias')
         .select('id, titulo, descricao, imagem, created_at')
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(10)
 
       if (error) throw error
       return data ?? []

@@ -2,26 +2,62 @@ import { useState, useCallback } from 'react'
 import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { t } from '@/i18n'
-import { useCourses } from '@/hooks/useCourses'
+import { useCourses, useCourseFilterOptions } from '@/hooks/useCourses'
 import { useCategories } from '@/hooks/useHome'
 import { CourseCard } from '@/components/CourseCard'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { FilterDropdown } from '@/components/FilterDropdown'
 import { Ionicons } from '@expo/vector-icons'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function CoursesScreen() {
+  const colors = useThemeColors()
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>()
+  const [estado, setEstado] = useState<string | null>(null)
+  const [cidade, setCidade] = useState<string | null>(null)
+  const [orgao, setOrgao] = useState<string | null>(null)
+  const [cargo, setCargo] = useState<string | null>(null)
+  const [disciplina, setDisciplina] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
   const [page, setPage] = useState(1)
 
   const { data, isLoading, refetch, isRefetching } = useCourses({
     search: search || undefined,
     categoriaId: selectedCategory,
+    estado, cidade, orgao, cargo, disciplina,
     page,
   })
 
   const { data: categories } = useCategories()
+
+  const parentFilters = { estado, cidade, orgao, cargo }
+  const { data: estadoOptions } = useCourseFilterOptions('estado')
+  const { data: cidadeOptions } = useCourseFilterOptions('cidade', { estado })
+  const { data: orgaoOptions } = useCourseFilterOptions('orgao', { estado, cidade })
+  const { data: cargoOptions } = useCourseFilterOptions('cargo', { estado, cidade, orgao })
+  const { data: disciplinaOptions } = useCourseFilterOptions('disciplina', parentFilters)
+
+  const hasActiveFilters = !!(estado || cidade || orgao || cargo || disciplina)
+  const hasFilterOptions = !!(estadoOptions?.length || cidadeOptions?.length || orgaoOptions?.length || cargoOptions?.length || disciplinaOptions?.length)
+
+  function handleEstadoChange(v: string | null) {
+    setEstado(v); setCidade(null); setOrgao(null); setCargo(null); setDisciplina(null); setPage(1)
+  }
+  function handleCidadeChange(v: string | null) {
+    setCidade(v); setOrgao(null); setCargo(null); setDisciplina(null); setPage(1)
+  }
+  function handleOrgaoChange(v: string | null) {
+    setOrgao(v); setCargo(null); setDisciplina(null); setPage(1)
+  }
+  function handleCargoChange(v: string | null) {
+    setCargo(v); setDisciplina(null); setPage(1)
+  }
+  function handleDisciplinaChange(v: string | null) {
+    setDisciplina(v); setPage(1)
+  }
 
   const handleRefresh = useCallback(() => {
     setPage(1)
@@ -32,7 +68,20 @@ export default function CoursesScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="bg-dark-surface px-4 pt-4 pb-3 border-b border-darkBorder-subtle">
         <Text className="text-2xl font-bold text-darkText mb-3">{t('courses.title')}</Text>
-        <SearchInput value={search} onChangeText={(v) => { setSearch(v); setPage(1) }} />
+        <View className="flex-row items-center">
+          <View className="flex-1">
+            <SearchInput value={search} onChangeText={(v) => { setSearch(v); setPage(1) }} className="flex-row items-center bg-dark-surfaceLight rounded-xl px-3" style={{ height: 44 }} />
+          </View>
+          {hasFilterOptions && (
+            <TouchableOpacity
+              onPress={() => setShowFilters(!showFilters)}
+              className={`ml-2 rounded-xl items-center justify-center ${hasActiveFilters || showFilters ? 'bg-primary' : 'bg-dark-surfaceLight'}`}
+              style={{ width: 44, height: 44 }}
+            >
+              <Ionicons name="options-outline" size={20} color={hasActiveFilters || showFilters ? '#ffffff' : colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Category chips */}
@@ -66,12 +115,43 @@ export default function CoursesScreen() {
         </View>
       )}
 
+      {/* Cascading filter dropdowns */}
+      {showFilters && (
+        <View className="flex-row items-center py-2 border-b border-darkBorder-subtle">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+            {estadoOptions && estadoOptions.length > 0 && (
+              <FilterDropdown label="Estado" value={estado} options={estadoOptions} onChange={handleEstadoChange} />
+            )}
+            {estado && cidadeOptions && cidadeOptions.length > 0 && (
+              <FilterDropdown label="Cidade" value={cidade} options={cidadeOptions} onChange={handleCidadeChange} />
+            )}
+            {cidade && orgaoOptions && orgaoOptions.length > 0 && (
+              <FilterDropdown label="Órgão" value={orgao} options={orgaoOptions} onChange={handleOrgaoChange} />
+            )}
+            {orgao && cargoOptions && cargoOptions.length > 0 && (
+              <FilterDropdown label="Cargo" value={cargo} options={cargoOptions} onChange={handleCargoChange} />
+            )}
+            {cargo && disciplinaOptions && disciplinaOptions.length > 0 && (
+              <FilterDropdown label="Disciplina" value={disciplina} options={disciplinaOptions} onChange={handleDisciplinaChange} />
+            )}
+          </ScrollView>
+          {hasActiveFilters && (
+            <TouchableOpacity
+              onPress={() => { setEstado(null); setCidade(null); setOrgao(null); setCargo(null); setDisciplina(null); setPage(1) }}
+              className="pr-4 pl-2"
+            >
+              <Ionicons name="close-circle" size={22} color="#f87171" />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {isLoading ? (
         <LoadingSpinner />
       ) : !data?.courses.length ? (
         <EmptyState
           title={t('common.noResults')}
-          icon={<Ionicons name="book-outline" size={48} color="#9ca3af" />}
+          icon={<Ionicons name="book-outline" size={48} color={colors.textMuted} />}
         />
       ) : (
         <FlatList
@@ -85,7 +165,7 @@ export default function CoursesScreen() {
               colors={['#2563eb']}
             />
           }
-          contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 }}
+          contentContainerStyle={{ paddingTop: 12, paddingBottom: 100 }}
           renderItem={({ item }) => (
             <CourseCard
               id={item.id}

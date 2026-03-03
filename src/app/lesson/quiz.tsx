@@ -7,12 +7,14 @@ import { Video, ResizeMode } from 'expo-av'
 import { useLessonQuestions } from '@/hooks/useLesson'
 import { useSaveQuizAttempt } from '@/hooks/useQuiz'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 export default function QuizScreen() {
   const { lesson_id, curso_id } = useLocalSearchParams<{ lesson_id: string; curso_id: string }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: questions, isLoading } = useLessonQuestions(lesson_id!)
   const saveAttempt = useSaveQuizAttempt()
 
@@ -71,7 +73,7 @@ export default function QuizScreen() {
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-2 pb-3 border-b border-darkBorder-subtle">
         <TouchableOpacity onPress={() => router.back()} className="p-1">
-          <Ionicons name="close" size={24} color="#1a1a2e" />
+          <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-sm font-semibold text-darkText-secondary">
           {currentIndex + 1} / {questions.length}

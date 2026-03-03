@@ -7,10 +7,12 @@ import { usePackages, usePackageCategories } from '@/hooks/usePackages'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useThemeColors } from '@/hooks/useThemeColors'
 import { t } from '@/i18n'
 
 export default function PackagesTab() {
   const router = useRouter()
+  const colors = useThemeColors()
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const { data: categories } = usePackageCategories()
@@ -18,11 +20,8 @@ export default function PackagesTab() {
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
-      <View className="flex-row items-center justify-between px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
+      <View className="px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
         <Text className="text-lg font-bold text-darkText">{t('packages.title')}</Text>
-        <TouchableOpacity onPress={() => router.push('/packages/my')}>
-          <Text className="text-sm font-medium text-primary-light">{t('packages.myPackages')}</Text>
-        </TouchableOpacity>
       </View>
 
       <SearchInput value={search} onChangeText={setSearch} />
@@ -64,7 +63,7 @@ export default function PackagesTab() {
           ListEmptyComponent={
             <EmptyState
               title={t('packages.noPackages')}
-              icon={<Ionicons name="cube-outline" size={48} color="#9ca3af" />}
+              icon={<Ionicons name="cube-outline" size={48} color={colors.textMuted} />}
             />
           }
           renderItem={({ item }) => (

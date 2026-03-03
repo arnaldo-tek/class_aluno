@@ -6,10 +6,12 @@ import { useAudioFolders } from '@/hooks/useAudio'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function AudioFoldersScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: folders, isLoading } = useAudioFolders(id!)
 
   if (isLoading) return <LoadingSpinner />
@@ -18,7 +20,7 @@ export default function AudioFoldersScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">{t('audio.folders')}</Text>
       </View>
@@ -30,7 +32,7 @@ export default function AudioFoldersScreen() {
         ListEmptyComponent={
           <EmptyState
             title={t('audio.noAudio')}
-            icon={<Ionicons name="folder-open-outline" size={48} color="#9ca3af" />}
+            icon={<Ionicons name="folder-open-outline" size={48} color={colors.textMuted} />}
           />
         }
         renderItem={({ item }) => (
@@ -42,7 +44,7 @@ export default function AudioFoldersScreen() {
               <Ionicons name="folder-outline" size={24} color="#60a5fa" />
             </View>
             <Text className="flex-1 text-base font-medium text-darkText">{item.nome}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         )}
       />

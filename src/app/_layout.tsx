@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { initSentry } from '@/lib/sentry'
 import '../../global.css'
@@ -20,17 +21,17 @@ const queryClient = new QueryClient({
   },
 })
 
-export default function RootLayout() {
+function AppContent() {
+  const { isDark } = useTheme()
+
   useEffect(() => {
     SplashScreen.hideAsync()
   }, [])
 
   return (
-    <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }}>
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
@@ -49,7 +50,6 @@ export default function RootLayout() {
           <Stack.Screen name="flashcards/cards" options={{ presentation: 'card' }} />
           <Stack.Screen name="flashcards/study" options={{ presentation: 'card', gestureEnabled: false }} />
           <Stack.Screen name="favorites/index" options={{ presentation: 'card' }} />
-          <Stack.Screen name="chat/index" options={{ presentation: 'card' }} />
           <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="notifications/index" options={{ presentation: 'card' }} />
           <Stack.Screen name="support/index" options={{ presentation: 'card' }} />
@@ -72,7 +72,7 @@ export default function RootLayout() {
           <Stack.Screen name="audio/laws/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="audio/player/[id]" options={{ presentation: 'card' }} />
           {/* Professors */}
-          <Stack.Screen name="professors/index" options={{ presentation: 'card' }} />
+          <Stack.Screen name="all-professors" options={{ presentation: 'card' }} />
           {/* Refund */}
           <Stack.Screen name="refund/[id]" options={{ presentation: 'card' }} />
           {/* Downloads */}
@@ -86,10 +86,24 @@ export default function RootLayout() {
           <Stack.Screen name="community/index" options={{ presentation: 'card' }} />
           <Stack.Screen name="community/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="community/rules/[id]" options={{ presentation: 'card' }} />
+          {/* Student area */}
+          <Stack.Screen name="student-area" options={{ presentation: 'card' }} />
           {/* Onboarding */}
           <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         </Stack>
+    </>
+  )
+}
+
+export default function RootLayout() {
+  return (
+    <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
       </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
     </ErrorBoundary>
   )

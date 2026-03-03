@@ -1,32 +1,31 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, Linking } from 'react-native'
+import { useState } from 'react'
+import { View, Text, ScrollView, Image, TouchableOpacity, Linking, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useProfessorDetail, useProfessorCourses, useProfessorReviews } from '@/hooks/useProfessor'
-import { useIsFollowing, useToggleFollow } from '@/hooks/useFavorites'
-import { useStartChat } from '@/hooks/useChat'
+import { useIsFollowing, useToggleFollow } from '@/hooks/useProfessor'
+import { useProfessorCardsByProfessor } from '@/hooks/useProfessorCards'
 import { CourseCard } from '@/components/CourseCard'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useThemeColors } from '@/hooks/useThemeColors'
 import { t } from '@/i18n'
+import { format } from 'date-fns'
+
+type TabKey = 'courses' | 'cards' | 'about' | 'reviews'
 
 export default function ProfessorDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<TabKey>('courses')
 
+  const colors = useThemeColors()
   const { data: professor, isLoading } = useProfessorDetail(id!)
   const { data: courses } = useProfessorCourses(id!)
   const { data: reviews } = useProfessorReviews(id!)
+  const { data: cards } = useProfessorCardsByProfessor(id!)
   const { data: isFollowing } = useIsFollowing(id!)
   const toggleFollow = useToggleFollow()
-  const startChat = useStartChat()
-
-  async function handleChat() {
-    if (!professor) return
-    try {
-      const chatId = await startChat.mutateAsync(professor.user_id)
-      router.push({ pathname: '/chat/[id]', params: { id: chatId, name: professor.nome_professor, photo: professor.foto_perfil ?? '' } })
-    } catch {}
-  }
 
   if (isLoading) return <LoadingSpinner />
   if (!professor) return null
@@ -38,6 +37,13 @@ export default function ProfessorDetailScreen() {
     { key: 'tiktok', icon: 'logo-tiktok' as const, url: professor.tiktok },
   ].filter((s) => !!s.url)
 
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: 'courses', label: 'Cursos' },
+    { key: 'cards', label: 'Cards' },
+    { key: 'about', label: 'Currículo' },
+    { key: 'reviews', label: 'Avaliações' },
+  ]
+
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -46,18 +52,13 @@ export default function ProfessorDetailScreen() {
           {professor.foto_capa ? (
             <Image source={{ uri: professor.foto_capa }} style={{ width: '100%', height: 160 }} resizeMode="cover" />
           ) : (
-            <View style={{ width: '100%', height: 160, backgroundColor: '#dbeafe' }} />
+            <View style={{ width: '100%', height: 160 }} className="bg-dark-surfaceLight" />
           )}
           <TouchableOpacity
             onPress={() => router.back()}
-            style={{
-              position: 'absolute', top: 12, left: 12,
-              width: 36, height: 36, borderRadius: 18,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              alignItems: 'center', justifyContent: 'center',
-            }}
+            className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/50 items-center justify-center"
           >
-            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+            <Ionicons name="arrow-back" size={20} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -66,178 +67,216 @@ export default function ProfessorDetailScreen() {
           {professor.foto_perfil ? (
             <Image
               source={{ uri: professor.foto_perfil }}
-              style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#f7f6f3' }}
+              className="w-24 h-24 rounded-full border-4 border-dark-bg"
             />
           ) : (
-            <View style={{
-              width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#f7f6f3',
-              backgroundColor: '#dbeafe', alignItems: 'center', justifyContent: 'center',
-            }}>
+            <View className="w-24 h-24 rounded-full border-4 border-dark-bg bg-dark-surfaceLight items-center justify-center">
               <Ionicons name="person" size={36} color="#60a5fa" />
             </View>
           )}
 
-          <Text style={{ fontSize: 20, fontWeight: '700', color: '#1a1a2e', marginTop: 10, textAlign: 'center' }}>
+          <Text className="text-xl font-bold text-darkText mt-2.5 text-center">
             {professor.nome_professor}
           </Text>
 
           {/* Rating */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+          <View className="flex-row items-center mt-1">
             <Ionicons name="star" size={16} color="#f59e0b" />
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#4b5563', marginLeft: 4 }}>
+            <Text className="text-sm font-semibold text-darkText-secondary ml-1">
               {(professor.average_rating ?? 0).toFixed(1)}
             </Text>
             {reviews && (
-              <Text style={{ fontSize: 13, color: '#9ca3af', marginLeft: 4 }}>
+              <Text className="text-xs text-darkText-muted ml-1">
                 ({reviews.length} {reviews.length === 1 ? 'avaliação' : 'avaliações'})
               </Text>
             )}
           </View>
 
-          {/* Social Links */}
-          {socialLinks.length > 0 && (
-            <View style={{ flexDirection: 'row', gap: 16, marginTop: 12 }}>
+          {/* Follow Button */}
+          <TouchableOpacity
+            onPress={() => toggleFollow.mutate({ professorId: id!, isFollowing: !!isFollowing })}
+            disabled={toggleFollow.isPending}
+            className={`flex-row items-center gap-2 mt-4 px-8 py-3 rounded-2xl ${isFollowing ? 'bg-dark-surfaceLight' : 'bg-primary'}`}
+          >
+            <Ionicons
+              name={isFollowing ? 'checkmark-circle' : 'person-add-outline'}
+              size={16}
+              color={isFollowing ? colors.textMuted : '#ffffff'}
+            />
+            <Text className={`text-sm font-semibold ${isFollowing ? 'text-darkText-muted' : 'text-white'}`}>
+              {isFollowing ? 'Seguindo' : 'Seguir'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Meus Destaques */}
+        {courses && courses.length > 0 && (
+          <View className="mt-5">
+            <Text className="text-base font-bold text-darkText px-4 mb-3">Meus Destaques</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+              {courses.slice(0, 6).map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  onPress={() => router.push({ pathname: '/course/[id]', params: { id: c.id } })}
+                  className="bg-dark-surface rounded-2xl mr-3 overflow-hidden border border-darkBorder-subtle"
+                  style={{ width: 160 }}
+                  activeOpacity={0.7}
+                >
+                  {c.imagem ? (
+                    <Image source={{ uri: c.imagem }} style={{ width: 160, height: 100 }} resizeMode="cover" />
+                  ) : (
+                    <View style={{ width: 160, height: 100 }} className="bg-dark-surfaceLight items-center justify-center">
+                      <Ionicons name="book-outline" size={28} color={colors.textMuted} />
+                    </View>
+                  )}
+                  <View className="p-2.5">
+                    <Text className="text-xs font-semibold text-darkText" numberOfLines={2}>{c.nome}</Text>
+                    {(c.average_rating ?? 0) > 0 && (
+                      <View className="flex-row items-center mt-1">
+                        <Ionicons name="star" size={10} color="#f59e0b" />
+                        <Text className="text-[10px] text-darkText-muted ml-0.5">{(c.average_rating ?? 0).toFixed(1)}</Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Redes Sociais */}
+        {socialLinks.length > 0 && (
+          <View className="mt-5 px-4">
+            <Text className="text-base font-bold text-darkText mb-3">Redes Sociais</Text>
+            <View className="flex-row gap-3">
               {socialLinks.map((s) => (
                 <TouchableOpacity
                   key={s.key}
                   onPress={() => Linking.openURL(s.url!)}
-                  style={{
-                    width: 40, height: 40, borderRadius: 20,
-                    backgroundColor: '#f0efec', alignItems: 'center', justifyContent: 'center',
-                  }}
+                  className="w-11 h-11 rounded-full bg-dark-surfaceLight items-center justify-center border border-darkBorder-subtle"
                 >
-                  <Ionicons name={s.icon} size={20} color="#6b7280" />
+                  <Ionicons name={s.icon} size={22} color="#60a5fa" />
                 </TouchableOpacity>
               ))}
             </View>
-          )}
+          </View>
+        )}
 
-          {/* Action Buttons */}
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 16, width: '100%', justifyContent: 'center' }}>
+        {/* Tabs */}
+        <View className="flex-row border-b border-darkBorder-subtle px-4 mt-5">
+          {tabs.map((tab) => (
             <TouchableOpacity
-              onPress={() => toggleFollow.mutate({ professorId: id!, isFollowing: !!isFollowing })}
-              disabled={toggleFollow.isPending}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 6,
-                paddingHorizontal: 24, paddingVertical: 12, borderRadius: 16,
-                backgroundColor: isFollowing ? '#f0efec' : '#60a5fa',
-              }}
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
+              className={`pb-3 mr-5 ${activeTab === tab.key ? 'border-b-2 border-accent' : ''}`}
             >
-              <Ionicons
-                name={isFollowing ? 'checkmark-circle' : 'person-add-outline'}
-                size={16}
-                color={isFollowing ? '#6b7280' : '#ffffff'}
-              />
-              <Text style={{
-                fontSize: 14, fontWeight: '600',
-                color: isFollowing ? '#6b7280' : '#ffffff',
-              }}>
-                {isFollowing ? 'Seguindo' : 'Seguir'}
+              <Text className={`text-sm font-semibold ${activeTab === tab.key ? 'text-accent' : 'text-darkText-muted'}`}>
+                {tab.label}
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleChat}
-              disabled={startChat.isPending}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 6,
-                paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16,
-                borderWidth: 1, borderColor: '#60a5fa',
-              }}
-            >
-              <Ionicons name="chatbubble-outline" size={16} color="#60a5fa" />
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#60a5fa' }}>Chat</Text>
-            </TouchableOpacity>
-          </View>
+          ))}
         </View>
 
-        {/* Bio / Descrição */}
-        {(professor.descricao || professor.biografia) && (
-          <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
-            <View style={{
-              backgroundColor: '#ffffff', borderRadius: 16, padding: 16,
-              borderWidth: 1, borderColor: '#e5e4e1',
-            }}>
-              {professor.descricao && (
-                <Text style={{ fontSize: 14, color: '#4b5563', lineHeight: 22 }}>
-                  {professor.descricao}
-                </Text>
+        {/* Tab content */}
+        <View className="px-4 pt-4 pb-8">
+          {activeTab === 'courses' && (
+            <View>
+              {!courses?.length ? (
+                <Text className="text-sm text-darkText-muted">Nenhum curso disponível.</Text>
+              ) : (
+                courses.map((c) => (
+                  <CourseCard
+                    key={c.id}
+                    id={c.id}
+                    nome={c.nome}
+                    imagem={c.imagem}
+                    preco={c.preco ?? 0}
+                    average_rating={c.average_rating}
+                  />
+                ))
               )}
-              {professor.descricao && professor.biografia && (
-                <View style={{ height: 1, backgroundColor: '#e5e4e1', marginVertical: 12 }} />
+            </View>
+          )}
+
+          {activeTab === 'cards' && (
+            <View>
+              {!cards?.length ? (
+                <Text className="text-sm text-darkText-muted">Nenhum card publicado.</Text>
+              ) : (
+                cards.map((card: any) => (
+                  <View key={card.id} className="bg-dark-surface rounded-2xl mb-3 overflow-hidden border border-darkBorder-subtle">
+                    {card.imagem && (
+                      <Image source={{ uri: card.imagem }} className="w-full h-48" resizeMode="cover" />
+                    )}
+                    <View className="p-4">
+                      {card.titulo && (
+                        <Text className="text-base font-semibold text-darkText mb-1">{card.titulo}</Text>
+                      )}
+                      {card.descricao && (
+                        <Text className="text-sm text-darkText-secondary leading-5">{card.descricao}</Text>
+                      )}
+                      {card.created_at && (
+                        <Text className="text-xs text-darkText-muted mt-2">
+                          {format(new Date(card.created_at), 'dd/MM/yyyy')}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+          )}
+
+          {activeTab === 'about' && (
+            <View>
+              {professor.descricao && (
+                <View className="mb-4">
+                  <Text className="text-sm text-darkText-secondary leading-6">{professor.descricao}</Text>
+                </View>
               )}
               {professor.biografia && (
-                <>
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
-                    Biografia
-                  </Text>
-                  <Text style={{ fontSize: 14, color: '#4b5563', lineHeight: 22 }}>
-                    {professor.biografia}
-                  </Text>
-                </>
+                <View className="bg-dark-surface rounded-2xl p-4 border border-darkBorder-subtle">
+                  <Text className="text-xs font-semibold text-darkText-muted uppercase tracking-wider mb-2">Biografia</Text>
+                  <Text className="text-sm text-darkText-secondary leading-6">{professor.biografia}</Text>
+                </View>
+              )}
+              {!professor.descricao && !professor.biografia && (
+                <Text className="text-sm text-darkText-muted">Nenhuma informação disponível.</Text>
               )}
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Cursos */}
-        {courses && courses.length > 0 && (
-          <View style={{ marginTop: 24 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: '#1a1a2e', paddingHorizontal: 16, marginBottom: 12 }}>
-              {t('courses.title')} ({courses.length})
-            </Text>
-            <View style={{ paddingHorizontal: 16 }}>
-              {courses.map((c) => (
-                <CourseCard
-                  key={c.id}
-                  id={c.id}
-                  nome={c.nome}
-                  imagem={c.imagem}
-                  preco={c.preco ?? 0}
-                  average_rating={c.average_rating}
-                />
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Avaliações */}
-        {reviews && reviews.length > 0 && (
-          <View style={{ marginTop: 24, paddingHorizontal: 16, paddingBottom: 32 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: '#1a1a2e', marginBottom: 12 }}>
-              {t('courses.reviews')} ({reviews.length})
-            </Text>
-            {reviews.map((review: any) => (
-              <View key={review.id} style={{
-                backgroundColor: '#ffffff', borderRadius: 12, padding: 14,
-                borderWidth: 1, borderColor: '#e5e4e1', marginBottom: 8,
-              }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#1a1a2e' }}>
-                    {review.user?.display_name ?? 'Aluno'}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Ionicons
-                        key={i}
-                        name={i < (review.rating ?? 0) ? 'star' : 'star-outline'}
-                        size={12}
-                        color="#f59e0b"
-                      />
-                    ))}
+          {activeTab === 'reviews' && (
+            <View>
+              {!reviews?.length ? (
+                <Text className="text-sm text-darkText-muted">Nenhuma avaliação ainda.</Text>
+              ) : (
+                reviews.map((review: any) => (
+                  <View key={review.id} className="mb-3 pb-3 border-b border-darkBorder-subtle">
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-sm font-semibold text-darkText">
+                        {review.user?.display_name ?? 'Aluno'}
+                      </Text>
+                      <View className="flex-row items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Ionicons
+                            key={i}
+                            name={i < (review.rating ?? 0) ? 'star' : 'star-outline'}
+                            size={12}
+                            color="#f59e0b"
+                          />
+                        ))}
+                      </View>
+                    </View>
+                    {review.comentario && (
+                      <Text className="text-sm text-darkText-secondary mt-1.5 leading-5">{review.comentario}</Text>
+                    )}
                   </View>
-                </View>
-                {review.comentario && (
-                  <Text style={{ fontSize: 13, color: '#6b7280', marginTop: 6, lineHeight: 20 }}>
-                    {review.comentario}
-                  </Text>
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-
-        <View style={{ height: 24 }} />
+                ))
+              )}
+            </View>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   )

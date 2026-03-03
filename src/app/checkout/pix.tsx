@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import QRCode from 'react-native-qrcode-svg'
 import { useCheckoutPix, useUpdateCustomerDocument } from '@/hooks/usePayment'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function PixCheckoutScreen() {
   const params = useLocalSearchParams<{
@@ -18,6 +19,7 @@ export default function PixCheckoutScreen() {
     cpf?: string
   }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const checkoutPix = useCheckoutPix()
   const updateDoc = useUpdateCustomerDocument()
 
@@ -100,7 +102,7 @@ export default function PixCheckoutScreen() {
         {/* Header */}
         <View className="flex-row items-center px-4 pt-4 pb-3 border-b border-darkBorder-subtle">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text className="text-lg font-bold text-darkText">Pagamento PIX</Text>
         </View>
@@ -109,7 +111,7 @@ export default function PixCheckoutScreen() {
           <View className="items-center px-4 pt-6">
             {/* Timer */}
             <View className="flex-row items-center mb-4">
-              <Ionicons name="time-outline" size={18} color={timeLeft < 300 ? '#f87171' : '#6b7280'} />
+              <Ionicons name="time-outline" size={18} color={timeLeft < 300 ? '#f87171' : colors.textSecondary} />
               <Text className={`text-sm font-medium ml-1 ${timeLeft < 300 ? 'text-error' : 'text-darkText-secondary'}`}>
                 Expira em {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
               </Text>
@@ -138,7 +140,7 @@ export default function PixCheckoutScreen() {
               onPress={handleCopy}
               className="w-full bg-primary rounded-2xl py-3.5 flex-row items-center justify-center mb-6"
             >
-              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={20} color="#1a1a2e" />
+              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={20} color={colors.text} />
               <Text className="text-darkText-inverse font-semibold ml-2">
                 {copied ? 'Código copiado!' : 'Copiar código PIX'}
               </Text>

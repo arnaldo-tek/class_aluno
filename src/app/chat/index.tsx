@@ -2,6 +2,7 @@ import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useThemeColors } from '@/hooks/useThemeColors'
 import { useChats } from '@/hooks/useChat'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -10,6 +11,7 @@ import { t } from '@/i18n'
 
 export default function ChatListScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { user } = useAuthContext()
   const { data: chats, isLoading } = useChats()
 
@@ -45,7 +47,7 @@ export default function ChatListScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-darkText flex-1">Conversas</Text>
       </View>

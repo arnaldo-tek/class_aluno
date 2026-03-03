@@ -75,7 +75,7 @@ export function useCommunityMessages(comunidadeId: string) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('comunidade_mensagens')
-        .select('id, texto, user_id, created_at, profiles(display_name, photo_url)')
+        .select('id, texto, user_id, created_at, profiles(display_name, photo_url, apelido_comunidade)')
         .eq('comunidade_id', comunidadeId)
         .order('created_at', { ascending: true })
 
@@ -126,6 +126,45 @@ export function useSendCommunityMessage() {
     },
     onSuccess: (_, { comunidadeId }) => {
       qc.invalidateQueries({ queryKey: ['community-messages', comunidadeId] })
+    },
+  })
+}
+
+export function useCommunityNickname() {
+  const { user } = useAuthContext()
+
+  return useQuery({
+    queryKey: ['community-nickname', user?.id],
+    queryFn: async () => {
+      if (!user) return null
+      const { data } = await supabase
+        .from('profiles')
+        .select('apelido_comunidade')
+        .eq('id', user.id)
+        .single()
+
+      return (data as any)?.apelido_comunidade ?? null
+    },
+    enabled: !!user,
+  })
+}
+
+export function useSetCommunityNickname() {
+  const { user } = useAuthContext()
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (nickname: string) => {
+      if (!user) throw new Error('Not authenticated')
+      const { error } = await supabase
+        .from('profiles')
+        .update({ apelido_comunidade: nickname.trim() } as any)
+        .eq('id', user.id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['community-nickname'] })
     },
   })
 }

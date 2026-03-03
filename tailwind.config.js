@@ -2,10 +2,11 @@
 module.exports = {
   content: ['./src/**/*.{ts,tsx}'],
   presets: [require('nativewind/preset')],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // Brand
+        // Brand (fixed - don't change with theme)
         primary: {
           DEFAULT: '#2563eb',
           light: '#3b82f6',
@@ -25,30 +26,30 @@ module.exports = {
           muted: '#fef3c7',
         },
 
-        // Surfaces (light premium)
+        // Surfaces (CSS variables for theme switching)
         dark: {
-          bg: '#f7f6f3',
-          surface: '#ffffff',
-          surfaceLight: '#f0efec',
-          elevated: '#e8e7e4',
+          bg: 'var(--color-bg)',
+          surface: 'var(--color-surface)',
+          surfaceLight: 'var(--color-surface-light)',
+          elevated: 'var(--color-elevated)',
         },
 
         // Borders
         darkBorder: {
-          DEFAULT: '#e5e4e1',
-          light: '#d4d3d0',
-          subtle: '#eeedeb',
+          DEFAULT: 'var(--color-border)',
+          light: 'var(--color-border-light)',
+          subtle: 'var(--color-border-subtle)',
         },
 
         // Text
         darkText: {
-          DEFAULT: '#1a1a2e',
-          secondary: '#6b7280',
-          muted: '#9ca3af',
-          inverse: '#ffffff',
+          DEFAULT: 'var(--color-text)',
+          secondary: 'var(--color-text-secondary)',
+          muted: 'var(--color-text-muted)',
+          inverse: 'var(--color-text-inverse)',
         },
 
-        // Semantic
+        // Semantic (fixed)
         success: {
           DEFAULT: '#059669',
           dark: '#ecfdf5',

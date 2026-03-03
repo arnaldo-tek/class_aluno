@@ -2,6 +2,7 @@ import { View, Text, Image, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 interface CourseCardProps {
   id: string
@@ -12,12 +13,14 @@ interface CourseCardProps {
   average_rating?: number | null
   horizontal?: boolean
   progress?: number | null
+  hidePrice?: boolean
 }
 
 export function CourseCard({
-  id, nome, imagem, preco, professor_nome, average_rating, horizontal, progress,
+  id, nome, imagem, preco, professor_nome, average_rating, horizontal, progress, hidePrice,
 }: CourseCardProps) {
   const router = useRouter()
+  const colors = useThemeColors()
 
   if (horizontal) {
     return (
@@ -32,14 +35,16 @@ export function CourseCard({
               <Image source={{ uri: imagem }} className="w-full h-32" resizeMode="cover" />
             ) : (
               <View className="w-full h-32 bg-dark-surfaceLight items-center justify-center">
-                <Ionicons name="book-outline" size={28} color="#9ca3af" />
+                <Ionicons name="book-outline" size={28} color={colors.textMuted} />
               </View>
             )}
-            <View className="absolute bottom-2 right-2 bg-accent rounded-lg px-2.5 py-1">
-              <Text className="text-xs font-bold text-white">
-                {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
-              </Text>
-            </View>
+            {!hidePrice && (
+              <View className="absolute bottom-2 right-2 bg-accent rounded-lg px-2.5 py-1">
+                <Text className="text-xs font-bold text-white">
+                  {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
+                </Text>
+              </View>
+            )}
           </View>
           <View className="p-3">
             <Text className="text-sm font-semibold text-darkText mb-1" numberOfLines={2}>{nome}</Text>
@@ -74,7 +79,7 @@ export function CourseCard({
             <Image source={{ uri: imagem }} className="w-28 h-28" resizeMode="cover" />
           ) : (
             <View className="w-28 h-28 bg-dark-surfaceLight items-center justify-center">
-              <Ionicons name="book-outline" size={28} color="#9ca3af" />
+              <Ionicons name="book-outline" size={28} color={colors.textMuted} />
             </View>
           )}
         </View>
@@ -105,11 +110,13 @@ export function CourseCard({
               ) : (
                 <View />
               )}
-              <View className="bg-accent rounded-lg px-2.5 py-1">
-                <Text className="text-xs font-bold text-white">
-                  {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
-                </Text>
-              </View>
+              {!hidePrice && (
+                <View className="bg-accent rounded-lg px-2.5 py-1">
+                  <Text className="text-xs font-bold text-white">
+                    {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
         </View>

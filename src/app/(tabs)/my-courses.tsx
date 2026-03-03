@@ -6,8 +6,10 @@ import { CourseCard } from '@/components/CourseCard'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Ionicons } from '@expo/vector-icons'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function MyCoursesScreen() {
+  const colors = useThemeColors()
   const { data: enrollments, isLoading, refetch, isRefetching } = useMyEnrollments()
 
   return (
@@ -22,7 +24,7 @@ export default function MyCoursesScreen() {
         <EmptyState
           title="Nenhum curso matriculado"
           description="Explore o catalogo e matricule-se em cursos."
-          icon={<Ionicons name="school-outline" size={48} color="#9ca3af" />}
+          icon={<Ionicons name="school-outline" size={48} color={colors.textMuted} />}
         />
       ) : (
         <FlatList

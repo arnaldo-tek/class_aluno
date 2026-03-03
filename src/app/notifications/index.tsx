@@ -5,9 +5,11 @@ import { Ionicons } from '@expo/vector-icons'
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useUnreadNotificationsCount } from '@/hooks/useNotifications'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function NotificationsScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: notifications, isLoading } = useNotifications()
   const { data: unreadCount } = useUnreadNotificationsCount()
   const markRead = useMarkNotificationRead()
@@ -33,7 +35,7 @@ export default function NotificationsScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 py-3 border-b border-darkBorder-subtle">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-darkText flex-1">Notificacoes</Text>
         {(unreadCount ?? 0) > 0 && (
@@ -48,7 +50,7 @@ export default function NotificationsScreen() {
 
       {!notifications || notifications.length === 0 ? (
         <EmptyState
-          icon={<Ionicons name="notifications-outline" size={48} color="#9ca3af" />}
+          icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />}
           title="Nenhuma notificacao"
           description="Voce sera notificado sobre novidades e atualizacoes"
         />
@@ -71,7 +73,7 @@ export default function NotificationsScreen() {
                 <Ionicons
                   name="notifications"
                   size={18}
-                  color={!item.is_read ? '#60a5fa' : '#9ca3af'}
+                  color={!item.is_read ? '#60a5fa' : colors.textMuted}
                 />
               </View>
 

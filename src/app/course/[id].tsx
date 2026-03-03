@@ -1,24 +1,27 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Alert, Platform } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Alert, Platform, FlatList, KeyboardAvoidingView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { t } from '@/i18n'
 import { useCourseDetail, useCourseModules, useCourseReviews } from '@/hooks/useCourses'
 import { useIsEnrolled } from '@/hooks/useEnrollments'
 import { useSubmitReview } from '@/hooks/useFavorites'
+import { useStartChat, useChatMessages, useSendMessage } from '@/hooks/useChat'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
 import { DownloadAllButton } from '@/components/DownloadAllButton'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'info' | 'modules' | 'reviews'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'modules' | 'reviews' | 'chat'>('info')
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewText, setReviewText] = useState('')
 
+  const colors = useThemeColors()
   const { user } = useAuthContext()
   const { data: course, isLoading } = useCourseDetail(id!)
   const { data: modules } = useCourseModules(id!)
@@ -41,7 +44,7 @@ export default function CourseDetailScreen() {
             <Image source={{ uri: course.imagem }} className="w-full h-56" resizeMode="cover" />
           ) : (
             <View className="w-full h-56 bg-dark-surfaceLight items-center justify-center">
-              <Ionicons name="book-outline" size={48} color="#9ca3af" />
+              <Ionicons name="book-outline" size={48} color={colors.textMuted} />
             </View>
           )}
           <TouchableOpacity
@@ -84,11 +87,11 @@ export default function CourseDetailScreen() {
               </Text>
             </View>
             <View className="flex-row items-center">
-              <Ionicons name="layers-outline" size={16} color="#6b7280" />
+              <Ionicons name="layers-outline" size={16} color={colors.textSecondary} />
               <Text className="text-sm text-darkText-secondary ml-1">{modules?.length ?? 0} {t('courses.modules')}</Text>
             </View>
             <View className="flex-row items-center">
-              <Ionicons name="play-circle-outline" size={16} color="#6b7280" />
+              <Ionicons name="play-circle-outline" size={16} color={colors.textSecondary} />
               <Text className="text-sm text-darkText-secondary ml-1">{totalAulas} {t('courses.lessons')}</Text>
             </View>
           </View>
@@ -134,14 +137,19 @@ export default function CourseDetailScreen() {
 
         {/* Tabs */}
         <View className="flex-row border-b border-darkBorder-subtle px-4 mt-3">
-          {(['info', 'modules', 'reviews'] as const).map((tab) => (
+          {([
+            { key: 'info' as const, label: t('courses.description') },
+            { key: 'modules' as const, label: t('courses.modules') },
+            { key: 'reviews' as const, label: t('courses.reviews') },
+            ...(isEnrolled ? [{ key: 'chat' as const, label: 'Chat' }] : []),
+          ]).map((tab) => (
             <TouchableOpacity
-              key={tab}
-              onPress={() => setActiveTab(tab)}
-              className={`pb-3.5 mr-6 ${activeTab === tab ? 'border-b-2 border-accent' : ''}`}
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
+              className={`pb-3.5 mr-6 ${activeTab === tab.key ? 'border-b-2 border-accent' : ''}`}
             >
-              <Text className={`text-sm font-semibold ${activeTab === tab ? 'text-accent' : 'text-darkText-muted'}`}>
-                {tab === 'info' ? t('courses.description') : tab === 'modules' ? t('courses.modules') : t('courses.reviews')}
+              <Text className={`text-sm font-semibold ${activeTab === tab.key ? 'text-accent' : 'text-darkText-muted'}`}>
+                {tab.label}
               </Text>
             </TouchableOpacity>
           ))}
@@ -178,7 +186,7 @@ export default function CourseDetailScreen() {
                           <Ionicons
                             name={canAccess ? 'play' : 'lock-closed'}
                             size={14}
-                            color={canAccess ? '#3b82f6' : '#9ca3af'}
+                            color={canAccess ? '#3b82f6' : colors.textMuted}
                           />
                         </View>
                         <Text className={`text-sm ml-3 flex-1 ${canAccess ? 'text-darkText' : 'text-darkText-muted'}`}>{aula.titulo}</Text>
@@ -197,7 +205,7 @@ export default function CourseDetailScreen() {
               {/* Review form */}
               {isEnrolled && user && (
                 <View className="mb-6 pb-6 border-b border-darkBorder-subtle">
-                  <Text className="text-sm font-bold text-darkText mb-3">Deixe sua avaliacao</Text>
+                  <Text className="text-sm font-bold text-darkText mb-3">Deixe sua avaliação</Text>
                   <View className="flex-row gap-1 mb-3">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <TouchableOpacity key={star} onPress={() => setReviewRating(star)}>
@@ -211,8 +219,8 @@ export default function CourseDetailScreen() {
                   </View>
                   <TextInput
                     className="bg-dark-surface border border-darkBorder-subtle rounded-2xl px-4 py-3 text-sm text-darkText min-h-[80px]"
-                    placeholder="Escreva um comentario (opcional)"
-                    placeholderTextColor="#636366"
+                    placeholder="Escreva um comentário (opcional)"
+                    placeholderTextColor={colors.textMuted}
                     value={reviewText}
                     onChangeText={setReviewText}
                     multiline
@@ -221,7 +229,7 @@ export default function CourseDetailScreen() {
                   <TouchableOpacity
                     onPress={async () => {
                       if (reviewRating === 0) {
-                        Alert.alert('Avaliacao', 'Selecione pelo menos 1 estrela.')
+                        Alert.alert('Avaliação', 'Selecione pelo menos 1 estrela.')
                         return
                       }
                       await submitReview.mutateAsync({
@@ -232,20 +240,20 @@ export default function CourseDetailScreen() {
                       })
                       setReviewRating(0)
                       setReviewText('')
-                      Alert.alert('Obrigado!', 'Sua avaliacao foi enviada.')
+                      Alert.alert('Obrigado!', 'Sua avaliação foi enviada.')
                     }}
                     disabled={submitReview.isPending || reviewRating === 0}
                     className={`mt-3 rounded-2xl py-3 items-center ${reviewRating > 0 ? 'bg-accent' : 'bg-dark-surfaceLight'}`}
                   >
                     <Text className={`font-bold text-sm ${reviewRating > 0 ? 'text-darkText-inverse' : 'text-darkText-muted'}`}>
-                      {submitReview.isPending ? 'Enviando...' : 'Enviar avaliacao'}
+                      {submitReview.isPending ? 'Enviando...' : 'Enviar avaliação'}
                     </Text>
                   </TouchableOpacity>
                 </View>
               )}
 
               {!reviews?.length ? (
-                <Text className="text-sm text-darkText-muted">Nenhuma avaliacao ainda.</Text>
+                <Text className="text-sm text-darkText-muted">Nenhuma avaliação ainda.</Text>
               ) : (
                 reviews.map((review: any) => (
                   <View key={review.id} className="mb-4 pb-4 border-b border-darkBorder-subtle">
@@ -266,8 +274,99 @@ export default function CourseDetailScreen() {
               )}
             </View>
           )}
+
+          {activeTab === 'chat' && isEnrolled && professor && (
+            <CourseChatSection courseId={id!} professorUserId={professor.user_id} professorName={professor.nome_professor} />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
+  )
+}
+
+function CourseChatSection({ courseId, professorUserId, professorName }: {
+  courseId: string; professorUserId: string; professorName: string
+}) {
+  const { user } = useAuthContext()
+  const startChat = useStartChat()
+  const [chatId, setChatId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user || !professorUserId) return
+    startChat.mutateAsync(professorUserId).then((id) => {
+      setChatId(id)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [professorUserId, user?.id])
+
+  if (loading) return <LoadingSpinner />
+  if (!chatId) return <Text className="text-sm text-darkText-muted">Não foi possível iniciar o chat.</Text>
+
+  return <ChatMessages chatId={chatId} professorName={professorName} />
+}
+
+function ChatMessages({ chatId, professorName }: { chatId: string; professorName: string }) {
+  const colors = useThemeColors()
+  const { user } = useAuthContext()
+  const { data: messages } = useChatMessages(chatId)
+  const sendMessage = useSendMessage()
+  const [text, setText] = useState('')
+  const flatListRef = useRef<FlatList>(null)
+
+  useEffect(() => {
+    if (messages?.length) {
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100)
+    }
+  }, [messages?.length])
+
+  return (
+    <View style={{ height: 400 }}>
+      <FlatList
+        ref={flatListRef}
+        data={messages ?? []}
+        keyExtractor={(item) => item.id}
+        className="flex-1"
+        contentContainerStyle={{ padding: 8 }}
+        renderItem={({ item }) => {
+          const isMe = item.user_id === user?.id
+          return (
+            <View className={`mb-2 max-w-[80%] ${isMe ? 'self-end' : 'self-start'}`}>
+              <View className={`px-3.5 py-2.5 rounded-2xl ${isMe ? 'bg-primary' : 'bg-dark-surfaceLight'}`}>
+                <Text className={`text-sm ${isMe ? 'text-white' : 'text-darkText'}`}>{item.text}</Text>
+              </View>
+            </View>
+          )
+        }}
+        ListEmptyComponent={
+          <View className="items-center py-12">
+            <Ionicons name="chatbubble-ellipses-outline" size={40} color={colors.textMuted} />
+            <Text className="text-sm text-darkText-muted mt-2">Inicie uma conversa com {professorName}</Text>
+          </View>
+        }
+      />
+      <View className="flex-row items-center bg-dark-surfaceLight rounded-2xl px-3 py-2 mt-2">
+        <TextInput
+          className="flex-1 text-sm text-darkText"
+          placeholder="Digite sua mensagem..."
+          placeholderTextColor={colors.textSecondary}
+          value={text}
+          onChangeText={setText}
+          multiline
+        />
+        <TouchableOpacity
+          onPress={async () => {
+            if (!text.trim()) return
+            const msg = text.trim()
+            setText('')
+            await sendMessage.mutateAsync({ chatId, text: msg })
+          }}
+          disabled={!text.trim() || sendMessage.isPending}
+          className="ml-2 p-2"
+        >
+          <Ionicons name="send" size={20} color={text.trim() ? '#3b82f6' : colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+    </View>
   )
 }

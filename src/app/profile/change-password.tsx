@@ -5,9 +5,11 @@ import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useChangePassword } from '@/hooks/useProfile'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function ChangePasswordScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const changePassword = useChangePassword()
 
   const [newPassword, setNewPassword] = useState('')
@@ -36,7 +38,7 @@ export default function ChangePasswordScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">
           {t('profile.changePassword')}

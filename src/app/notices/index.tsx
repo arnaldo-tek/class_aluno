@@ -9,9 +9,11 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { FilterDropdown } from '@/components/FilterDropdown'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function NoticesScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [estado, setEstado] = useState<string | null>(null)
@@ -37,7 +39,7 @@ export default function NoticesScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">{t('notices.title')}</Text>
       </View>
@@ -63,7 +65,7 @@ export default function NoticesScreen() {
           )}
         />
       ) : (
-        <>
+        <View className="flex-1">
           {selectedCategory && (
             <View className="px-4 pb-2">
               <TouchableOpacity
@@ -76,7 +78,7 @@ export default function NoticesScreen() {
             </View>
           )}
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 pb-3">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 pb-3" style={{ flexGrow: 0 }}>
             {(!selectedCat || selectedCat.filtro_estado) && estadoOptions && estadoOptions.length > 0 && (
               <FilterDropdown label={t('news.estado')} value={estado} options={estadoOptions} onChange={setEstado} />
             )}
@@ -98,10 +100,11 @@ export default function NoticesScreen() {
               data={notices}
               keyExtractor={(item) => item.id}
               contentContainerStyle={{ padding: 16, paddingTop: 0 }}
+              className="flex-1"
               ListEmptyComponent={
                 <EmptyState
                   title={t('notices.noNotices')}
-                  icon={<Ionicons name="document-text-outline" size={48} color="#9ca3af" />}
+                  icon={<Ionicons name="document-text-outline" size={48} color={colors.textMuted} />}
                 />
               }
               renderItem={({ item }) => (
@@ -133,7 +136,7 @@ export default function NoticesScreen() {
               )}
             />
           )}
-        </>
+        </View>
       )}
     </SafeAreaView>
   )

@@ -3,52 +3,55 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useRef, useEffect, useState } from 'react'
 import { t } from '@/i18n'
-import { useBanners, useCategories, useTopProfessors, useRecentNews, useAreaAlunoBanners } from '@/hooks/useHome'
+import { useBanners, useCategories, useTopProfessors, useRecentNews } from '@/hooks/useHome'
 import { useFeaturedCourses } from '@/hooks/useCourses'
 import { usePackages } from '@/hooks/usePackages'
 import { useUnreadNotificationsCount } from '@/hooks/useNotifications'
-import { useUnreadChatsCount } from '@/hooks/useChat'
 import { CourseCard } from '@/components/CourseCard'
 import { ProfessorCard } from '@/components/ProfessorCard'
 import { SectionHeader } from '@/components/ui/SectionHeader'
+import { DrawerMenu } from '@/components/DrawerMenu'
 import { Ionicons } from '@expo/vector-icons'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 
 export default function HomeScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: unreadNotifications } = useUnreadNotificationsCount()
-  const { data: unreadChats } = useUnreadChatsCount()
+  const [drawerVisible, setDrawerVisible] = useState(false)
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View className="flex-row items-center px-4 pt-4 pb-3">
-          <Text className="text-2xl font-bold text-darkText flex-1">{t('home.title')}</Text>
-          <TouchableOpacity onPress={() => router.push('/chat')} className="relative mr-4 p-1">
-            <Ionicons name="chatbubbles-outline" size={24} color="#6b7280" />
-            {(unreadChats ?? 0) > 0 && (
-              <View className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent items-center justify-center">
-                <Text className="text-[10px] font-bold text-darkText-inverse">{unreadChats}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/notifications')} className="relative p-1">
-            <Ionicons name="notifications-outline" size={24} color="#6b7280" />
-            {(unreadNotifications ?? 0) > 0 && (
-              <View className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent items-center justify-center">
-                <Text className="text-[10px] font-bold text-darkText-inverse">{unreadNotifications}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+    <SafeAreaView className="flex-1 bg-dark-bg" edges={['left', 'right', 'bottom']}>
+      {/* Top bar - Superclasse yellow */}
+      <View style={{ backgroundColor: '#f5ff00' }} className="px-4 pt-14 pb-3 flex-row items-center">
+        <TouchableOpacity onPress={() => setDrawerVisible(true)} className="p-1 mr-3">
+          <Ionicons name="menu" size={26} color={colors.text} />
+        </TouchableOpacity>
+        <Text className="text-xl font-bold text-gray-900 flex-1">Superclasse</Text>
+        <TouchableOpacity
+          onPress={() => router.push('/student-area' as any)}
+          className="bg-white/90 rounded-full px-3.5 py-1.5 mr-3"
+          activeOpacity={0.7}
+        >
+          <Text className="text-xs font-bold text-gray-800">Aluno</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/notifications')} className="relative p-1">
+          <Ionicons name="notifications-outline" size={24} color={colors.text} />
+          {(unreadNotifications ?? 0) > 0 && (
+            <View className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-red-500 items-center justify-center">
+              <Text className="text-[10px] font-bold text-white">{unreadNotifications}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
 
+      <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
+
+      <ScrollView className="flex-1 pt-4" showsVerticalScrollIndicator={false}>
         {/* Banners */}
         <BannerCarousel />
-
-        {/* Area do Aluno Banners */}
-        <AreaAlunoBanners />
 
         {/* Featured Courses */}
         <FeaturedSection />
@@ -65,7 +68,7 @@ export default function HomeScreen() {
         {/* Recent News */}
         <NewsSection />
 
-        <View className="h-6" />
+        <View className="h-28" />
       </ScrollView>
     </SafeAreaView>
   )
@@ -75,13 +78,15 @@ function BannerCarousel() {
   const { data: banners } = useBanners()
   const flatListRef = useRef<FlatList>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const BANNER_GAP = 12
   const BANNER_WIDTH = SCREEN_WIDTH - 32
+  const SNAP_WIDTH = BANNER_WIDTH + BANNER_GAP
 
   useEffect(() => {
     if (!banners?.length || banners.length <= 1) return
     const interval = setInterval(() => {
       const next = (currentIndex + 1) % banners.length
-      flatListRef.current?.scrollToOffset({ offset: next * BANNER_WIDTH, animated: true })
+      flatListRef.current?.scrollToOffset({ offset: next * SNAP_WIDTH, animated: true })
       setCurrentIndex(next)
     }, 4000)
     return () => clearInterval(interval)
@@ -90,18 +95,20 @@ function BannerCarousel() {
   if (!banners?.length) return null
 
   return (
-    <View className="mb-5 px-4">
+    <View className="mb-5">
       <FlatList
         ref={flatListRef}
         data={banners}
         horizontal
         pagingEnabled={false}
         decelerationRate="fast"
-        snapToInterval={BANNER_WIDTH}
+        snapToInterval={SNAP_WIDTH}
         snapToAlignment="start"
         showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+        ItemSeparatorComponent={() => <View style={{ width: BANNER_GAP }} />}
         onMomentumScrollEnd={(e) => {
-          const index = Math.round(e.nativeEvent.contentOffset.x / BANNER_WIDTH)
+          const index = Math.round(e.nativeEvent.contentOffset.x / SNAP_WIDTH)
           setCurrentIndex(index)
         }}
         keyExtractor={(item) => item.id}
@@ -134,41 +141,6 @@ function BannerCarousel() {
           ))}
         </View>
       )}
-    </View>
-  )
-}
-
-function AreaAlunoBanners() {
-  const { data: banners } = useAreaAlunoBanners()
-
-  if (!banners?.length) return null
-
-  return (
-    <View className="mb-5 px-4">
-      <FlatList
-        data={banners}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            activeOpacity={item.link ? 0.8 : 1}
-            onPress={() => {
-              if (item.link) Linking.openURL(item.link)
-            }}
-            className="mr-3 rounded-2xl overflow-hidden"
-            style={{ width: SCREEN_WIDTH - 64 }}
-          >
-            {item.imagem ? (
-              <Image source={{ uri: item.imagem }} className="w-full h-32" resizeMode="cover" />
-            ) : (
-              <View className="w-full h-32 bg-dark-surfaceLight items-center justify-center">
-                <Ionicons name="image-outline" size={28} color="#6b7280" />
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
-      />
     </View>
   )
 }
@@ -304,6 +276,7 @@ function PackagesSection() {
 function NewsSection() {
   const { data: news } = useRecentNews()
   const router = useRouter()
+  const colors = useThemeColors()
 
   if (!news?.length) return null
 
@@ -320,7 +293,7 @@ function NewsSection() {
             <Image source={{ uri: item.imagem }} className="w-20 h-20" resizeMode="cover" />
           ) : (
             <View className="w-20 h-20 bg-dark-surfaceLight items-center justify-center">
-              <Ionicons name="newspaper-outline" size={20} color="#9ca3af" />
+              <Ionicons name="newspaper-outline" size={20} color={colors.textMuted} />
             </View>
           )}
           <View className="flex-1 p-3.5 justify-center">

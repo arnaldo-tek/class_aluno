@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useCheckoutCard, useUpdateCustomerDocument } from '@/hooks/usePayment'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function CardCheckoutScreen() {
   const params = useLocalSearchParams<{
@@ -16,6 +17,7 @@ export default function CardCheckoutScreen() {
     cpf?: string
   }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const checkout = useCheckoutCard()
   const updateDoc = useUpdateCustomerDocument()
 
@@ -113,7 +115,7 @@ export default function CardCheckoutScreen() {
         {/* Header */}
         <View className="flex-row items-center px-4 pt-4 pb-3 border-b border-darkBorder-subtle">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text className="text-lg font-bold text-darkText">Cartão de Crédito</Text>
         </View>
@@ -223,7 +225,7 @@ export default function CardCheckoutScreen() {
             }`}
           >
             {checkout.isPending ? (
-              <ActivityIndicator color="#1a1a2e" />
+              <ActivityIndicator color={colors.text} />
             ) : (
               <Text className={`font-bold text-base ${isValid ? 'text-darkText-inverse' : 'text-darkText-muted'}`}>
                 Pagar R$ {amountBRL.toFixed(2)}

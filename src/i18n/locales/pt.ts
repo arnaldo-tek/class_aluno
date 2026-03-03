@@ -36,6 +36,9 @@ export default {
     courses: 'Cursos',
     myCourses: 'Meus Cursos',
     profile: 'Perfil',
+    subscriptions: 'Assinaturas',
+    professors: 'Professores',
+    more: 'Mais',
   },
   home: {
     title: 'Superclasse',

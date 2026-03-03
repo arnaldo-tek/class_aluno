@@ -6,6 +6,7 @@ import { useDownloadCount } from '@/hooks/useDownloads'
 import { signOut } from '@/lib/auth'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useThemeColors } from '@/hooks/useThemeColors'
 import { t } from '@/i18n'
 
 export default function ProfileScreen() {
@@ -52,8 +53,7 @@ export default function ProfileScreen() {
           <MenuItem icon="cart-outline" iconColor="#60a5fa" label={t('profile.myPurchases')} onPress={() => router.push('/purchases')} />
           <MenuItem icon="cube-outline" iconColor="#60a5fa" label={t('packages.title')} onPress={() => router.push('/packages')} />
           <MenuItem icon="heart-outline" iconColor="#f87171" label={t('profile.favorites')} onPress={() => router.push('/favorites')} />
-          <MenuItem icon="layers-outline" iconColor="#fbbf24" label="Flashcards" onPress={() => router.push('/flashcards')} />
-          <MenuItem icon="chatbubbles-outline" iconColor="#34d399" label="Conversas" onPress={() => router.push('/chat')} last />
+          <MenuItem icon="layers-outline" iconColor="#fbbf24" label="Flashcards" onPress={() => router.push('/flashcards')} last />
         </View>
 
         {/* Menu items - Media */}
@@ -65,11 +65,6 @@ export default function ProfileScreen() {
           <MenuItem icon="newspaper-outline" iconColor="#fbbf24" label={t('news.title')} onPress={() => router.push('/news')} />
           <MenuItem icon="document-text-outline" iconColor="#60a5fa" label={t('notices.title')} onPress={() => router.push('/notices')} />
           <MenuItem icon="people-outline" iconColor="#34d399" label={t('community.title')} onPress={() => router.push('/community')} last />
-        </View>
-
-        {/* Menu items - Discover */}
-        <View className="bg-dark-surface rounded-2xl overflow-hidden mb-4">
-          <MenuItem icon="school-outline" iconColor="#c084fc" label="Todos os professores" onPress={() => router.push('/professors')} last />
         </View>
 
         {/* Menu items - Settings */}
@@ -95,6 +90,7 @@ export default function ProfileScreen() {
 }
 
 function MenuItem({ icon, iconColor, label, last, badge, onPress }: { icon: string; iconColor: string; label: string; last?: boolean; badge?: number; onPress?: () => void }) {
+  const colors = useThemeColors()
   return (
     <TouchableOpacity onPress={onPress} className={`flex-row items-center px-4 py-3.5 ${last ? '' : 'border-b border-darkBorder-subtle'}`}>
       <View className="w-8 h-8 rounded-lg bg-dark-surfaceLight items-center justify-center mr-3">
@@ -106,7 +102,7 @@ function MenuItem({ icon, iconColor, label, last, badge, onPress }: { icon: stri
           <Text className="text-xs text-white font-bold">{badge}</Text>
         </View>
       )}
-      <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
     </TouchableOpacity>
   )
 }

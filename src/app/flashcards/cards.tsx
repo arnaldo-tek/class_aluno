@@ -6,12 +6,14 @@ import { Ionicons } from '@expo/vector-icons'
 import { useFlashcards, useCreateFlashcard, useDeleteFlashcard } from '@/hooks/useFlashcards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function FlashcardsListScreen() {
   const { block_id, block_name, folder_id, folder_name } = useLocalSearchParams<{
     block_id: string; block_name?: string; folder_id: string; folder_name?: string
   }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: cards, isLoading } = useFlashcards(block_id!)
   const createCard = useCreateFlashcard()
   const deleteCard = useDeleteFlashcard()
@@ -37,7 +39,7 @@ export default function FlashcardsListScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center justify-between px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="flex-1 text-lg font-bold text-darkText" numberOfLines={1}>{block_name ?? 'Cards'}</Text>
         <View className="flex-row gap-2">
@@ -62,11 +64,11 @@ export default function FlashcardsListScreen() {
         <TouchableOpacity onPress={() => router.push('/flashcards')}>
           <Text className="text-xs text-primary-light">Flashcards</Text>
         </TouchableOpacity>
-        <Ionicons name="chevron-forward" size={12} color="#9ca3af" style={{ marginHorizontal: 4 }} />
+        <Ionicons name="chevron-forward" size={12} color={colors.textMuted} style={{ marginHorizontal: 4 }} />
         <TouchableOpacity onPress={() => router.push({ pathname: '/flashcards/blocks', params: { folder_id: folder_id!, folder_name: folder_name ?? '' } })}>
           <Text className="text-xs text-primary-light" numberOfLines={1}>{folder_name ?? 'Pasta'}</Text>
         </TouchableOpacity>
-        <Ionicons name="chevron-forward" size={12} color="#9ca3af" style={{ marginHorizontal: 4 }} />
+        <Ionicons name="chevron-forward" size={12} color={colors.textMuted} style={{ marginHorizontal: 4 }} />
         <Text className="text-xs text-darkText-muted" numberOfLines={1}>{block_name ?? 'Bloco'}</Text>
       </View>
 
@@ -104,7 +106,7 @@ export default function FlashcardsListScreen() {
         <EmptyState
           title="Nenhum flashcard"
           description="Adicione cards com pergunta e resposta."
-          icon={<Ionicons name="card-outline" size={48} color="#9ca3af" />}
+          icon={<Ionicons name="card-outline" size={48} color={colors.textMuted} />}
         />
       ) : (
         <FlatList
@@ -125,7 +127,7 @@ export default function FlashcardsListScreen() {
                   ])}
                   className="ml-2 p-1"
                 >
-                  <Ionicons name="trash-outline" size={16} color="#9ca3af" />
+                  <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
             </View>

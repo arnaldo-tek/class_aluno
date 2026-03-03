@@ -7,10 +7,12 @@ import { CourseCard } from '@/components/CourseCard'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function PackageDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: pkg, isLoading } = usePackageDetail(id!)
   const { data: hasAccess } = useHasPackageAccess(id!)
 
@@ -23,7 +25,7 @@ export default function PackageDetailScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1" numberOfLines={1}>
           {pkg.nome}
@@ -68,8 +70,9 @@ export default function PackageDetailScreen() {
                 id={course.id}
                 nome={course.nome}
                 imagem={course.imagem}
-                preco={course.preco ?? 0}
+                preco={0}
                 professor_nome={course.professor?.nome_professor}
+                hidePrice
               />
             )
           })}

@@ -5,6 +5,7 @@ import { useAuthContext } from '@/contexts/AuthContext'
 interface NewsFilters {
   search?: string
   categoriaId?: string | null
+  categoriaIds?: string[]
   estado?: string | null
   cidade?: string | null
   orgao?: string | null
@@ -23,7 +24,9 @@ export function useNews(filters?: NewsFilters) {
       if (filters?.search) {
         query = query.ilike('titulo', `%${filters.search}%`)
       }
-      if (filters?.categoriaId) {
+      if (filters?.categoriaIds && filters.categoriaIds.length > 0) {
+        query = query.in('categoria_id', filters.categoriaIds)
+      } else if (filters?.categoriaId) {
         query = query.eq('categoria_id', filters.categoriaId)
       }
       if (filters?.estado) {

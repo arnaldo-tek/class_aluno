@@ -16,6 +16,7 @@ import {
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { ContentType } from '@/lib/offlineDb'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 const typeIcons: Record<ContentType, keyof typeof Ionicons.glyphMap> = {
   video: 'videocam',
@@ -31,6 +32,7 @@ const typeColors: Record<ContentType, string> = {
 
 export default function DownloadsScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: downloads = [], isLoading } = useAllDownloads()
   const { data: storageUsed = 0 } = useStorageInfo()
   const cancelDownload = useCancelDownload()
@@ -68,7 +70,7 @@ export default function DownloadsScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">{t('downloads')}</Text>
       </View>
@@ -76,7 +78,7 @@ export default function DownloadsScreen() {
       {/* Storage info */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-dark-surface border-b border-darkBorder-subtle">
         <View className="flex-row items-center">
-          <Ionicons name="folder-outline" size={18} color="#6b7280" />
+          <Ionicons name="folder-outline" size={18} color={colors.textSecondary} />
           <Text className="text-sm text-darkText-secondary ml-2">
             {t('storageUsed')}: {formatFileSize(storageUsed)}
           </Text>
@@ -88,7 +90,7 @@ export default function DownloadsScreen() {
 
       {downloads.length === 0 ? (
         <EmptyState
-          icon={<Ionicons name="download-outline" size={48} color="#9ca3af" />}
+          icon={<Ionicons name="download-outline" size={48} color={colors.textMuted} />}
           title={t('noDownloads')}
           description={t('noDownloadsDesc')}
         />
@@ -158,7 +160,7 @@ export default function DownloadsScreen() {
                   <View className="flex-row items-center ml-2 gap-2">
                     {item.status === 'downloading' && (
                       <TouchableOpacity onPress={() => pauseDownload.mutate(item.id)} hitSlop={8}>
-                        <Ionicons name="pause-circle-outline" size={22} color="#6b7280" />
+                        <Ionicons name="pause-circle-outline" size={22} color={colors.textSecondary} />
                       </TouchableOpacity>
                     )}
                     {item.status === 'paused' && (

@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { useAuthContext } from '@/contexts/AuthContext'
 
 export function useProfessorDetail(professorId: string) {
   return useQuery({
@@ -54,5 +55,93 @@ export function useProfessorReviews(professorId: string) {
       return data ?? []
     },
     enabled: !!professorId,
+  })
+}
+
+export function useAllProfessors(search?: string) {
+  return useQuery({
+    queryKey: ['all-professors', search],
+    queryFn: async () => {
+      let query = supabase
+        .from('professor_profiles')
+        .select('id, nome_professor, foto_perfil, average_rating')
+        .eq('approval_status', 'aprovado')
+        .eq('is_blocked', false)
+        .order('nome_professor')
+
+      if (search?.trim()) {
+        query = query.ilike('nome_professor', `%${search.trim()}%`)
+      }
+
+      const { data, error } = await query
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
+export function useFollowedProfessors() {
+  const { user } = useAuthContext()
+  return useQuery({
+    queryKey: ['followed-professors', user?.id],
+    queryFn: async () => {
+      if (!user) return []
+      const { data, error } = await supabase
+        .from('user_following_professors')
+        .select('professor:professor_profiles(id, nome_professor, foto_perfil, average_rating)')
+        .eq('user_id', user.id)
+
+      if (error) throw error
+      return (data ?? []).map((d: any) => d.professor).filter(Boolean)
+    },
+    enabled: !!user,
+  })
+}
+
+export function useIsFollowing(professorId: string) {
+  const { user } = useAuthContext()
+  return useQuery({
+    queryKey: ['is-following', user?.id, professorId],
+    queryFn: async () => {
+      if (!user) return false
+      const { data } = await supabase
+        .from('user_following_professors')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('professor_id', professorId)
+        .maybeSingle()
+
+      return !!data
+    },
+    enabled: !!user && !!professorId,
+  })
+}
+
+export function useToggleFollow() {
+  const { user } = useAuthContext()
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ professorId, isFollowing }: { professorId: string; isFollowing: boolean }) => {
+      if (!user) throw new Error('Not authenticated')
+
+      if (isFollowing) {
+        const { error } = await supabase
+          .from('user_following_professors')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('professor_id', professorId)
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('user_following_professors')
+          .insert({ user_id: user.id, professor_id: professorId })
+        if (error) throw error
+      }
+    },
+    onSuccess: (_d, { professorId }) => {
+      qc.invalidateQueries({ queryKey: ['is-following'] })
+      qc.invalidateQueries({ queryKey: ['followed-professors'] })
+    },
   })
 }

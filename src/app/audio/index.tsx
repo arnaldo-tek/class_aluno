@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, Dimensions, ScrollView, Platform } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Image, Dimensions, ScrollView, Platform, PanResponder } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useAudioPackages, useAudioBanners, useAudioFolders, useAudioLaws, useAudioLawDetail } from '@/hooks/useAudio'
+import { Video, ResizeMode } from 'expo-av'
+import { useAudioPackages, useAudioBanners, useAudioFolders, useAudioLaws, useAudioLawDetail, useAudioLawQuestions } from '@/hooks/useAudio'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 
@@ -20,83 +22,198 @@ const TAB_CONFIG: Array<{ tipo: TabType; key: string; icon: string; color: strin
   { tipo: 4, key: 'audio.municipalLaws', icon: 'business-outline', color: '#c084fc' },
 ]
 
+const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
+const THUMB_SIZE = 16
+const TRACK_H = 6
+const SEEK_BAR_H_PAD = 16
+
+function formatTime(ms: number) {
+  const totalSeconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+function AudioSeekBar({ progress, positionMs, durationMs, onSeekStart, onSeek }: {
+  progress: number; positionMs: number; durationMs: number; onSeekStart: () => void; onSeek: (ratio: number) => void
+}) {
+  const barWidth = SCREEN_WIDTH - 32 - SEEK_BAR_H_PAD * 2
+  const [dragging, setDragging] = useState(false)
+  const [dragRatio, setDragRatio] = useState(0)
+  const barRef = useRef<View>(null)
+  const barX = useRef(0)
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (e) => {
+        onSeekStart()
+        setDragging(true)
+        barRef.current?.measureInWindow((x) => {
+          barX.current = x
+          setDragRatio(Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / barWidth)))
+        })
+      },
+      onPanResponderMove: (e) => {
+        setDragRatio(Math.max(0, Math.min(1, (e.nativeEvent.pageX - barX.current) / barWidth)))
+      },
+      onPanResponderRelease: (e) => {
+        const ratio = Math.max(0, Math.min(1, (e.nativeEvent.pageX - barX.current) / barWidth))
+        setDragging(false)
+        onSeek(ratio)
+      },
+    })
+  ).current
+
+  const dp = dragging ? dragRatio : progress
+  const dPos = dragging ? dragRatio * durationMs : positionMs
+
+  return (
+    <View className="px-4 pb-3">
+      <View ref={barRef} {...panResponder.panHandlers} style={{ height: THUMB_SIZE + 8, justifyContent: 'center' }}>
+        <View className="bg-dark-surfaceLight rounded-full" style={{ height: TRACK_H, width: '100%' }}>
+          <View className="bg-primary rounded-full" style={{ height: TRACK_H, width: `${dp * 100}%` }} />
+        </View>
+        <View style={{
+          position: 'absolute', left: dp * barWidth - THUMB_SIZE / 2, top: 4,
+          width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: THUMB_SIZE / 2,
+          backgroundColor: '#3b82f6', borderWidth: 2, borderColor: '#fff',
+          ...(dragging ? { transform: [{ scale: 1.25 }], shadowColor: '#3b82f6', shadowOpacity: 0.4, shadowRadius: 4, elevation: 4 } : {}),
+        }} />
+      </View>
+      <View className="flex-row justify-between mt-0.5">
+        <Text className="text-[10px] text-darkText-muted">{formatTime(dPos)}</Text>
+        <Text className="text-[10px] text-darkText-muted">{formatTime(durationMs)}</Text>
+      </View>
+    </View>
+  )
+}
+
 function useWebAudio() {
   const [currentIndex, setCurrentIndex] = useState<number | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [speed, setSpeed] = useState(1)
+  const [positionMs, setPositionMs] = useState(0)
+  const [durationMs, setDurationMs] = useState(0)
   const audioRef = useRef<any>(null)
+  const isSeeking = useRef(false)
+  const webTimerRef = useRef<any>(null)
+
+  const stopWebTimer = useCallback(() => {
+    if (webTimerRef.current) { clearInterval(webTimerRef.current); webTimerRef.current = null }
+  }, [])
 
   const stop = useCallback(() => {
+    stopWebTimer()
     if (audioRef.current) {
-      if (Platform.OS === 'web') {
-        audioRef.current.pause()
-        audioRef.current.src = ''
-      } else {
-        audioRef.current.stopAsync?.().catch(() => {})
-        audioRef.current.unloadAsync?.().catch(() => {})
-      }
+      if (Platform.OS === 'web') { audioRef.current.pause(); audioRef.current.src = '' }
+      else { audioRef.current.stopAsync?.().catch(() => {}); audioRef.current.unloadAsync?.().catch(() => {}) }
       audioRef.current = null
     }
     setIsPlaying(false)
     setCurrentIndex(null)
-  }, [])
+    setPositionMs(0)
+    setDurationMs(0)
+  }, [stopWebTimer])
 
   const play = useCallback(async (url: string, index: number, audios: any[]) => {
     stop()
     if (Platform.OS === 'web') {
-      const audio = new window.Audio(url)
-      audio.onended = () => {
+      const a = new window.Audio(url)
+      a.playbackRate = speed
+      a.onloadedmetadata = () => setDurationMs(a.duration * 1000)
+      a.onended = () => {
+        stopWebTimer()
         const next = index + 1
         if (next < audios.length) play(audios[next].audio_url, next, audios)
-        else { setIsPlaying(false); setCurrentIndex(null) }
+        else { setIsPlaying(false); setCurrentIndex(null); setPositionMs(0); setDurationMs(0) }
       }
-      audioRef.current = audio
-      audio.play()
+      audioRef.current = a
+      a.play()
+      webTimerRef.current = setInterval(() => { if (!isSeeking.current) setPositionMs(a.currentTime * 1000) }, 250)
     } else {
       try {
         const { Audio } = require('expo-av')
-        const { sound } = await Audio.Sound.createAsync({ uri: url }, { shouldPlay: true }, (s: any) => {
-          if (s.isLoaded && s.didJustFinish) {
-            const next = index + 1
-            if (next < audios.length) play(audios[next].audio_url, next, audios)
-            else { setIsPlaying(false); setCurrentIndex(null) }
-          }
-        })
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: url },
+          { shouldPlay: true, rate: speed, shouldCorrectPitch: true },
+          (s: any) => {
+            if (!s.isLoaded) return
+            if (!isSeeking.current) setPositionMs(s.positionMillis ?? 0)
+            if (s.durationMillis) setDurationMs(s.durationMillis)
+            if (s.didJustFinish) {
+              const next = index + 1
+              if (next < audios.length) play(audios[next].audio_url, next, audios)
+              else { setIsPlaying(false); setCurrentIndex(null); setPositionMs(0); setDurationMs(0) }
+            }
+          },
+        )
         audioRef.current = sound
       } catch { return }
     }
     setCurrentIndex(index)
     setIsPlaying(true)
-  }, [stop])
+  }, [stop, speed, stopWebTimer])
 
   const toggle = useCallback(async (index: number, url: string, audios: any[]) => {
     if (currentIndex === index && isPlaying) {
-      Platform.OS === 'web' ? audioRef.current?.pause() : await audioRef.current?.pauseAsync?.()
+      if (Platform.OS === 'web') { audioRef.current?.pause(); stopWebTimer() }
+      else await audioRef.current?.pauseAsync?.()
       setIsPlaying(false)
     } else if (currentIndex === index) {
-      Platform.OS === 'web' ? audioRef.current?.play() : await audioRef.current?.playAsync?.()
+      if (Platform.OS === 'web') {
+        audioRef.current?.play()
+        webTimerRef.current = setInterval(() => { if (!isSeeking.current && audioRef.current) setPositionMs(audioRef.current.currentTime * 1000) }, 250)
+      } else await audioRef.current?.playAsync?.()
       setIsPlaying(true)
     } else {
       await play(url, index, audios)
     }
-  }, [currentIndex, isPlaying, play])
+  }, [currentIndex, isPlaying, play, stopWebTimer])
 
-  return { currentIndex, isPlaying, play, toggle, stop }
+  const changeSpeed = useCallback(async (s: number) => {
+    setSpeed(s)
+    if (audioRef.current) {
+      if (Platform.OS === 'web') audioRef.current.playbackRate = s
+      else await audioRef.current.setRateAsync?.(s, true)
+    }
+  }, [])
+
+  const seek = useCallback(async (ratio: number) => {
+    if (audioRef.current && durationMs > 0) {
+      const seekTo = ratio * durationMs
+      if (Platform.OS === 'web') audioRef.current.currentTime = seekTo / 1000
+      else await audioRef.current.setPositionAsync?.(seekTo)
+      setPositionMs(seekTo)
+    }
+    isSeeking.current = false
+  }, [durationMs])
+
+  const startSeeking = useCallback(() => { isSeeking.current = true }, [])
+
+  const progress = durationMs > 0 ? positionMs / durationMs : 0
+
+  return { currentIndex, isPlaying, speed, positionMs, durationMs, progress, play, toggle, stop, changeSpeed, seek, startSeeking }
 }
 
 export default function AudioScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const [activeTab, setActiveTab] = useState<TabType>(1)
   const [level, setLevel] = useState<DrillLevel>('packages')
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null)
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const [selectedLawId, setSelectedLawId] = useState<string | null>(null)
   const [breadcrumb, setBreadcrumb] = useState<Array<{ label: string; level: DrillLevel; id?: string }>>([])
+  const [playerTab, setPlayerTab] = useState<'audio' | 'text' | 'questions'>('audio')
 
   const { data: packages, isLoading: loadingPkg } = useAudioPackages(activeTab)
   const { data: banners } = useAudioBanners()
   const { data: folders, isLoading: loadingFolders } = useAudioFolders(selectedPackageId ?? '')
   const { data: laws, isLoading: loadingLaws } = useAudioLaws(selectedFolderId ?? '')
   const { data: lawDetail, isLoading: loadingDetail } = useAudioLawDetail(selectedLawId ?? '')
+  const { data: lawQuestions } = useAudioLawQuestions(selectedLawId ?? '')
   const audio = useWebAudio()
 
   const bannerRef = useRef<FlatList>(null)
@@ -137,6 +254,7 @@ export default function AudioScreen() {
   function selectLaw(law: any) {
     setSelectedLawId(law.id)
     setLevel('player')
+    setPlayerTab('audio')
     setBreadcrumb(prev => [...prev.slice(0, 2), { label: law.nome, level: 'laws', id: selectedFolderId! }])
   }
 
@@ -171,7 +289,7 @@ export default function AudioScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={goBack} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">{t('audio.title')}</Text>
       </View>
@@ -214,7 +332,8 @@ export default function AudioScreen() {
       )}
 
       {/* Tabs */}
-      <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 }}>
+      <View className="py-2">
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
         {TAB_CONFIG.map((item, idx) => (
           <TouchableOpacity
             key={String(item.tipo)}
@@ -233,7 +352,7 @@ export default function AudioScreen() {
               backgroundColor: activeTab === item.tipo ? '#eff6ff' : '#f0efec',
             }}
           >
-            <Ionicons name={item.icon as any} size={13} color={activeTab === item.tipo ? item.color : '#6b7280'} />
+            <Ionicons name={item.icon as any} size={13} color={activeTab === item.tipo ? item.color : colors.textSecondary} />
             <Text style={{
               fontSize: 11,
               fontWeight: '600',
@@ -244,18 +363,19 @@ export default function AudioScreen() {
             </Text>
           </TouchableOpacity>
         ))}
+      </ScrollView>
       </View>
 
       {/* Breadcrumb */}
       {breadcrumb.length > 0 && (
-        <View className="flex-row items-center px-4 pb-2">
+        <View className="flex-row flex-wrap items-center px-4 pb-2">
           <TouchableOpacity onPress={resetToPackages}>
             <Text className="text-xs text-primary-light">Inicio</Text>
           </TouchableOpacity>
           {breadcrumb.map((b, i) => (
             <View key={i} className="flex-row items-center">
-              <Ionicons name="chevron-forward" size={12} color="#6b7280" style={{ marginHorizontal: 4 }} />
-              <Text className={`text-xs ${i === breadcrumb.length - 1 ? 'text-darkText font-medium' : 'text-darkText-muted'}`} numberOfLines={1}>
+              <Ionicons name="chevron-forward" size={12} color={colors.textSecondary} style={{ marginHorizontal: 4 }} />
+              <Text className={`text-xs ${i === breadcrumb.length - 1 ? 'text-darkText font-medium' : 'text-darkText-muted'}`}>
                 {b.label}
               </Text>
             </View>
@@ -266,7 +386,7 @@ export default function AudioScreen() {
       {/* Content area - changes based on level */}
       {level === 'packages' && (
         loadingPkg ? <LoadingSpinner /> : !packages?.length ? (
-          <EmptyState title={t('audio.noAudio')} icon={<Ionicons name="musical-notes-outline" size={48} color="#9ca3af" />} />
+          <EmptyState title={t('audio.noAudio')} icon={<Ionicons name="musical-notes-outline" size={48} color={colors.textMuted} />} />
         ) : (
           <FlatList
             data={packages}
@@ -282,7 +402,7 @@ export default function AudioScreen() {
                   <Ionicons name="folder" size={20} color={activeColor} />
                 </View>
                 <Text className="flex-1 text-sm font-medium text-darkText ml-3">{item.nome}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           />
@@ -291,7 +411,7 @@ export default function AudioScreen() {
 
       {level === 'folders' && (
         loadingFolders ? <LoadingSpinner /> : !folders?.length ? (
-          <EmptyState title="Nenhuma subpasta" icon={<Ionicons name="folder-open-outline" size={48} color="#9ca3af" />} />
+          <EmptyState title="Nenhuma subpasta" icon={<Ionicons name="folder-open-outline" size={48} color={colors.textMuted} />} />
         ) : (
           <FlatList
             data={folders}
@@ -311,7 +431,7 @@ export default function AudioScreen() {
                   </View>
                 )}
                 <Text className="flex-1 text-sm font-medium text-darkText ml-3">{item.nome}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           />
@@ -320,7 +440,7 @@ export default function AudioScreen() {
 
       {level === 'laws' && (
         loadingLaws ? <LoadingSpinner /> : !laws?.length ? (
-          <EmptyState title="Nenhuma lei" icon={<Ionicons name="document-text-outline" size={48} color="#9ca3af" />} />
+          <EmptyState title="Nenhuma lei" icon={<Ionicons name="document-text-outline" size={48} color={colors.textMuted} />} />
         ) : (
           <FlatList
             data={laws}
@@ -336,7 +456,7 @@ export default function AudioScreen() {
                   <Ionicons name="play" size={16} color={activeColor} />
                 </View>
                 <Text className="flex-1 text-sm font-medium text-darkText ml-3" numberOfLines={2}>{item.nome}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           />
@@ -345,54 +465,298 @@ export default function AudioScreen() {
 
       {level === 'player' && (
         loadingDetail ? <LoadingSpinner /> : !lawDetail?.lei ? null : (
-          <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
-            <Text className="text-base font-bold text-darkText mb-4">{lawDetail.lei.nome}</Text>
+          <>
+            {/* Player tabs: Áudio, Texto, Questões */}
+            <View className="flex-row border-b border-darkBorder-subtle px-4">
+              {([
+                { key: 'audio' as const, label: 'Áudio', icon: 'musical-notes' },
+                { key: 'text' as const, label: 'Texto', icon: 'document-text' },
+                { key: 'questions' as const, label: 'Questões', icon: 'help-circle' },
+              ]).map((tab) => (
+                <TouchableOpacity
+                  key={tab.key}
+                  onPress={() => setPlayerTab(tab.key)}
+                  className={`flex-row items-center pb-3 pt-3 mr-6 ${playerTab === tab.key ? 'border-b-2 border-primary' : ''}`}
+                >
+                  <Ionicons name={tab.icon as any} size={16} color={playerTab === tab.key ? '#3b82f6' : colors.textSecondary} />
+                  <Text className={`text-sm font-semibold ml-1.5 ${playerTab === tab.key ? 'text-primary' : 'text-darkText-muted'}`}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-            {lawDetail.audios.length > 0 && (
-              <View className="mb-4">
-                {lawDetail.audios.map((a, i) => (
-                  <TouchableOpacity
-                    key={a.id}
-                    onPress={() => audio.toggle(i, a.audio_url, lawDetail.audios)}
-                    className={`flex-row items-center px-4 py-3 mb-2 rounded-2xl border ${
-                      audio.currentIndex === i ? 'border-primary bg-primary-50' : 'border-darkBorder-subtle bg-dark-surface'
-                    }`}
-                  >
-                    <View className={`w-9 h-9 rounded-full items-center justify-center ${
-                      audio.currentIndex === i && audio.isPlaying ? 'bg-primary' : 'bg-dark-surfaceLight'
-                    }`}>
-                      <Ionicons
-                        name={audio.currentIndex === i && audio.isPlaying ? 'pause' : 'play'}
-                        size={16}
-                        color={audio.currentIndex === i && audio.isPlaying ? '#fff' : activeColor}
-                      />
+            <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
+              {/* Áudio tab */}
+              {playerTab === 'audio' && (
+                <View className="px-4 pt-4">
+                  {lawDetail.audios.length > 0 ? (
+                    <View>
+                      {/* Speed control */}
+                      <View className="flex-row items-center justify-center py-2 gap-1 mb-3">
+                        {SPEED_OPTIONS.map((s) => (
+                          <TouchableOpacity
+                            key={s}
+                            onPress={() => audio.changeSpeed(s)}
+                            className={`px-3 py-1.5 rounded-full ${audio.speed === s ? 'bg-primary' : 'bg-dark-surfaceLight'}`}
+                          >
+                            <Text className={`text-xs font-semibold ${audio.speed === s ? 'text-white' : 'text-darkText-muted'}`}>
+                              {s}x
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+
+                      <Text className="text-sm font-semibold text-darkText mb-2">
+                        Áudios ({lawDetail.audios.length})
+                      </Text>
+
+                      {lawDetail.audios.map((a, i) => (
+                        <View
+                          key={a.id}
+                          className={`mb-2.5 rounded-2xl overflow-hidden border ${
+                            audio.currentIndex === i ? 'border-primary bg-primary-50' : 'border-darkBorder-subtle bg-dark-surface'
+                          }`}
+                        >
+                          <TouchableOpacity
+                            onPress={() => audio.toggle(i, a.audio_url, lawDetail.audios)}
+                            className="flex-row items-center px-4 py-3"
+                          >
+                            <View className={`w-10 h-10 rounded-full items-center justify-center ${
+                              audio.currentIndex === i && audio.isPlaying ? 'bg-primary' : 'bg-dark-surfaceLight'
+                            }`}>
+                              <Ionicons
+                                name={audio.currentIndex === i && audio.isPlaying ? 'pause' : 'play'}
+                                size={18}
+                                color={audio.currentIndex === i && audio.isPlaying ? '#fff' : activeColor}
+                              />
+                            </View>
+                            <Text className="flex-1 text-sm font-medium text-darkText ml-3">
+                              {a.titulo ?? `Audio ${i + 1}`}
+                            </Text>
+                            {audio.currentIndex === i && <Ionicons name="musical-notes" size={16} color="#f59e0b" />}
+                          </TouchableOpacity>
+
+                          {audio.currentIndex === i && (
+                            <AudioSeekBar
+                              progress={audio.progress}
+                              positionMs={audio.positionMs}
+                              durationMs={audio.durationMs}
+                              onSeekStart={audio.startSeeking}
+                              onSeek={audio.seek}
+                            />
+                          )}
+                        </View>
+                      ))}
+
+                      {lawDetail.audios.length > 1 && (
+                        <TouchableOpacity
+                          onPress={() => audio.play(lawDetail.audios[0].audio_url, 0, lawDetail.audios)}
+                          className="mt-1 bg-primary rounded-2xl py-3.5 items-center"
+                        >
+                          <Text className="text-white font-semibold text-sm">Reproduzir todos sequencialmente</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-                    <Text className="flex-1 text-sm font-medium text-darkText ml-3">
-                      {a.titulo ?? `Audio ${i + 1}`}
-                    </Text>
-                    {audio.currentIndex === i && <Ionicons name="musical-notes" size={14} color="#f59e0b" />}
-                  </TouchableOpacity>
-                ))}
+                  ) : (
+                    <View className="items-center py-12">
+                      <Ionicons name="musical-notes-outline" size={40} color={colors.textMuted} />
+                      <Text className="text-sm text-darkText-muted mt-2">Nenhum áudio disponível</Text>
+                    </View>
+                  )}
+                </View>
+              )}
 
-                {lawDetail.audios.length > 1 && (
-                  <TouchableOpacity
-                    onPress={() => audio.play(lawDetail.audios[0].audio_url, 0, lawDetail.audios)}
-                    className="mt-1 bg-primary rounded-2xl py-3 items-center"
-                  >
-                    <Text className="text-white font-semibold text-sm">Reproduzir todos</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
+              {/* Texto tab */}
+              {playerTab === 'text' && (
+                <View className="px-4 pt-4">
+                  {lawDetail.lei.texto ? (
+                    <>
+                      <Text className="text-sm font-semibold text-darkText mb-3">{lawDetail.lei.nome}</Text>
+                      <Text className="text-sm text-darkText-secondary leading-6" style={{ textAlign: 'justify' }}>{lawDetail.lei.texto}</Text>
+                    </>
+                  ) : (
+                    <View className="items-center py-12">
+                      <Ionicons name="document-text-outline" size={40} color={colors.textMuted} />
+                      <Text className="text-sm text-darkText-muted mt-2">Nenhum texto disponível</Text>
+                    </View>
+                  )}
+                </View>
+              )}
 
-            {lawDetail.lei.texto && (
-              <View className="bg-dark-surface rounded-2xl p-4 border border-darkBorder-subtle">
-                <Text className="text-sm text-darkText-secondary leading-6">{lawDetail.lei.texto}</Text>
-              </View>
-            )}
-          </ScrollView>
+              {/* Questões tab */}
+              {playerTab === 'questions' && (
+                <InlineQuizSection questions={lawQuestions ?? []} />
+              )}
+            </ScrollView>
+          </>
         )
       )}
     </SafeAreaView>
+  )
+}
+
+function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergunta: string; resposta: string; alternativas: string[]; video?: string | null }> }) {
+  const colors = useThemeColors()
+  const [started, setStarted] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+  const [showResult, setShowResult] = useState(false)
+  const [score, setScore] = useState({ correct: 0, total: 0 })
+
+  if (!questions.length) {
+    return (
+      <View className="items-center py-12 px-4">
+        <Ionicons name="help-circle-outline" size={40} color={colors.textMuted} />
+        <Text className="text-sm text-darkText-muted mt-2">Nenhuma questão disponível</Text>
+      </View>
+    )
+  }
+
+  const question = questions[currentIndex]
+  const isLastQuestion = currentIndex === questions.length - 1
+  const isFinished = score.total === questions.length && showResult && isLastQuestion
+
+  function handleSelectAnswer(answer: string) {
+    if (showResult) return
+    setSelectedAnswer(answer)
+    setShowResult(true)
+    setScore((prev) => ({
+      correct: prev.correct + (answer === question.resposta ? 1 : 0),
+      total: prev.total + 1,
+    }))
+  }
+
+  function handleNext() {
+    setCurrentIndex((i) => i + 1)
+    setSelectedAnswer(null)
+    setShowResult(false)
+  }
+
+  function handleRestart() {
+    setCurrentIndex(0)
+    setSelectedAnswer(null)
+    setShowResult(false)
+    setScore({ correct: 0, total: 0 })
+    setStarted(true)
+  }
+
+  if (!started) {
+    return (
+      <View className="px-4 pt-6">
+        <TouchableOpacity
+          onPress={() => setStarted(true)}
+          className="flex-row items-center justify-center bg-primary rounded-2xl py-3.5"
+        >
+          <Ionicons name="help-circle-outline" size={20} color="#fff" />
+          <Text className="text-white font-semibold text-sm ml-2">
+            Responder questões ({questions.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  if (isFinished) {
+    return (
+      <View className="px-4 pt-6 items-center">
+        <View className="w-16 h-16 rounded-full bg-primary/20 items-center justify-center mb-3">
+          <Ionicons name="trophy" size={32} color="#3b82f6" />
+        </View>
+        <Text className="text-xl font-bold text-darkText mb-1">Resultado</Text>
+        <Text className="text-3xl font-bold text-primary mb-1">
+          {score.correct}/{score.total}
+        </Text>
+        <Text className="text-sm text-darkText-secondary mb-4">
+          {Math.round((score.correct / score.total) * 100)}% de acertos
+        </Text>
+        <TouchableOpacity onPress={handleRestart} className="w-full bg-primary rounded-2xl py-3.5 items-center">
+          <Text className="text-white font-bold">Refazer</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  return (
+    <View className="px-4 pt-6">
+      <View className="flex-row items-center justify-between mb-3">
+        <Text className="text-sm font-semibold text-darkText">
+          Questão {currentIndex + 1}/{questions.length}
+        </Text>
+        <View className="flex-row items-center">
+          <Ionicons name="checkmark-circle" size={16} color="#34d399" />
+          <Text className="text-sm font-semibold text-success ml-1">{score.correct}</Text>
+        </View>
+      </View>
+
+      <View className="h-1 bg-dark-surfaceLight rounded-full mb-4">
+        <View className="h-1 bg-primary rounded-full" style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }} />
+      </View>
+
+      <Text className="text-base font-semibold text-darkText mb-4 leading-7">{question.pergunta}</Text>
+
+      {(question.alternativas ?? []).map((alt: string, i: number) => {
+        const letter = String.fromCharCode(65 + i)
+        const isSelected = selectedAnswer === alt
+        const isCorrectAnswer = alt === question.resposta
+
+        let bgClass = 'bg-dark-surface border-darkBorder'
+        let textClass = 'text-darkText'
+        let letterBg = 'bg-dark-surfaceLight'
+        let letterText = 'text-darkText-secondary'
+
+        if (showResult) {
+          if (isCorrectAnswer) {
+            bgClass = 'bg-success-dark border-success/40'; letterBg = 'bg-success'; textClass = 'text-success'; letterText = 'text-darkText-inverse'
+          } else if (isSelected) {
+            bgClass = 'bg-error-dark border-error/40'; letterBg = 'bg-error'; textClass = 'text-error'; letterText = 'text-darkText-inverse'
+          }
+        } else if (isSelected) {
+          bgClass = 'bg-primary-50 border-primary/40'; letterBg = 'bg-primary'; letterText = 'text-white'
+        }
+
+        return (
+          <TouchableOpacity
+            key={i}
+            onPress={() => handleSelectAnswer(alt)}
+            disabled={showResult}
+            className={`flex-row items-center px-4 py-4 mb-3 rounded-2xl border ${bgClass}`}
+          >
+            <View className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${letterBg}`}>
+              <Text className={`text-sm font-bold ${letterText}`}>{letter}</Text>
+            </View>
+            <Text className={`flex-1 text-sm font-medium ${textClass}`}>{alt}</Text>
+            {showResult && isCorrectAnswer && <Ionicons name="checkmark-circle" size={20} color="#34d399" />}
+            {showResult && isSelected && !isCorrectAnswer && <Ionicons name="close-circle" size={20} color="#f87171" />}
+          </TouchableOpacity>
+        )
+      })}
+
+      {showResult && question.video && (
+        <View className="mt-2 mb-2">
+          <Text className="text-sm font-bold text-darkText mb-2">Explicação em vídeo:</Text>
+          <View className="rounded-2xl overflow-hidden">
+            <Video
+              source={{ uri: question.video }}
+              style={{ width: SCREEN_WIDTH - 32, height: (SCREEN_WIDTH - 32) * 9 / 16, backgroundColor: '#000' }}
+              resizeMode={ResizeMode.CONTAIN}
+              useNativeControls
+            />
+          </View>
+        </View>
+      )}
+
+      {showResult && !isLastQuestion && (
+        <TouchableOpacity onPress={handleNext} className="mt-4 bg-primary rounded-2xl py-3.5 items-center">
+          <Text className="text-white font-bold">Próxima questão</Text>
+        </TouchableOpacity>
+      )}
+
+      {showResult && isLastQuestion && (
+        <TouchableOpacity onPress={() => setScore((s) => ({ ...s }))} className="mt-4 bg-primary rounded-2xl py-3.5 items-center">
+          <Text className="text-white font-bold">Ver resultado</Text>
+        </TouchableOpacity>
+      )}
+    </View>
   )
 }

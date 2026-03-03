@@ -27,15 +27,20 @@ export function useFeaturedCourses() {
 interface CoursesFilter {
   search?: string
   categoriaId?: string
+  estado?: string | null
+  cidade?: string | null
+  orgao?: string | null
+  cargo?: string | null
+  disciplina?: string | null
   page?: number
 }
 
 export function useCourses(filters: CoursesFilter = {}) {
-  const { search, categoriaId, page = 1 } = filters
+  const { search, categoriaId, estado, cidade, orgao, cargo, disciplina, page = 1 } = filters
   const pageSize = 20
 
   return useQuery({
-    queryKey: ['courses', search, categoriaId, page],
+    queryKey: ['courses', search, categoriaId, estado, cidade, orgao, cargo, disciplina, page],
     queryFn: async () => {
       let query = supabase
         .from('cursos')
@@ -49,6 +54,11 @@ export function useCourses(filters: CoursesFilter = {}) {
 
       if (search) query = query.ilike('nome', `%${search}%`)
       if (categoriaId) query = query.eq('categoria_id', categoriaId)
+      if (estado) query = query.eq('estado', estado)
+      if (cidade) query = query.eq('cidade', cidade)
+      if (orgao) query = query.eq('orgao', orgao)
+      if (cargo) query = query.eq('cargo', cargo)
+      if (disciplina) query = query.eq('disciplina', disciplina)
 
       const { data, error, count } = await query
       if (error) throw error
@@ -61,6 +71,31 @@ export function useCourses(filters: CoursesFilter = {}) {
         total: count ?? 0,
         hasMore: (count ?? 0) > page * pageSize,
       }
+    },
+  })
+}
+
+export function useCourseFilterOptions(field: 'estado' | 'cidade' | 'orgao' | 'cargo' | 'disciplina', parentFilters?: Record<string, string | null>) {
+  return useQuery({
+    queryKey: ['course-filter-options', field, parentFilters],
+    queryFn: async () => {
+      let query = supabase
+        .from('cursos')
+        .select(field)
+        .eq('is_publicado', true)
+        .eq('is_encerrado', false)
+        .not(field, 'is', null)
+
+      if (parentFilters?.estado) query = query.eq('estado', parentFilters.estado)
+      if (parentFilters?.cidade && field !== 'estado') query = query.eq('cidade', parentFilters.cidade)
+      if (parentFilters?.orgao && field !== 'estado' && field !== 'cidade') query = query.eq('orgao', parentFilters.orgao)
+      if (parentFilters?.cargo && field !== 'estado' && field !== 'cidade' && field !== 'orgao') query = query.eq('cargo', parentFilters.cargo)
+
+      const { data, error } = await query
+      if (error) throw error
+
+      const unique = [...new Set((data ?? []).map((d: any) => d[field]).filter(Boolean))]
+      return unique.sort().map((v) => ({ label: v as string, value: v as string }))
     },
   })
 }

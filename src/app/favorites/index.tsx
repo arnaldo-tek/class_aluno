@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 type Tab = 'professores' | 'cursos' | 'noticias' | 'editais'
 
@@ -82,6 +83,7 @@ function useFavoriteCourseDetails(ids: string[]) {
 
 export default function FavoritesScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const [activeTab, setActiveTab] = useState<Tab>('professores')
 
   const { data: following, isLoading: loadingProf } = useFollowingProfessors()
@@ -109,7 +111,7 @@ export default function FavoritesScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-darkText">{t('profile.favorites')}</Text>
       </View>
@@ -135,7 +137,7 @@ export default function FavoritesScreen() {
           <EmptyState
             title="Nenhum professor seguido"
             description="Siga professores para vê-los aqui."
-            icon={<Ionicons name="person-outline" size={48} color="#636366" />}
+            icon={<Ionicons name="person-outline" size={48} color={colors.textMuted} />}
           />
         ) : (
           <FlatList
@@ -167,7 +169,7 @@ export default function FavoritesScreen() {
                       </View>
                     )}
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="#636366" />
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                 </TouchableOpacity>
               )
             }}
@@ -180,7 +182,7 @@ export default function FavoritesScreen() {
           <EmptyState
             title="Nenhum curso favorito"
             description="Favorite cursos para ve-los aqui."
-            icon={<Ionicons name="book-outline" size={48} color="#636366" />}
+            icon={<Ionicons name="book-outline" size={48} color={colors.textMuted} />}
           />
         ) : (
           <FlatList
@@ -221,7 +223,7 @@ export default function FavoritesScreen() {
           <EmptyState
             title="Nenhuma notícia favorita"
             description="Favorite notícias para vê-las aqui."
-            icon={<Ionicons name="newspaper-outline" size={48} color="#636366" />}
+            icon={<Ionicons name="newspaper-outline" size={48} color={colors.textMuted} />}
           />
         ) : (
           <FlatList
@@ -251,7 +253,7 @@ export default function FavoritesScreen() {
           <EmptyState
             title="Nenhum edital favorito"
             description="Favorite editais para vê-los aqui."
-            icon={<Ionicons name="document-text-outline" size={48} color="#636366" />}
+            icon={<Ionicons name="document-text-outline" size={48} color={colors.textMuted} />}
           />
         ) : (
           <FlatList

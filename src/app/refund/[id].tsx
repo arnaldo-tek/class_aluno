@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useMutation } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/contexts/AuthContext'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 const REASONS = [
   'Nao gostei do conteudo',
@@ -34,6 +35,7 @@ function useRequestRefund() {
 export default function RefundRequestScreen() {
   const { id, nome } = useLocalSearchParams<{ id: string; nome?: string }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const [selectedReason, setSelectedReason] = useState<string | null>(null)
   const [details, setDetails] = useState('')
   const refund = useRequestRefund()
@@ -61,7 +63,7 @@ export default function RefundRequestScreen() {
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View className="flex-row items-center px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text className="text-lg font-bold text-darkText">Solicitar reembolso</Text>
         </View>
@@ -87,7 +89,7 @@ export default function RefundRequestScreen() {
               <Ionicons
                 name={selectedReason === reason ? 'radio-button-on' : 'radio-button-off'}
                 size={20}
-                color={selectedReason === reason ? '#60a5fa' : '#636366'}
+                color={selectedReason === reason ? '#60a5fa' : colors.textMuted}
               />
               <Text className={`text-sm ml-3 ${selectedReason === reason ? 'text-primary-light font-medium' : 'text-darkText'}`}>
                 {reason}

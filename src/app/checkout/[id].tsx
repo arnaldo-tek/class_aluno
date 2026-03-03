@@ -8,10 +8,12 @@ import { usePackageDetail } from '@/hooks/usePackages'
 import { useValidateCoupon, useCustomerId } from '@/hooks/usePayment'
 import { useFreeEnroll } from '@/hooks/useEnrollments'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function CheckoutScreen() {
   const { id, type = 'curso' } = useLocalSearchParams<{ id: string; type?: string }>()
   const router = useRouter()
+  const colors = useThemeColors()
 
   const isPacote = type === 'pacote'
   const courseQuery = useCourseDetail(isPacote ? '' : id!)
@@ -102,7 +104,7 @@ export default function CheckoutScreen() {
         {/* Header */}
         <View className="flex-row items-center px-4 pt-4 pb-3 border-b border-darkBorder-subtle">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text className="text-lg font-bold text-darkText">Checkout</Text>
         </View>
@@ -113,7 +115,7 @@ export default function CheckoutScreen() {
             <Image source={{ uri: item.imagem }} className="w-20 h-14 rounded-lg" resizeMode="cover" />
           ) : (
             <View className="w-20 h-14 rounded-lg bg-dark-surfaceLight items-center justify-center">
-              <Ionicons name={isPacote ? 'layers-outline' : 'book-outline'} size={20} color="#9ca3af" />
+              <Ionicons name={isPacote ? 'layers-outline' : 'book-outline'} size={20} color={colors.textMuted} />
             </View>
           )}
           <View className="flex-1 ml-3 justify-center">
@@ -247,7 +249,7 @@ export default function CheckoutScreen() {
                   <Text className="text-sm font-semibold text-darkText">Cartao de Credito</Text>
                   <Text className="text-xs text-darkText-secondary">Parcele em ate 12x</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -262,7 +264,7 @@ export default function CheckoutScreen() {
                   <Text className="text-sm font-semibold text-darkText">PIX</Text>
                   <Text className="text-xs text-darkText-secondary">Aprovacao instantanea</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
               </TouchableOpacity>
             </>
           )}

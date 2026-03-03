@@ -1,0 +1,242 @@
+import { useState, useMemo } from 'react'
+import { View, Text, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { useAllProfessors } from '@/hooks/useProfessor'
+import { useProfessorCards, useFollowedProfessorCards } from '@/hooks/useProfessorCards'
+import { SearchInput } from '@/components/ui/SearchInput'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { useThemeColors } from '@/hooks/useThemeColors'
+
+type Filter = 'feed' | 'following' | 'all'
+
+type CardItem = {
+  id: string
+  titulo: string
+  texto: string | null
+  imagem: string | null
+  video: string | null
+  professor_id: string
+  professor_nome: string
+  professor_foto: string | null
+  created_at: string
+}
+
+export default function ProfessorsScreen() {
+  const router = useRouter()
+  const [filter, setFilter] = useState<Filter>('feed')
+  const [search, setSearch] = useState('')
+
+  return (
+    <SafeAreaView className="flex-1 bg-dark-bg">
+      <View className="px-4 pt-4 pb-3">
+        <Text className="text-2xl font-bold text-darkText">Professores</Text>
+      </View>
+
+      {/* Filter tabs */}
+      <View className="flex-row px-4 mb-3">
+        <FilterChip label="Feed" active={filter === 'feed'} onPress={() => setFilter('feed')} />
+        <FilterChip label="Seguindo" active={filter === 'following'} onPress={() => setFilter('following')} />
+        <FilterChip label="Todos" active={filter === 'all'} onPress={() => setFilter('all')} />
+      </View>
+
+      {filter === 'all' && (
+        <SearchInput value={search} onChangeText={setSearch} />
+      )}
+
+      {filter === 'feed' && <ProfessorFeed />}
+      {filter === 'following' && <FollowingFeed />}
+      {filter === 'all' && <AllProfessorsFeed search={search} />}
+    </SafeAreaView>
+  )
+}
+
+function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      className={`px-4 py-2 mr-2 rounded-full border ${
+        active ? 'bg-primary border-primary' : 'bg-dark-surfaceLight border-darkBorder'
+      }`}
+      activeOpacity={0.7}
+    >
+      <Text className={`text-sm font-medium ${active ? 'text-white' : 'text-darkText-secondary'}`}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  )
+}
+
+function CardFeedItem({ item }: { item: CardItem }) {
+  const router = useRouter()
+
+  return (
+    <TouchableOpacity
+      onPress={() => router.push({ pathname: '/professor/[id]', params: { id: item.professor_id } })}
+      className="bg-dark-surface rounded-2xl mb-4 overflow-hidden border border-darkBorder-subtle"
+      activeOpacity={0.8}
+    >
+      {/* Professor info */}
+      <View className="flex-row items-center px-4 py-3">
+        {item.professor_foto ? (
+          <Image source={{ uri: item.professor_foto }} className="w-10 h-10 rounded-full" />
+        ) : (
+          <View className="w-10 h-10 rounded-full bg-primary-50 items-center justify-center">
+            <Ionicons name="person" size={18} color="#3b82f6" />
+          </View>
+        )}
+        <View className="ml-3 flex-1">
+          <Text className="text-sm font-semibold text-darkText">{item.professor_nome}</Text>
+          <Text className="text-xs text-darkText-muted">Professor</Text>
+        </View>
+      </View>
+
+      {/* Media */}
+      {item.imagem && (
+        <Image source={{ uri: item.imagem }} className="w-full h-64" resizeMode="cover" />
+      )}
+      {item.video && !item.imagem && (
+        <View className="w-full h-64 bg-dark-surfaceLight items-center justify-center">
+          <Ionicons name="play-circle-outline" size={48} color="#3b82f6" />
+        </View>
+      )}
+
+      {/* Text */}
+      {item.texto && (
+        <View className="px-4 py-3">
+          <Text className="text-sm text-darkText leading-5">{item.texto}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  )
+}
+
+function ProfessorFeed() {
+  const colors = useThemeColors()
+  const { data: cards, isLoading } = useProfessorCards()
+
+  if (isLoading) return <LoadingSpinner />
+  if (!cards?.length) {
+    return (
+      <EmptyState
+        title="Nenhum card ainda"
+        description="Os professores ainda não publicaram cards."
+        icon={<Ionicons name="images-outline" size={48} color={colors.textMuted} />}
+      />
+    )
+  }
+
+  return (
+    <FlatList
+      data={cards}
+      keyExtractor={(item) => item.id}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ padding: 16, paddingTop: 0 }}
+      renderItem={({ item }) => <CardFeedItem item={item} />}
+    />
+  )
+}
+
+function FollowingFeed() {
+  const colors = useThemeColors()
+  const { data: cards, isLoading } = useFollowedProfessorCards()
+
+  if (isLoading) return <LoadingSpinner />
+  if (!cards?.length) {
+    return (
+      <EmptyState
+        title="Nenhum card ainda"
+        description="Siga professores para ver seus cards aqui."
+        icon={<Ionicons name="heart-outline" size={48} color={colors.textMuted} />}
+      />
+    )
+  }
+
+  return (
+    <FlatList
+      data={cards}
+      keyExtractor={(item) => item.id}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ padding: 16, paddingTop: 0 }}
+      renderItem={({ item }) => <CardFeedItem item={item} />}
+    />
+  )
+}
+
+function ProfessorAvatarList() {
+  const { data: professors, isLoading } = useAllProfessors()
+  const router = useRouter()
+
+  if (isLoading || !professors?.length) return null
+
+  return (
+    <View className="mb-3">
+      <View className="flex-row items-center justify-between px-4 mb-2">
+        <Text className="text-sm font-semibold text-darkText">Professores</Text>
+        <TouchableOpacity onPress={() => router.push({ pathname: '/all-professors' as any })} className="flex-row items-center">
+          <Text className="text-sm text-primary-light font-medium mr-1">Ver todos</Text>
+          <Ionicons name="chevron-forward" size={14} color="#60a5fa" />
+        </TouchableOpacity>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 4 }}
+      >
+        {professors.map((prof) => (
+          <TouchableOpacity
+            key={prof.id}
+            onPress={() => router.push({ pathname: '/professor/[id]', params: { id: prof.id } })}
+            className="items-center mr-4"
+            style={{ width: 68 }}
+            activeOpacity={0.7}
+          >
+            {prof.foto_perfil ? (
+              <Image source={{ uri: prof.foto_perfil }} className="w-14 h-14 rounded-full border-2 border-primary/40" />
+            ) : (
+              <View className="w-14 h-14 rounded-full bg-primary-50 items-center justify-center border-2 border-primary/40">
+                <Ionicons name="person" size={22} color="#3b82f6" />
+              </View>
+            )}
+            <Text className="text-xs text-darkText-secondary mt-1 text-center" numberOfLines={1}>
+              {prof.nome_professor}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  )
+}
+
+function AllProfessorsFeed({ search }: { search: string }) {
+  const colors = useThemeColors()
+  const { data: allCards, isLoading } = useProfessorCards()
+
+  const filteredCards = useMemo(() => {
+    if (!allCards) return []
+    if (!search.trim()) return allCards
+    const term = search.trim().toLowerCase()
+    return allCards.filter((card) => card.professor_nome.toLowerCase().includes(term))
+  }, [allCards, search])
+
+  if (isLoading) return <LoadingSpinner />
+
+  return (
+    <FlatList
+      data={filteredCards}
+      keyExtractor={(item) => item.id}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ padding: 16, paddingTop: 0 }}
+      ListHeaderComponent={!search.trim() ? <ProfessorAvatarList /> : null}
+      ListEmptyComponent={
+        <EmptyState
+          title="Nenhum card encontrado"
+          icon={<Ionicons name="school-outline" size={48} color={colors.textMuted} />}
+        />
+      }
+      renderItem={({ item }) => <CardFeedItem item={item} />}
+    />
+  )
+}

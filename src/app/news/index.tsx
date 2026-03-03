@@ -7,13 +7,15 @@ import { format } from 'date-fns'
 import { useNews, useNewsCategories, useNewsFilterOptions } from '@/hooks/useNews'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { FilterDropdown } from '@/components/FilterDropdown'
+import { FilterDropdown, FilterDropdownMulti } from '@/components/FilterDropdown'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function NewsScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [estado, setEstado] = useState<string | null>(null)
   const [cidade, setCidade] = useState<string | null>(null)
   const [orgao, setOrgao] = useState<string | null>(null)
@@ -22,10 +24,10 @@ export default function NewsScreen() {
 
   const { data: categories } = useNewsCategories()
   const { data: news, isLoading } = useNews({
-    search, categoriaId: selectedCategory, estado, cidade, orgao, disciplina,
+    search, categoriaIds: selectedCategories, estado, cidade, orgao, disciplina,
   })
 
-  const selectedCat = categories?.find((c) => c.id === selectedCategory)
+  const selectedCat = selectedCategories.length === 1 ? categories?.find((c) => c.id === selectedCategories[0]) : null
   const { data: estadoOptions } = useNewsFilterOptions('estado')
   const { data: cidadeOptions } = useNewsFilterOptions('cidade')
   const { data: orgaoOptions } = useNewsFilterOptions('orgao')
@@ -39,19 +41,19 @@ export default function NewsScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">{t('news.title')}</Text>
         {hasFilterOptions && (
           <TouchableOpacity onPress={() => setShowFilters(!showFilters)} className="p-1">
-            <Ionicons name="options-outline" size={20} color={hasActiveFilters ? '#60a5fa' : '#9ca3af'} />
+            <Ionicons name="options-outline" size={20} color={hasActiveFilters ? '#60a5fa' : colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>
 
       {/* Search */}
       <View className="flex-row items-center bg-dark-surfaceLight rounded-xl px-3 py-2 mx-4 mt-3">
-        <Ionicons name="search" size={16} color="#9ca3af" />
+        <Ionicons name="search" size={16} color={colors.textMuted} />
         <TextInput
           className="flex-1 ml-2 text-sm text-darkText"
           placeholder={t('common.search')}
@@ -63,28 +65,15 @@ export default function NewsScreen() {
         />
       </View>
 
-      {/* Category chips */}
+      {/* Category dropdown (multi-select) */}
       {categories && categories.length > 0 && (
-        <View className="flex-row flex-wrap px-4 pt-2 pb-1">
-          <TouchableOpacity
-            onPress={() => setSelectedCategory(null)}
-            className={`px-3 py-1 mr-1.5 mb-1.5 rounded-full ${!selectedCategory ? 'bg-primary' : 'bg-dark-surfaceLight'}`}
-          >
-            <Text className={`text-xs font-medium ${!selectedCategory ? 'text-white' : 'text-darkText-muted'}`}>
-              Todas
-            </Text>
-          </TouchableOpacity>
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              onPress={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-1 mr-1.5 mb-1.5 rounded-full ${selectedCategory === cat.id ? 'bg-primary' : 'bg-dark-surfaceLight'}`}
-            >
-              <Text className={`text-xs font-medium ${selectedCategory === cat.id ? 'text-white' : 'text-darkText-muted'}`}>
-                {cat.nome}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View className="flex-row px-4 pt-2 pb-1">
+          <FilterDropdownMulti
+            label="Todas as categorias"
+            values={selectedCategories}
+            options={categories.map((c) => ({ label: c.nome, value: c.id }))}
+            onChange={setSelectedCategories}
+          />
         </View>
       )}
 
@@ -117,7 +106,7 @@ export default function NewsScreen() {
           ListEmptyComponent={
             <EmptyState
               title={t('news.noNews')}
-              icon={<Ionicons name="newspaper-outline" size={48} color="#9ca3af" />}
+              icon={<Ionicons name="newspaper-outline" size={48} color={colors.textMuted} />}
             />
           }
           renderItem={({ item }) => (
@@ -130,7 +119,7 @@ export default function NewsScreen() {
                 <Image source={{ uri: item.imagem }} className="w-full h-40" resizeMode="cover" />
               ) : (
                 <View className="w-full h-24 bg-dark-surfaceLight items-center justify-center">
-                  <Ionicons name="newspaper-outline" size={32} color="#4b5563" />
+                  <Ionicons name="newspaper-outline" size={32} color={colors.textMuted} />
                 </View>
               )}
               <View className="p-3.5">

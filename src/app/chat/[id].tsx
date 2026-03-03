@@ -3,6 +3,7 @@ import { View, Text, FlatList, TextInput, TouchableOpacity, Image, KeyboardAvoid
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useThemeColors } from '@/hooks/useThemeColors'
 import { useChatMessages, useSendMessage, useMarkChatSeen } from '@/hooks/useChat'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -10,6 +11,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 export default function ChatScreen() {
   const { id, name, photo } = useLocalSearchParams<{ id: string; name: string; photo: string }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const { user } = useAuthContext()
   const { data: messages, isLoading } = useChatMessages(id!)
   const sendMessage = useSendMessage()
@@ -74,7 +76,7 @@ export default function ChatScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 bg-dark-surface border-b border-darkBorder">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         {photo ? (
           <Image source={{ uri: photo }} className="w-9 h-9 rounded-full" />
@@ -150,7 +152,7 @@ export default function ChatScreen() {
             value={text}
             onChangeText={setText}
             placeholder="Escreva uma mensagem..."
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.textMuted}
             className="flex-1 bg-dark-surfaceLight rounded-2xl px-4 py-2.5 text-sm text-darkText max-h-24"
             multiline
             onSubmitEditing={handleSend}
@@ -162,7 +164,7 @@ export default function ChatScreen() {
               text.trim() ? 'bg-primary' : 'bg-dark-surfaceLight'
             }`}
           >
-            <Ionicons name="send" size={18} color={text.trim() ? '#1a1a2e' : '#9ca3af'} />
+            <Ionicons name="send" size={18} color={text.trim() ? colors.text : colors.textMuted} />
           </TouchableOpacity>
         </View>
         <SafeAreaView edges={['bottom']} className="bg-dark-surface" />

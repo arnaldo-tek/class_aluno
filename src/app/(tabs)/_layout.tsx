@@ -2,11 +2,13 @@ import { Redirect, Tabs } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { useSessionGuard } from '@/hooks/useSessionGuard'
-import { View, ActivityIndicator } from 'react-native'
+import { View, ActivityIndicator, Platform } from 'react-native'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function TabsLayout() {
   const { user, isLoading } = useAuthContext()
+  const colors = useThemeColors()
   useSessionGuard()
 
   if (isLoading) {
@@ -25,15 +27,23 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: '#9ca3af',
+        tabBarActiveTintColor: '#f59e0b',
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopWidth: 1,
-          borderTopColor: '#e5e4e1',
-          paddingBottom: 28,
+          backgroundColor: colors.tabBarBg,
+          borderTopWidth: 0,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 12,
           paddingTop: 8,
-          height: 85,
+          height: Platform.OS === 'ios' ? 85 : 65,
+          marginHorizontal: 16,
+          marginBottom: Platform.OS === 'ios' ? 0 : 8,
+          borderRadius: 24,
+          position: 'absolute',
+          shadowColor: colors.tabBarShadow,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          elevation: 10,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -61,32 +71,35 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="my-courses"
+        name="packages"
         options={{
-          title: t('tabs.myCourses'),
+          title: 'Assinaturas',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'card' : 'card-outline'} size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="professors"
+        options={{
+          title: 'Professores',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'school' : 'school-outline'} size={22} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="packages"
+        name="more"
         options={{
-          title: t('packages.title'),
+          title: 'Mais',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'cube' : 'cube-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} />
           ),
         }}
       />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: t('tabs.profile'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
-          ),
-        }}
-      />
+      {/* Hidden tabs - keep routes but hide from tab bar */}
+      <Tabs.Screen name="my-courses" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
     </Tabs>
   )
 }

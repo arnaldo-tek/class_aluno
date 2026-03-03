@@ -7,9 +7,11 @@ import { useMyChamados, useCreateChamado } from '@/hooks/useSupport'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Badge } from '@/components/ui/Badge'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function SupportScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: chamados, isLoading } = useMyChamados()
   const createChamado = useCreateChamado()
   const [showForm, setShowForm] = useState(false)
@@ -64,14 +66,14 @@ export default function SupportScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 bg-dark-surface border-b border-darkBorder">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-darkText flex-1">Suporte</Text>
         <TouchableOpacity
           onPress={() => setShowForm(!showForm)}
           className="w-9 h-9 rounded-full bg-primary items-center justify-center"
         >
-          <Ionicons name={showForm ? 'close' : 'add'} size={22} color="#1a1a2e" />
+          <Ionicons name={showForm ? 'close' : 'add'} size={22} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -141,7 +143,7 @@ export default function SupportScreen() {
                   {item.descricao}
                 </Text>
                 <View className="flex-row items-center mt-2">
-                  <Ionicons name="chatbubble-outline" size={14} color="#9ca3af" />
+                  <Ionicons name="chatbubble-outline" size={14} color={colors.textMuted} />
                   <Text className="text-xs text-darkText-muted ml-1">Toque para ver mensagens</Text>
                 </View>
               </TouchableOpacity>

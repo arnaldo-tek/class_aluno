@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useMutation } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/contexts/AuthContext'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 function useSubmitSuggestion() {
   const { user } = useAuthContext()
@@ -23,6 +24,7 @@ function useSubmitSuggestion() {
 
 export default function SuggestionScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const [text, setText] = useState('')
   const submit = useSubmitSuggestion()
 
@@ -52,7 +54,7 @@ export default function SuggestionScreen() {
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View className="flex-row items-center px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text className="text-lg font-bold text-darkText">Enviar sugestao</Text>
         </View>

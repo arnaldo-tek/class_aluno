@@ -6,9 +6,11 @@ import { useCommunities, useIsMember, useToggleMembership } from '@/hooks/useCom
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function CommunityListScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: communities, isLoading } = useCommunities()
 
   if (isLoading) return <LoadingSpinner />
@@ -17,7 +19,7 @@ export default function CommunityListScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">{t('community.title')}</Text>
       </View>
@@ -29,7 +31,7 @@ export default function CommunityListScreen() {
         ListEmptyComponent={
           <EmptyState
             title={t('community.noCommunities')}
-            icon={<Ionicons name="people-outline" size={48} color="#9ca3af" />}
+            icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />}
           />
         }
         renderItem={({ item }) => (

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Linking, Modal } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -9,15 +9,18 @@ import { useIsFavorite } from '@/hooks/useNews'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function NoticeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: notice, isLoading } = useNoticeDetail(id!)
   const { data: isFavorite } = useIsFavorite('edital', id!)
   const toggleFavorite = useToggleNoticeFavorite()
 
   const [viewMode, setViewMode] = useState<'summary' | 'complete'>('summary')
+  const [pdfFullscreen, setPdfFullscreen] = useState(false)
 
   if (isLoading) return <LoadingSpinner />
   if (!notice) return null
@@ -32,7 +35,7 @@ export default function NoticeDetailScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1" numberOfLines={1}>
           {t('notices.title')}
@@ -41,7 +44,7 @@ export default function NoticeDetailScreen() {
           <Ionicons
             name={isFavorite ? 'heart' : 'heart-outline'}
             size={24}
-            color={isFavorite ? '#f87171' : '#6b7280'}
+            color={isFavorite ? '#f87171' : colors.textSecondary}
           />
         </TouchableOpacity>
       </View>
@@ -86,25 +89,58 @@ export default function NoticeDetailScreen() {
             </View>
           )}
 
+          {/* Content text */}
           <Text className="text-base text-darkText-secondary leading-7 mt-5">
             {viewMode === 'summary' ? (notice.resumo ?? notice.descricao) : (notice.descricao ?? notice.resumo)}
           </Text>
 
-          {hasPdf && (
-            <View className="mt-6">
-              <Text className="text-sm font-bold text-darkText mb-2">{t('notices.downloadPdf')}</Text>
-              <View style={{ height: 600 }}>
-                <WebView
-                  source={{ uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent((notice as any).pdf)}` }}
-                  style={{ flex: 1, backgroundColor: '#f7f6f3' }}
-                  startInLoadingState
-                  renderLoading={() => <LoadingSpinner />}
-                />
-              </View>
+          {/* PDF actions */}
+          {hasPdf && viewMode === 'complete' && (
+            <View className="flex-row mt-6 gap-3">
+              <TouchableOpacity
+                onPress={() => setPdfFullscreen(true)}
+                className="flex-1 flex-row items-center justify-center bg-primary rounded-2xl py-3.5"
+              >
+                <Ionicons name="document-text-outline" size={18} color="#ffffff" />
+                <Text className="text-sm font-bold text-white ml-2">Visualizar PDF</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => Linking.openURL((notice as any).pdf)}
+                className="flex-row items-center justify-center bg-dark-surfaceLight rounded-2xl py-3.5 px-4 border border-darkBorder"
+              >
+                <Ionicons name="download-outline" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
             </View>
           )}
         </View>
       </ScrollView>
+
+      {/* PDF Fullscreen Modal */}
+      {hasPdf && (
+        <Modal visible={pdfFullscreen} animationType="slide" presentationStyle="fullScreen">
+          <SafeAreaView className="flex-1 bg-dark-bg">
+            <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle bg-dark-surface">
+              <TouchableOpacity onPress={() => setPdfFullscreen(false)} className="mr-3 p-1">
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <Text className="text-base font-bold text-darkText flex-1" numberOfLines={1}>
+                {notice.titulo}
+              </Text>
+              <TouchableOpacity onPress={() => Linking.openURL((notice as any).pdf)} className="p-1">
+                <Ionicons name="download-outline" size={22} color="#60a5fa" />
+              </TouchableOpacity>
+            </View>
+            <WebView
+              source={{ uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent((notice as any).pdf)}` }}
+              style={{ flex: 1 }}
+              startInLoadingState
+              renderLoading={() => <LoadingSpinner />}
+              javaScriptEnabled
+              scalesPageToFit
+            />
+          </SafeAreaView>
+        </Modal>
+      )}
     </SafeAreaView>
   )
 }

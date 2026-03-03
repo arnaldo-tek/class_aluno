@@ -8,9 +8,11 @@ import { useAuthContext } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function ChamadoChatScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { id, descricao, status } = useLocalSearchParams<{ id: string; descricao: string; status: string }>()
   const { user } = useAuthContext()
   const qc = useQueryClient()
@@ -66,7 +68,7 @@ export default function ChamadoChatScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 bg-dark-surface border-b border-darkBorder">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View className="flex-1">
           <Text className="text-lg font-bold text-darkText">Chamado</Text>
@@ -96,7 +98,7 @@ export default function ChamadoChatScreen() {
           }
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center py-8">
-              <Ionicons name="chatbubbles-outline" size={40} color="#9ca3af" />
+              <Ionicons name="chatbubbles-outline" size={40} color={colors.textMuted} />
               <Text className="text-sm text-darkText-muted mt-2">Nenhuma mensagem ainda</Text>
               <Text className="text-xs text-darkText-muted">Aguarde a resposta do suporte</Text>
             </View>
@@ -114,11 +116,11 @@ export default function ChamadoChatScreen() {
                   borderWidth: 1,
                   borderColor: isMe ? '#bae6fd' : '#e5e4e1',
                 }}>
-                  <Text style={{ fontSize: 11, color: '#9ca3af', marginBottom: 2 }}>
+                  <Text style={{ fontSize: 11, color: colors.textMuted, marginBottom: 2 }}>
                     {isMe ? 'Você' : 'Suporte'}
                   </Text>
-                  <Text style={{ fontSize: 14, color: '#1a1a2e', lineHeight: 20 }}>{item.mensagem}</Text>
-                  <Text style={{ fontSize: 10, color: '#9ca3af', marginTop: 4, textAlign: 'right' }}>
+                  <Text style={{ fontSize: 14, color: colors.text, lineHeight: 20 }}>{item.mensagem}</Text>
+                  <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 4, textAlign: 'right' }}>
                     {item.created_at ? new Date(item.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                   </Text>
                 </View>

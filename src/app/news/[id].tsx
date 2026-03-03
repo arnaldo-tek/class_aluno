@@ -8,10 +8,12 @@ import { useNewsDetail, useIsFavorite, useToggleNewsFavorite } from '@/hooks/use
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function NewsDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: news, isLoading } = useNewsDetail(id!)
   const { data: isFavorite } = useIsFavorite('noticia', id!)
   const toggleFavorite = useToggleNewsFavorite()
@@ -33,7 +35,7 @@ export default function NewsDetailScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder-subtle">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1" numberOfLines={1}>
           {t('news.title')}
@@ -42,11 +44,11 @@ export default function NewsDetailScreen() {
           <Ionicons
             name={isFavorite ? 'heart' : 'heart-outline'}
             size={24}
-            color={isFavorite ? '#f87171' : '#6b7280'}
+            color={isFavorite ? '#f87171' : colors.textSecondary}
           />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleShare} className="p-1">
-          <Ionicons name="share-outline" size={24} color="#6b7280" />
+          <Ionicons name="share-outline" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 

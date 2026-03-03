@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons'
 import { useCommunityDetail } from '@/hooks/useCommunity'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function CommunityRulesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: community, isLoading } = useCommunityDetail(id!)
 
   if (isLoading) return <LoadingSpinner />
@@ -18,7 +20,7 @@ export default function CommunityRulesScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">
           {t('community.rules')} - {community.nome}

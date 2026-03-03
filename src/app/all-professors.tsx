@@ -9,6 +9,7 @@ import { SearchInput } from '@/components/ui/SearchInput'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 function useAllProfessors(search: string) {
   return useQuery({
@@ -34,6 +35,7 @@ function useAllProfessors(search: string) {
 
 export default function ProfessorsListScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const [search, setSearch] = useState('')
   const { data: professors, isLoading } = useAllProfessors(search)
 
@@ -41,7 +43,7 @@ export default function ProfessorsListScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-darkText flex-1">Professores</Text>
       </View>
@@ -59,7 +61,7 @@ export default function ProfessorsListScreen() {
       ) : !professors?.length ? (
         <EmptyState
           title="Nenhum professor encontrado"
-          icon={<Ionicons name="person-outline" size={48} color="#636366" />}
+          icon={<Ionicons name="person-outline" size={48} color={colors.textMuted} />}
         />
       ) : (
         <FlatList
@@ -93,7 +95,7 @@ export default function ProfessorsListScreen() {
                   </View>
                 )}
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#636366" />
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           )}
         />

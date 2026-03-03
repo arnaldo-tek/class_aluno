@@ -153,11 +153,12 @@ export function useLessonFlashcards(aulaId: string) {
     queryKey: ['flashcards-aula', aulaId, user?.id],
     queryFn: async () => {
       if (!user) return []
+      // Fetch both: professor-created flashcards (aluno_id IS NULL) + aluno's own
       const { data, error } = await supabase
         .from('flashcards')
-        .select('id, pergunta, resposta, created_at')
+        .select('id, pergunta, resposta, professor_id, aluno_id, created_at')
         .eq('aula_id', aulaId)
-        .eq('aluno_id', user.id)
+        .or(`aluno_id.eq.${user.id},aluno_id.is.null`)
         .order('created_at')
 
       if (error) throw error

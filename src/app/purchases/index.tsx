@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { usePurchaseHistory } from '@/hooks/usePayment'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
   pending: { label: 'Pendente', color: '#d97706', bg: 'bg-yellow-100', icon: 'time-outline' },
@@ -17,6 +18,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 
 export default function PurchaseHistoryScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: purchases, isLoading, refetch, isRefetching } = usePurchaseHistory()
 
   return (
@@ -24,7 +26,7 @@ export default function PurchaseHistoryScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 pt-4 pb-3 border-b border-darkBorder-subtle">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-darkText">Minhas compras</Text>
       </View>
@@ -35,7 +37,7 @@ export default function PurchaseHistoryScreen() {
         <EmptyState
           title="Nenhuma compra"
           description="Suas compras de cursos e pacotes aparecerão aqui."
-          icon={<Ionicons name="receipt-outline" size={48} color="#9ca3af" />}
+          icon={<Ionicons name="receipt-outline" size={48} color={colors.textMuted} />}
         />
       ) : (
         <FlatList
@@ -69,7 +71,7 @@ export default function PurchaseHistoryScreen() {
                     />
                   ) : (
                     <View className="w-20 h-20 bg-dark-surfaceLight items-center justify-center">
-                      <Ionicons name="book-outline" size={24} color="#9ca3af" />
+                      <Ionicons name="book-outline" size={24} color={colors.textMuted} />
                     </View>
                   )}
 

@@ -6,9 +6,11 @@ import { Ionicons } from '@expo/vector-icons'
 import { useFlashcardFolders, useCreateFolder, useDeleteFolder } from '@/hooks/useFlashcards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function FlashcardFoldersScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { data: folders, isLoading } = useFlashcardFolders()
   const createFolder = useCreateFolder()
   const deleteFolder = useDeleteFolder()
@@ -34,7 +36,7 @@ export default function FlashcardFoldersScreen() {
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="flex-1 text-lg font-bold text-darkText">Flashcards</Text>
         <TouchableOpacity onPress={() => setShowInput(!showInput)}>
@@ -69,7 +71,7 @@ export default function FlashcardFoldersScreen() {
         <EmptyState
           title="Nenhuma pasta"
           description="Crie pastas para organizar seus flashcards."
-          icon={<Ionicons name="layers-outline" size={48} color="#9ca3af" />}
+          icon={<Ionicons name="layers-outline" size={48} color={colors.textMuted} />}
         />
       ) : (
         <FlatList
@@ -91,9 +93,9 @@ export default function FlashcardFoldersScreen() {
                 className="p-2"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Ionicons name="trash-outline" size={18} color="#9ca3af" />
+                <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
               </TouchableOpacity>
-              <Ionicons name="chevron-forward" size={18} color="#6b7280" />
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         />

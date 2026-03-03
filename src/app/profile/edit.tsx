@@ -7,9 +7,11 @@ import { useAuthContext } from '@/contexts/AuthContext'
 import { useProfile, useUpdateProfile, useUploadAvatar } from '@/hooks/useProfile'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { t } from '@/i18n'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function EditProfileScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { user } = useAuthContext()
   const { data: profile, isLoading } = useProfile(user?.id)
   const updateProfile = useUpdateProfile()
@@ -53,7 +55,7 @@ export default function EditProfileScreen() {
     <SafeAreaView className="flex-1 bg-dark-bg">
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">
           {t('profile.editProfile')}
@@ -74,7 +76,7 @@ export default function EditProfileScreen() {
               </View>
             )}
             <View className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full items-center justify-center">
-              <Ionicons name="camera" size={16} color="#1a1a2e" />
+              <Ionicons name="camera" size={16} color={colors.text} />
             </View>
           </TouchableOpacity>
           {uploadAvatar.isPending && (

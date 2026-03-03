@@ -8,11 +8,13 @@ import { Platform, Linking } from 'react-native'
 import { t } from '@/i18n'
 import { useOnboardingSlides } from '@/hooks/useOnboarding'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
 export default function OnboardingScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const flatListRef = useRef<FlatList>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const { data: slides, isLoading } = useOnboardingSlides()
@@ -89,7 +91,7 @@ export default function OnboardingScreen() {
                 />
               ) : (
                 <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }} className="bg-dark-surfaceLight items-center justify-center">
-                  <Ionicons name="image-outline" size={64} color="#9ca3af" />
+                  <Ionicons name="image-outline" size={64} color={colors.textMuted} />
                 </View>
               )}
             </TouchableOpacity>
