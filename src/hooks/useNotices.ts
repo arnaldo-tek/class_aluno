@@ -5,9 +5,11 @@ import { useAuthContext } from '@/contexts/AuthContext'
 interface NoticeFilters {
   search?: string
   categoriaId?: string | null
-  estado?: string | null
-  cidade?: string | null
+  categoriaIds?: string[]
+  estadoId?: string | null
+  municipioId?: string | null
   orgao?: string | null
+  cargo?: string | null
   disciplina?: string | null
 }
 
@@ -23,17 +25,22 @@ export function useNotices(filters?: NoticeFilters) {
       if (filters?.search) {
         query = query.ilike('titulo', `%${filters.search}%`)
       }
-      if (filters?.categoriaId) {
+      if (filters?.categoriaIds && filters.categoriaIds.length > 0) {
+        query = query.in('categoria_id', filters.categoriaIds)
+      } else if (filters?.categoriaId) {
         query = query.eq('categoria_id', filters.categoriaId)
       }
-      if (filters?.estado) {
-        query = query.eq('estado', filters.estado)
+      if (filters?.estadoId) {
+        query = query.eq('estado_id', filters.estadoId)
       }
-      if (filters?.cidade) {
-        query = query.eq('cidade', filters.cidade)
+      if (filters?.municipioId) {
+        query = query.eq('municipio_id', filters.municipioId)
       }
       if (filters?.orgao) {
         query = query.eq('orgao', filters.orgao)
+      }
+      if (filters?.cargo) {
+        query = query.eq('cargo', filters.cargo)
       }
       if (filters?.disciplina) {
         query = query.eq('disciplina', filters.disciplina)
@@ -52,7 +59,7 @@ export function useNoticeDetail(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('editais')
-        .select('*, categorias(id, nome, filtro_estado, filtro_cidade, filtro_orgao, filtro_disciplina), professor_profiles(nome_professor)')
+        .select('*, categorias(id, nome, filtro_estado, filtro_cidade, filtro_orgao_editais_noticias, filtro_disciplina), professor_profiles(nome_professor)')
         .eq('id', id)
         .single()
 
@@ -69,7 +76,7 @@ export function useNoticeCategories() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categorias')
-        .select('id, nome, filtro_estado, filtro_cidade, filtro_orgao, filtro_disciplina')
+        .select('id, nome, filtro_estado, filtro_cidade, filtro_orgao_editais_noticias, filtro_cargo, filtro_disciplina')
         .eq('tipo', 'edital')
         .order('nome')
 
@@ -108,19 +115,50 @@ export function useToggleNoticeFavorite() {
   })
 }
 
-export function useNoticeFilterOptions(field: 'estado' | 'cidade' | 'orgao' | 'disciplina') {
+type NoticeFilterField = 'estado' | 'cidade' | 'orgao' | 'cargo' | 'disciplina'
+
+export function useNoticeFilterOptions(field: NoticeFilterField, categoriaIds?: string[], enabled = true) {
   return useQuery({
-    queryKey: ['notice-filter-options', field],
+    queryKey: ['notice-filter-options', field, categoriaIds],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('editais')
-        .select(field)
-        .not(field, 'is', null)
+      if (field === 'estado') {
+        const selectField = 'estado_id, estado:estados(nome)'
+        let query = supabase.from('editais').select(selectField).not('estado_id', 'is', null)
+        if (categoriaIds && categoriaIds.length > 0) query = query.in('categoria_id', categoriaIds)
+        const { data, error } = await query
+        if (error) throw error
+        const map = new Map<string, string>()
+        for (const d of data ?? []) {
+          const id = (d as any).estado_id
+          const nome = (d as any).estado?.nome
+          if (id && nome) map.set(id, nome)
+        }
+        return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id, nome]) => ({ label: nome, value: id }))
+      }
 
+      if (field === 'cidade') {
+        const selectField = 'municipio_id, municipio:municipios(nome)'
+        let query = supabase.from('editais').select(selectField).not('municipio_id', 'is', null)
+        if (categoriaIds && categoriaIds.length > 0) query = query.in('categoria_id', categoriaIds)
+        const { data, error } = await query
+        if (error) throw error
+        const map = new Map<string, string>()
+        for (const d of data ?? []) {
+          const id = (d as any).municipio_id
+          const nome = (d as any).municipio?.nome
+          if (id && nome) map.set(id, nome)
+        }
+        return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id, nome]) => ({ label: nome, value: id }))
+      }
+
+      // orgao, cargo, disciplina are text columns
+      let query = supabase.from('editais').select(field).not(field, 'is', null)
+      if (categoriaIds && categoriaIds.length > 0) query = query.in('categoria_id', categoriaIds)
+      const { data, error } = await query
       if (error) throw error
-
       const unique = [...new Set((data ?? []).map((d: any) => d[field]).filter(Boolean))]
       return unique.sort().map((v) => ({ label: v as string, value: v as string }))
     },
+    enabled,
   })
 }

@@ -333,6 +333,7 @@ function PdfTab({ url }: { url: string }) {
 // Card height: screen minus header (~56), tabs (~52), "mark complete" area (~80), padding
 
 function FlashcardsTab({ aulaId, cursoId }: { aulaId: string; cursoId?: string }) {
+  const colors = useThemeColors()
   const { data: cards = [], isLoading } = useLessonFlashcards(aulaId)
   const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -344,8 +345,8 @@ function FlashcardsTab({ aulaId, cursoId }: { aulaId: string; cursoId?: string }
         <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
           <Ionicons name="layers-outline" size={32} color="#2563eb" />
         </View>
-        <Text className="text-base font-semibold text-darkText">Nenhum flashcard</Text>
-        <Text className="text-sm text-darkText-muted mt-1 text-center px-8">
+        <Text style={{ color: colors.text }} className="text-base font-semibold">Nenhum flashcard</Text>
+        <Text style={{ color: colors.textMuted }} className="text-sm mt-1 text-center px-8">
           O professor ainda não adicionou flashcards a esta aula
         </Text>
       </View>
@@ -374,7 +375,7 @@ function FlashcardsTab({ aulaId, cursoId }: { aulaId: string; cursoId?: string }
 
       {/* Counter */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8 }}>
-        <Text style={{ fontSize: 14, fontWeight: '600', color: '#a0a0b0' }}>
+        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textSecondary }}>
           {currentIndex + 1} / {cards.length}
         </Text>
       </View>
@@ -420,7 +421,7 @@ function FlipCard({ pergunta, resposta }: { pergunta: string; resposta: string }
       <View style={{ flex: 1, position: 'relative' }}>
         {/* Front - Frente */}
         <RNAnimated.View pointerEvents={isFlipped ? 'none' : 'auto'} style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: frontRotate }] }}>
-          <View style={{ flex: 1, backgroundColor: '#1e1e2e', borderRadius: 16, borderWidth: 1, borderColor: '#2a2a3a', padding: 24 }}>
+          <View style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.borderSubtle, padding: 24 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
               <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(37,99,235,0.15)', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6' }}>F</Text>
@@ -430,9 +431,9 @@ function FlipCard({ pergunta, resposta }: { pergunta: string; resposta: string }
               <Ionicons name="sync-outline" size={16} color={colors.textMuted} />
             </View>
             <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator nestedScrollEnabled>
-              <Text style={{ fontSize: 16, color: '#f0f0f0', lineHeight: 24, textAlign: 'justify' }}>{pergunta}</Text>
+              <Text style={{ fontSize: 16, color: colors.text, lineHeight: 24, textAlign: 'justify' }}>{pergunta}</Text>
             </ScrollView>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2a2a3a', marginTop: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.borderSubtle, marginTop: 12 }}>
               <Ionicons name="sync-outline" size={14} color={colors.textMuted} />
               <Text style={{ fontSize: 12, color: colors.textMuted, marginLeft: 6 }}>Toque para virar</Text>
             </View>
@@ -441,7 +442,7 @@ function FlipCard({ pergunta, resposta }: { pergunta: string; resposta: string }
 
         {/* Back - Verso */}
         <RNAnimated.View pointerEvents={isFlipped ? 'auto' : 'none'} style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: backRotate }] }}>
-          <View style={{ flex: 1, backgroundColor: '#252538', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(96,165,250,0.3)', padding: 24 }}>
+          <View style={{ flex: 1, backgroundColor: colors.surfaceLight, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(96,165,250,0.3)', padding: 24 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
               <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(96,165,250,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#60a5fa' }}>V</Text>
@@ -451,9 +452,9 @@ function FlipCard({ pergunta, resposta }: { pergunta: string; resposta: string }
               <Ionicons name="sync-outline" size={16} color={colors.textMuted} />
             </View>
             <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator nestedScrollEnabled>
-              <Text style={{ fontSize: 16, color: '#f0f0f0', lineHeight: 24, textAlign: 'justify' }}>{resposta}</Text>
+              <Text style={{ fontSize: 16, color: colors.text, lineHeight: 24, textAlign: 'justify' }}>{resposta}</Text>
             </ScrollView>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2a2a3a', marginTop: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.borderSubtle, marginTop: 12 }}>
               <Ionicons name="sync-outline" size={14} color={colors.textMuted} />
               <Text style={{ fontSize: 12, color: colors.textMuted, marginLeft: 6 }}>Toque para virar</Text>
             </View>

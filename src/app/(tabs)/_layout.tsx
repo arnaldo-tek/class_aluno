@@ -3,12 +3,14 @@ import { Ionicons } from '@expo/vector-icons'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { useSessionGuard } from '@/hooks/useSessionGuard'
 import { View, ActivityIndicator, Platform } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { t } from '@/i18n'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function TabsLayout() {
   const { user, isLoading } = useAuthContext()
   const colors = useThemeColors()
+  const insets = useSafeAreaInsets()
   useSessionGuard()
 
   if (isLoading) {
@@ -36,7 +38,7 @@ export default function TabsLayout() {
           paddingTop: 8,
           height: Platform.OS === 'ios' ? 90 : 72,
           marginHorizontal: 16,
-          marginBottom: Platform.OS === 'ios' ? 8 : 16,
+          marginBottom: Platform.OS === 'ios' ? 8 : Math.max(insets.bottom, 12) + 16,
           borderRadius: 24,
           position: 'absolute',
           shadowColor: colors.tabBarShadow,

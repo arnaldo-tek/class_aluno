@@ -122,7 +122,7 @@ export default function MyAudioScreen() {
             contentContainerStyle={{ padding: 16 }}
             renderItem={({ item }) => (
               <TouchableOpacity
-                onPress={() => router.push({ pathname: '/audio/laws/[id]', params: { id: item.id } })}
+                onPress={() => router.push({ pathname: '/audio/player/[id]', params: { id: item.id } })}
                 className="bg-dark-surface rounded-2xl px-4 py-3.5 mb-3 flex-row items-center"
                 activeOpacity={0.7}
               >

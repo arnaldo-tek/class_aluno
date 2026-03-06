@@ -181,7 +181,7 @@ function PackagesSection() {
             <View className="p-3">
               <Text className="text-sm font-semibold text-darkText" numberOfLines={1}>{item.nome}</Text>
               <Text className="text-xs font-bold text-primary-light mt-1">
-                R$ {((item.preco ?? 0) / 100).toFixed(2)}{t('packages.perMonth')}
+                R$ {(item.preco ?? 0).toFixed(2)}{t('packages.perMonth')}
               </Text>
             </View>
           </TouchableOpacity>

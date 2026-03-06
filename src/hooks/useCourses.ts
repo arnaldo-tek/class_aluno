@@ -31,16 +31,18 @@ interface CoursesFilter {
   cidade?: string | null
   orgao?: string | null
   cargo?: string | null
-  disciplina?: string | null
+  escolaridade?: string | null
+  nivelId?: string | null
+  disciplinaId?: string | null
   page?: number
 }
 
 export function useCourses(filters: CoursesFilter = {}) {
-  const { search, categoriaId, estado, cidade, orgao, cargo, disciplina, page = 1 } = filters
+  const { search, categoriaId, estado, cidade, orgao, cargo, escolaridade, nivelId, disciplinaId, page = 1 } = filters
   const pageSize = 20
 
   return useQuery({
-    queryKey: ['courses', search, categoriaId, estado, cidade, orgao, cargo, disciplina, page],
+    queryKey: ['courses', search, categoriaId, estado, cidade, orgao, cargo, escolaridade, nivelId, disciplinaId, page],
     queryFn: async () => {
       let query = supabase
         .from('cursos')
@@ -58,7 +60,9 @@ export function useCourses(filters: CoursesFilter = {}) {
       if (cidade) query = query.eq('cidade', cidade)
       if (orgao) query = query.eq('orgao', orgao)
       if (cargo) query = query.eq('cargo', cargo)
-      if (disciplina) query = query.eq('disciplina', disciplina)
+      if (escolaridade) query = query.eq('escolaridade', escolaridade)
+      if (nivelId) query = query.eq('nivel_id', nivelId)
+      if (disciplinaId) query = query.eq('disciplina_id', disciplinaId)
 
       const { data, error, count } = await query
       if (error) throw error
@@ -75,17 +79,47 @@ export function useCourses(filters: CoursesFilter = {}) {
   })
 }
 
-export function useCourseFilterOptions(field: 'estado' | 'cidade' | 'orgao' | 'cargo' | 'disciplina', parentFilters?: Record<string, string | null>) {
+// Busca os flags de filtro da categoria selecionada
+export function useCategoryFilters(categoriaId?: string) {
   return useQuery({
-    queryKey: ['course-filter-options', field, parentFilters],
+    queryKey: ['category-filters', categoriaId],
     queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categorias')
+        .select('filtro_estado, filtro_cidade, filtro_orgao, filtro_cargo, filtro_escolaridade, filtro_nivel, filtro_disciplina')
+        .eq('id', categoriaId!)
+        .single()
+      if (error) throw error
+      return data
+    },
+    enabled: !!categoriaId,
+  })
+}
+
+type FilterField = 'estado' | 'cidade' | 'orgao' | 'cargo' | 'escolaridade' | 'nivel_id' | 'disciplina_id'
+
+export function useCourseFilterOptions(field: FilterField, parentFilters?: Record<string, string | null>, categoriaId?: string, enabled = true) {
+  const isDisciplina = field === 'disciplina_id'
+  const isNivel = field === 'nivel_id'
+  const needsJoin = isDisciplina || isNivel
+
+  return useQuery({
+    queryKey: ['course-filter-options', field, parentFilters, categoriaId],
+    queryFn: async () => {
+      // Para disciplina/nivel, join com tabela de referência para pegar o nome
+      const selectField = isDisciplina
+        ? 'disciplina_id, disciplina:disciplinas!cursos_disciplina_id_fkey(nome)'
+        : isNivel
+        ? 'nivel_id, nivel:niveis(nome)'
+        : field
       let query = supabase
         .from('cursos')
-        .select(field)
+        .select(selectField)
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
         .not(field, 'is', null)
 
+      if (categoriaId) query = query.eq('categoria_id', categoriaId)
       if (parentFilters?.estado) query = query.eq('estado', parentFilters.estado)
       if (parentFilters?.cidade && field !== 'estado') query = query.eq('cidade', parentFilters.cidade)
       if (parentFilters?.orgao && field !== 'estado' && field !== 'cidade') query = query.eq('orgao', parentFilters.orgao)
@@ -94,9 +128,24 @@ export function useCourseFilterOptions(field: 'estado' | 'cidade' | 'orgao' | 'c
       const { data, error } = await query
       if (error) throw error
 
+      if (needsJoin) {
+        const idKey = isDisciplina ? 'disciplina_id' : 'nivel_id'
+        const joinKey = isDisciplina ? 'disciplina' : 'nivel'
+        const map = new Map<string, string>()
+        for (const d of data ?? []) {
+          const id = (d as any)[idKey]
+          const nome = (d as any)[joinKey]?.nome
+          if (id && nome) map.set(id, nome)
+        }
+        return [...map.entries()]
+          .sort((a, b) => a[1].localeCompare(b[1]))
+          .map(([id, nome]) => ({ label: nome, value: id }))
+      }
+
       const unique = [...new Set((data ?? []).map((d: any) => d[field]).filter(Boolean))]
       return unique.sort().map((v) => ({ label: v as string, value: v as string }))
     },
+    enabled,
   })
 }
 

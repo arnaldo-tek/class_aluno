@@ -51,7 +51,7 @@ export default function PackageDetailScreen() {
 
           <View className="flex-row items-center mt-4">
             <Text className="text-2xl font-bold" style={{ color: '#e6d900' }}>
-              R$ {((pkg.preco ?? 0) / 100).toFixed(2)}
+              R$ {(pkg.preco ?? 0).toFixed(2)}
             </Text>
             <Text className="text-sm text-darkText-muted ml-1">{t('packages.perMonth')}</Text>
           </View>

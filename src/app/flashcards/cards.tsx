@@ -36,12 +36,12 @@ export default function FlashcardsListScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
-      <View className="flex-row items-center justify-between px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1 }} className="flex-row items-center justify-between px-4 pt-4 pb-3">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text className="flex-1 text-lg font-bold text-darkText" numberOfLines={1}>{block_name ?? 'Cards'}</Text>
+        <Text style={{ color: colors.text }} className="flex-1 text-lg font-bold" numberOfLines={1}>{block_name ?? 'Cards'}</Text>
         <View className="flex-row gap-2">
           {cards && cards.length > 0 && (
             <TouchableOpacity
@@ -60,7 +60,7 @@ export default function FlashcardsListScreen() {
       </View>
 
       {/* Breadcrumb */}
-      <View className="flex-row items-center px-4 py-2 bg-dark-bg">
+      <View style={{ backgroundColor: colors.bg }} className="flex-row items-center px-4 py-2">
         <TouchableOpacity onPress={() => router.push('/flashcards')}>
           <Text className="text-xs text-primary-light">Flashcards</Text>
         </TouchableOpacity>
@@ -69,23 +69,25 @@ export default function FlashcardsListScreen() {
           <Text className="text-xs text-primary-light" numberOfLines={1}>{folder_name ?? 'Pasta'}</Text>
         </TouchableOpacity>
         <Ionicons name="chevron-forward" size={12} color={colors.textMuted} style={{ marginHorizontal: 4 }} />
-        <Text className="text-xs text-darkText-muted" numberOfLines={1}>{block_name ?? 'Bloco'}</Text>
+        <Text style={{ color: colors.textMuted }} className="text-xs" numberOfLines={1}>{block_name ?? 'Bloco'}</Text>
       </View>
 
       {showForm && (
-        <View className="px-4 py-3 bg-dark-surface border-b border-darkBorder gap-2">
+        <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1 }} className="px-4 py-3 gap-2">
           <TextInput
-            className="border border-darkBorder rounded-2xl px-3 py-2 text-sm bg-dark-surfaceLight text-darkText"
+            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text }}
+            className="border rounded-2xl px-3 py-2 text-sm"
             placeholder="Pergunta"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.textMuted}
             value={pergunta}
             onChangeText={setPergunta}
             multiline
           />
           <TextInput
-            className="border border-darkBorder rounded-2xl px-3 py-2 text-sm bg-dark-surfaceLight text-darkText"
+            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text }}
+            className="border rounded-2xl px-3 py-2 text-sm"
             placeholder="Resposta"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.textMuted}
             value={resposta}
             onChangeText={setResposta}
             multiline
@@ -95,7 +97,7 @@ export default function FlashcardsListScreen() {
             disabled={createCard.isPending}
             className="bg-primary rounded-2xl py-3.5 items-center"
           >
-            <Text className="text-darkText-inverse font-semibold text-sm">Adicionar card</Text>
+            <Text style={{ color: colors.textInverse }} className="font-semibold text-sm">Adicionar card</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -114,11 +116,11 @@ export default function FlashcardsListScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => (
-            <View className="bg-dark-surface rounded-2xl px-4 py-3 mb-3 border border-darkBorder">
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.border }} className="rounded-2xl px-4 py-3 mb-3 border">
               <View className="flex-row items-start justify-between">
                 <View className="flex-1">
-                  <Text className="text-sm font-semibold text-darkText mb-1">{item.pergunta}</Text>
-                  <Text className="text-sm text-darkText-secondary">{item.resposta}</Text>
+                  <Text style={{ color: colors.text }} className="text-sm font-semibold mb-1">{item.pergunta}</Text>
+                  <Text style={{ color: colors.textSecondary }} className="text-sm">{item.resposta}</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => Alert.alert('Excluir', 'Excluir este flashcard?', [

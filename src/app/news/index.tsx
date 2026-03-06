@@ -16,26 +16,32 @@ export default function NewsScreen() {
   const colors = useThemeColors()
   const [search, setSearch] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [estado, setEstado] = useState<string | null>(null)
-  const [cidade, setCidade] = useState<string | null>(null)
+  const [estadoId, setEstadoId] = useState<string | null>(null)
+  const [municipioId, setMunicipioId] = useState<string | null>(null)
   const [orgao, setOrgao] = useState<string | null>(null)
+  const [cargo, setCargo] = useState<string | null>(null)
   const [disciplina, setDisciplina] = useState<string | null>(null)
   const { data: categories } = useNewsCategories()
   const { data: news, isLoading } = useNews({
-    search, categoriaIds: selectedCategories, estado, cidade, orgao, disciplina,
+    search, categoriaIds: selectedCategories, estadoId, municipioId, orgao, cargo, disciplina,
   })
 
-  const selectedCat = selectedCategories.length === 1 ? categories?.find((c) => c.id === selectedCategories[0]) : null
-  const { data: estadoOptions } = useNewsFilterOptions('estado')
-  const { data: cidadeOptions } = useNewsFilterOptions('cidade')
-  const { data: orgaoOptions } = useNewsFilterOptions('orgao')
-  const { data: disciplinaOptions } = useNewsFilterOptions('disciplina')
+  const selectedCats = selectedCategories.length > 0
+    ? categories?.filter((c) => selectedCategories.includes(c.id)) ?? []
+    : []
+  const fEstado = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_estado)
+  const fCidade = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_cidade)
+  const fOrgao = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_orgao_editais_noticias)
+  const fCargo = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_cargo)
+  const fDisciplina = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_disciplina)
 
-  const showEstado = (!selectedCat || selectedCat.filtro_estado) && !!estadoOptions?.length
-  const showCidade = (!selectedCat || selectedCat.filtro_cidade) && !!cidadeOptions?.length
-  const showOrgao = (!selectedCat || selectedCat.filtro_orgao) && !!orgaoOptions?.length
-  const showDisciplina = (!selectedCat || selectedCat.filtro_disciplina) && !!disciplinaOptions?.length
-  const hasSubFilters = showEstado || showCidade || showOrgao || showDisciplina
+  const { data: estadoOptions } = useNewsFilterOptions('estado', selectedCategories, fEstado)
+  const { data: cidadeOptions } = useNewsFilterOptions('cidade', selectedCategories, fCidade)
+  const { data: orgaoOptions } = useNewsFilterOptions('orgao', selectedCategories, fOrgao)
+  const { data: cargoOptions } = useNewsFilterOptions('cargo', selectedCategories, fCargo)
+  const { data: disciplinaOptions } = useNewsFilterOptions('disciplina', selectedCategories, fDisciplina)
+
+  const hasSubFilters = fEstado || fCidade || fOrgao || fCargo || fDisciplina
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
@@ -70,10 +76,8 @@ export default function NewsScreen() {
             options={categories.map((c) => ({ label: c.nome, value: c.id }))}
             onChange={(vals) => {
               setSelectedCategories(vals)
-              setEstado(null)
-              setCidade(null)
-              setOrgao(null)
-              setDisciplina(null)
+              setEstadoId(null); setMunicipioId(null); setOrgao(null)
+              setCargo(null); setDisciplina(null)
             }}
           />
         </View>
@@ -81,20 +85,33 @@ export default function NewsScreen() {
 
       {/* Sub-filters - show when category has filter flags */}
       {hasSubFilters && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-          {showEstado && (
-            <FilterDropdown label={t('news.estado')} value={estado} options={estadoOptions!} onChange={setEstado} />
+        <View className="flex-row items-center py-2 border-b border-darkBorder-subtle">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+            {fEstado && estadoOptions && estadoOptions.length > 0 && (
+              <FilterDropdown label="Estado" value={estadoId} options={estadoOptions} onChange={(val) => { setEstadoId(val); setMunicipioId(null) }} />
+            )}
+            {fCidade && cidadeOptions && cidadeOptions.length > 0 && (
+              <FilterDropdown label="Cidade" value={municipioId} options={cidadeOptions} onChange={setMunicipioId} />
+            )}
+            {fOrgao && orgaoOptions && orgaoOptions.length > 0 && (
+              <FilterDropdown label="Órgão" value={orgao} options={orgaoOptions} onChange={setOrgao} />
+            )}
+            {fCargo && cargoOptions && cargoOptions.length > 0 && (
+              <FilterDropdown label="Cargo" value={cargo} options={cargoOptions} onChange={setCargo} />
+            )}
+            {fDisciplina && disciplinaOptions && disciplinaOptions.length > 0 && (
+              <FilterDropdown label="Disciplina" value={disciplina} options={disciplinaOptions} onChange={setDisciplina} />
+            )}
+          </ScrollView>
+          {(estadoId || municipioId || orgao || cargo || disciplina) && (
+            <TouchableOpacity
+              onPress={() => { setEstadoId(null); setMunicipioId(null); setOrgao(null); setCargo(null); setDisciplina(null) }}
+              className="pr-4 pl-2"
+            >
+              <Ionicons name="close-circle" size={22} color="#f87171" />
+            </TouchableOpacity>
           )}
-          {showCidade && (
-            <FilterDropdown label={t('news.cidade')} value={cidade} options={cidadeOptions!} onChange={setCidade} />
-          )}
-          {showOrgao && (
-            <FilterDropdown label={t('news.orgao')} value={orgao} options={orgaoOptions!} onChange={setOrgao} />
-          )}
-          {showDisciplina && (
-            <FilterDropdown label={t('news.disciplina')} value={disciplina} options={disciplinaOptions!} onChange={setDisciplina} />
-          )}
-        </ScrollView>
+        </View>
       )}
 
       {/* News list */}

@@ -32,13 +32,13 @@ export default function FlashcardFoldersScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder">
+      <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1 }} className="flex-row items-center justify-between px-4 pt-4 pb-3">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text className="flex-1 text-lg font-bold text-darkText">Flashcards</Text>
+        <Text style={{ color: colors.text }} className="flex-1 text-lg font-bold">Flashcards</Text>
         <TouchableOpacity onPress={() => setShowInput(!showInput)}>
           <Ionicons name="add-circle-outline" size={28} color="#60a5fa" />
         </TouchableOpacity>
@@ -46,11 +46,12 @@ export default function FlashcardFoldersScreen() {
 
       {/* Create input */}
       {showInput && (
-        <View className="flex-row px-4 py-3 bg-dark-surface border-b border-darkBorder gap-2">
+        <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1 }} className="flex-row px-4 py-3 gap-2">
           <TextInput
-            className="flex-1 border border-darkBorder rounded-2xl px-3 py-2 text-sm bg-dark-surfaceLight text-darkText"
+            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text }}
+            className="flex-1 border rounded-2xl px-3 py-2 text-sm"
             placeholder="Nome da pasta"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.textMuted}
             value={newName}
             onChangeText={setNewName}
             autoFocus
@@ -60,7 +61,7 @@ export default function FlashcardFoldersScreen() {
             disabled={createFolder.isPending}
             className="bg-primary rounded-2xl px-4 items-center justify-center"
           >
-            <Text className="text-darkText-inverse font-semibold text-sm">Criar</Text>
+            <Text style={{ color: colors.textInverse }} className="font-semibold text-sm">Criar</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -81,13 +82,14 @@ export default function FlashcardFoldersScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => router.push({ pathname: '/flashcards/blocks', params: { folder_id: item.id, folder_name: item.nome } })}
-              className="bg-dark-surface rounded-2xl px-4 py-4 mb-3 border border-darkBorder flex-row items-center"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="rounded-2xl px-4 py-4 mb-3 border flex-row items-center"
               activeOpacity={0.7}
             >
               <View className="w-10 h-10 rounded-full bg-primary-50 items-center justify-center">
                 <Ionicons name="folder-outline" size={22} color="#60a5fa" />
               </View>
-              <Text className="flex-1 text-base font-medium text-darkText ml-3">{item.nome}</Text>
+              <Text style={{ color: colors.text }} className="flex-1 text-base font-medium ml-3">{item.nome}</Text>
               <TouchableOpacity
                 onPress={() => handleDelete(item.id, item.nome)}
                 className="p-2"

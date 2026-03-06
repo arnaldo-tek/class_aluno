@@ -42,7 +42,6 @@ export default function StudentAreaScreen() {
           <AreaCard icon="layers" color="#34d399" label="Meus Flashcards" onPress={() => router.push('/flashcards')} />
           <AreaCard icon="document-text" color="#60a5fa" label="Meus Editais" onPress={() => router.push('/notices/my')} />
           <AreaCard icon="newspaper" color="#fbbf24" label="Minhas Notícias" onPress={() => router.push('/news/my')} />
-          <AreaCard icon="heart" color="#f87171" label="Favoritos" onPress={() => router.push('/favorites')} />
         </View>
 
         <View className="h-8 px-4" />

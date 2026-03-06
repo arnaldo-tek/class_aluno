@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, TouchableOpacity, Modal, FlatList, Pressable } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 
 interface FilterDropdownProps {
@@ -29,12 +30,9 @@ export function FilterDropdown({ label, value, options, onChange }: FilterDropdo
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="fade">
-        <TouchableOpacity
-          className="flex-1 bg-black/60 justify-end"
-          activeOpacity={1}
-          onPress={() => setVisible(false)}
-        >
-          <View className="bg-dark-surface rounded-t-3xl max-h-[60%]">
+        <View style={{ flex: 1 }}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }} onPress={() => setVisible(false)} />
+          <View className="bg-dark-surface rounded-t-3xl" style={{ maxHeight: '70%' }}>
             <View className="w-10 h-1 bg-darkBorder rounded-full self-center mt-3 mb-2" />
             <View className="flex-row items-center justify-between px-5 py-4 border-b border-darkBorder">
               <Text className="text-base font-bold text-darkText">{label}</Text>
@@ -46,7 +44,8 @@ export function FilterDropdown({ label, value, options, onChange }: FilterDropdo
             </View>
             <FlatList
               data={options}
-              keyExtractor={(item) => item.value}
+              keyExtractor={(item, index) => `${item.value}-${index}`}
+              contentContainerStyle={{ paddingBottom: 28 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => { onChange(item.value); setVisible(false) }}
@@ -64,7 +63,7 @@ export function FilterDropdown({ label, value, options, onChange }: FilterDropdo
               )}
             />
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </>
   )
@@ -79,6 +78,7 @@ interface FilterDropdownMultiProps {
 
 export function FilterDropdownMulti({ label, values, options, onChange }: FilterDropdownMultiProps) {
   const [visible, setVisible] = useState(false)
+  const insets = useSafeAreaInsets()
 
   const hasSelection = values.length > 0
   const displayLabel = hasSelection
@@ -150,7 +150,7 @@ export function FilterDropdownMulti({ label, values, options, onChange }: Filter
                 )
               }}
             />
-            <View className="px-5 pt-3 pb-10 border-t border-darkBorder">
+            <View className="px-5 pt-3 border-t border-darkBorder" style={{ paddingBottom: Math.max(insets.bottom, 28) + 8 }}>
               <TouchableOpacity
                 onPress={() => setVisible(false)}
                 className="bg-primary rounded-2xl py-3.5 items-center"

@@ -71,17 +71,18 @@ export default function ProfessorsListScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => router.push({ pathname: '/professor/[id]', params: { id: item.id } })}
-              className="bg-dark-surface rounded-2xl px-4 py-3.5 mb-3 flex-row items-center"
+              className="bg-dark-surface rounded-2xl mb-3 flex-row items-center"
+              style={{ paddingHorizontal: 16, paddingVertical: 14 }}
               activeOpacity={0.7}
             >
               {item.foto_perfil ? (
-                <Image source={{ uri: item.foto_perfil }} className="w-14 h-14 rounded-full" />
+                <Image source={{ uri: item.foto_perfil }} style={{ width: 52, height: 52, borderRadius: 26 }} />
               ) : (
-                <View className="w-14 h-14 rounded-full bg-primary-50 items-center justify-center">
-                  <Ionicons name="person" size={24} color="#60a5fa" />
+                <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(59,130,246,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="person" size={24} color="#3b82f6" />
                 </View>
               )}
-              <View className="flex-1 ml-3">
+              <View className="flex-1" style={{ marginLeft: 14 }}>
                 <Text className="text-base font-semibold text-darkText">{item.nome_professor}</Text>
                 {item.descricao && (
                   <Text className="text-xs text-darkText-muted mt-0.5" numberOfLines={1}>

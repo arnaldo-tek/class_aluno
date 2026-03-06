@@ -145,18 +145,22 @@ export default function ProfessorDetailScreen() {
 
         {/* Redes Sociais */}
         {socialLinks.length > 0 && (
-          <View className="mt-5 px-4">
-            <Text className="text-base font-bold text-darkText mb-3">Redes Sociais</Text>
-            <View className="flex-row gap-3">
-              {socialLinks.map((s) => (
-                <TouchableOpacity
-                  key={s.key}
-                  onPress={() => Linking.openURL(s.url!)}
-                  className="w-11 h-11 rounded-full bg-dark-surfaceLight items-center justify-center border border-darkBorder-subtle"
-                >
-                  <Ionicons name={s.icon} size={22} color="#60a5fa" />
-                </TouchableOpacity>
-              ))}
+          <View style={{ marginTop: 20 }}>
+            <Text style={{ textAlign: 'center' }} className="text-base font-bold text-darkText mb-3">Redes Sociais</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', gap: 20 }}>
+              {socialLinks.map((s) => {
+                const iconColor = s.key === 'instagram' ? '#E4405F' : s.key === 'youtube' ? '#FF0000' : s.key === 'facebook' ? '#1877F2' : '#69C9D0'
+                return (
+                  <TouchableOpacity
+                    key={s.key}
+                    onPress={() => Linking.openURL(s.url!)}
+                    className="w-12 h-12 rounded-full items-center justify-center"
+                    style={{ backgroundColor: `${iconColor}15` }}
+                  >
+                    <Ionicons name={s.icon} size={24} color={iconColor} />
+                  </TouchableOpacity>
+                )
+              })}
             </View>
           </View>
         )}

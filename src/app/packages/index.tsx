@@ -92,7 +92,7 @@ export default function PackagesScreen() {
                 )}
                 <View className="flex-row items-center justify-between mt-3">
                   <Text className="text-lg font-bold" style={{ color: '#e6d900' }}>
-                    R$ {((item.preco ?? 0) / 100).toFixed(2)}{t('packages.perMonth')}
+                    R$ {(item.preco ?? 0).toFixed(2)}{t('packages.perMonth')}
                   </Text>
                   <Text className="text-xs text-darkText-muted">
                     {(item as any).pacote_cursos?.length ?? 0} {t('courses.title').toLowerCase()}

@@ -368,6 +368,7 @@ export type Database = {
           filtro_estado: string | null
           filtro_nivel: string | null
           filtro_orgao: string | null
+          filtro_orgao_editais_noticias: string | null
           id: string
           nome: string
           tipo: string
@@ -381,6 +382,7 @@ export type Database = {
           filtro_estado?: string | null
           filtro_nivel?: string | null
           filtro_orgao?: string | null
+          filtro_orgao_editais_noticias?: string | null
           id?: string
           nome: string
           tipo: string
@@ -394,6 +396,7 @@ export type Database = {
           filtro_estado?: string | null
           filtro_nivel?: string | null
           filtro_orgao?: string | null
+          filtro_orgao_editais_noticias?: string | null
           id?: string
           nome?: string
           tipo?: string
@@ -861,8 +864,10 @@ export type Database = {
           descricao: string | null
           disciplina: string | null
           estado: string | null
+          estado_id: string | null
           id: string
           imagem: string | null
+          municipio_id: string | null
           orgao: string | null
           pdf: string | null
           professor_id: string | null
@@ -877,8 +882,10 @@ export type Database = {
           descricao?: string | null
           disciplina?: string | null
           estado?: string | null
+          estado_id?: string | null
           id?: string
           imagem?: string | null
+          municipio_id?: string | null
           orgao?: string | null
           pdf?: string | null
           professor_id?: string | null
@@ -893,8 +900,10 @@ export type Database = {
           descricao?: string | null
           disciplina?: string | null
           estado?: string | null
+          estado_id?: string | null
           id?: string
           imagem?: string | null
+          municipio_id?: string | null
           orgao?: string | null
           pdf?: string | null
           professor_id?: string | null
@@ -1526,8 +1535,10 @@ export type Database = {
           descricao: string | null
           disciplina: string | null
           estado: string | null
+          estado_id: string | null
           id: string
           imagem: string | null
+          municipio_id: string | null
           orgao: string | null
           pdf: string | null
           titulo: string
@@ -1540,8 +1551,10 @@ export type Database = {
           descricao?: string | null
           disciplina?: string | null
           estado?: string | null
+          estado_id?: string | null
           id?: string
           imagem?: string | null
+          municipio_id?: string | null
           orgao?: string | null
           pdf?: string | null
           titulo: string
@@ -1554,8 +1567,10 @@ export type Database = {
           descricao?: string | null
           disciplina?: string | null
           estado?: string | null
+          estado_id?: string | null
           id?: string
           imagem?: string | null
+          municipio_id?: string | null
           orgao?: string | null
           pdf?: string | null
           titulo?: string

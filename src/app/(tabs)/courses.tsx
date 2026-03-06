@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { t } from '@/i18n'
-import { useCourses, useCourseFilterOptions } from '@/hooks/useCourses'
+import { useCourses, useCourseFilterOptions, useCategoryFilters } from '@/hooks/useCourses'
 import { useCategories } from '@/hooks/useHome'
 import { CourseCard } from '@/components/CourseCard'
 import { SearchInput } from '@/components/ui/SearchInput'
@@ -22,7 +22,9 @@ export default function CoursesScreen() {
   const [cidade, setCidade] = useState<string | null>(null)
   const [orgao, setOrgao] = useState<string | null>(null)
   const [cargo, setCargo] = useState<string | null>(null)
-  const [disciplina, setDisciplina] = useState<string | null>(null)
+  const [escolaridade, setEscolaridade] = useState<string | null>(null)
+  const [nivelId, setNivelId] = useState<string | null>(null)
+  const [disciplinaId, setDisciplinaId] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [page, setPage] = useState(1)
   const [drawerVisible, setDrawerVisible] = useState(false)
@@ -30,36 +32,59 @@ export default function CoursesScreen() {
   const { data, isLoading, refetch, isRefetching } = useCourses({
     search: search || undefined,
     categoriaId: selectedCategory,
-    estado, cidade, orgao, cargo, disciplina,
+    estado, cidade, orgao, cargo, escolaridade, nivelId, disciplinaId,
     page,
   })
 
   const { data: categories } = useCategories()
+  const { data: catFilters } = useCategoryFilters(selectedCategory)
 
+  // Flags da categoria definem quais filtros mostrar
+  const fEstado = catFilters?.filtro_estado ?? false
+  const fCidade = catFilters?.filtro_cidade ?? false
+  const fOrgao = catFilters?.filtro_orgao ?? false
+  const fCargo = catFilters?.filtro_cargo ?? false
+  const fEscolaridade = catFilters?.filtro_escolaridade ?? false
+  const fNivel = catFilters?.filtro_nivel ?? false
+  const fDisciplina = catFilters?.filtro_disciplina ?? false
+
+  // Busca opções apenas para filtros habilitados na categoria
   const parentFilters = { estado, cidade, orgao, cargo }
-  const { data: estadoOptions } = useCourseFilterOptions('estado')
-  const { data: cidadeOptions } = useCourseFilterOptions('cidade', { estado })
-  const { data: orgaoOptions } = useCourseFilterOptions('orgao', { estado, cidade })
-  const { data: cargoOptions } = useCourseFilterOptions('cargo', { estado, cidade, orgao })
-  const { data: disciplinaOptions } = useCourseFilterOptions('disciplina', parentFilters)
+  const { data: estadoOptions } = useCourseFilterOptions('estado', undefined, selectedCategory, fEstado)
+  const { data: cidadeOptions } = useCourseFilterOptions('cidade', { estado }, selectedCategory, fCidade && !!estado)
+  const { data: orgaoOptions } = useCourseFilterOptions('orgao', { estado, cidade }, selectedCategory, fOrgao)
+  const { data: cargoOptions } = useCourseFilterOptions('cargo', { estado, cidade, orgao }, selectedCategory, fCargo)
+  const { data: escolaridadeOptions } = useCourseFilterOptions('escolaridade', undefined, selectedCategory, fEscolaridade)
+  const { data: nivelOptions } = useCourseFilterOptions('nivel_id', undefined, selectedCategory, fNivel)
+  const { data: disciplinaOptions } = useCourseFilterOptions('disciplina_id', parentFilters, selectedCategory, fDisciplina)
 
-  const hasActiveFilters = !!(estado || cidade || orgao || cargo || disciplina)
-  const hasFilterOptions = !!(estadoOptions?.length || cidadeOptions?.length || orgaoOptions?.length || cargoOptions?.length || disciplinaOptions?.length)
+  const hasActiveFilters = !!(estado || cidade || orgao || cargo || escolaridade || nivelId || disciplinaId)
+  const hasAnyFilter = fEstado || fCidade || fOrgao || fCargo || fEscolaridade || fNivel || fDisciplina
+  const filtersVisible = showFilters || (!!selectedCategory && hasAnyFilter)
 
+  function clearAllFilters() {
+    setEstado(null); setCidade(null); setOrgao(null); setCargo(null); setEscolaridade(null); setNivelId(null); setDisciplinaId(null); setPage(1)
+  }
   function handleEstadoChange(v: string | null) {
-    setEstado(v); setCidade(null); setOrgao(null); setCargo(null); setDisciplina(null); setPage(1)
+    setEstado(v); setCidade(null); setOrgao(null); setCargo(null); setDisciplinaId(null); setPage(1)
   }
   function handleCidadeChange(v: string | null) {
-    setCidade(v); setOrgao(null); setCargo(null); setDisciplina(null); setPage(1)
+    setCidade(v); setOrgao(null); setCargo(null); setDisciplinaId(null); setPage(1)
   }
   function handleOrgaoChange(v: string | null) {
-    setOrgao(v); setCargo(null); setDisciplina(null); setPage(1)
+    setOrgao(v); setCargo(null); setDisciplinaId(null); setPage(1)
   }
   function handleCargoChange(v: string | null) {
-    setCargo(v); setDisciplina(null); setPage(1)
+    setCargo(v); setDisciplinaId(null); setPage(1)
+  }
+  function handleEscolaridadeChange(v: string | null) {
+    setEscolaridade(v); setDisciplinaId(null); setPage(1)
+  }
+  function handleNivelChange(v: string | null) {
+    setNivelId(v); setDisciplinaId(null); setPage(1)
   }
   function handleDisciplinaChange(v: string | null) {
-    setDisciplina(v); setPage(1)
+    setDisciplinaId(v); setPage(1)
   }
 
   const handleRefresh = useCallback(() => {
@@ -76,7 +101,7 @@ export default function CoursesScreen() {
           <View className="flex-1">
             <SearchInput value={search} onChangeText={(v) => { setSearch(v); setPage(1) }} className="flex-row items-center bg-dark-surfaceLight rounded-xl px-3" style={{ height: 44 }} />
           </View>
-          {hasFilterOptions && (
+          {hasAnyFilter && (
             <TouchableOpacity
               onPress={() => setShowFilters(!showFilters)}
               className={`ml-2 rounded-xl items-center justify-center ${hasActiveFilters || showFilters ? 'bg-primary' : 'bg-dark-surfaceLight'}`}
@@ -97,7 +122,7 @@ export default function CoursesScreen() {
             contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
           >
             <TouchableOpacity
-              onPress={() => { setSelectedCategory(undefined); setPage(1) }}
+              onPress={() => { setSelectedCategory(undefined); clearAllFilters() }}
               className={`rounded-full px-4 py-2 mr-2 border ${!selectedCategory ? 'bg-primary border-primary' : 'bg-dark-surface border-darkBorder'}`}
             >
               <Text className={`text-sm font-semibold ${!selectedCategory ? 'text-white' : 'text-darkText-secondary'}`}>
@@ -107,7 +132,7 @@ export default function CoursesScreen() {
             {categories.map((cat) => (
               <TouchableOpacity
                 key={cat.id}
-                onPress={() => { setSelectedCategory(cat.id === selectedCategory ? undefined : cat.id); setPage(1) }}
+                onPress={() => { setSelectedCategory(cat.id === selectedCategory ? undefined : cat.id); clearAllFilters() }}
                 className={`rounded-full px-4 py-2 mr-2 border ${selectedCategory === cat.id ? 'bg-primary border-primary' : 'bg-dark-surface border-darkBorder'}`}
               >
                 <Text className={`text-sm font-semibold ${selectedCategory === cat.id ? 'text-white' : 'text-darkText-secondary'}`}>
@@ -120,28 +145,34 @@ export default function CoursesScreen() {
       )}
 
       {/* Cascading filter dropdowns */}
-      {showFilters && (
+      {filtersVisible && (
         <View className="flex-row items-center py-2 border-b border-darkBorder-subtle">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-            {estadoOptions && estadoOptions.length > 0 && (
+            {fEstado && estadoOptions && estadoOptions.length > 0 && (
               <FilterDropdown label="Estado" value={estado} options={estadoOptions} onChange={handleEstadoChange} />
             )}
-            {estado && cidadeOptions && cidadeOptions.length > 0 && (
+            {fCidade && estado && cidadeOptions && cidadeOptions.length > 0 && (
               <FilterDropdown label="Cidade" value={cidade} options={cidadeOptions} onChange={handleCidadeChange} />
             )}
-            {cidade && orgaoOptions && orgaoOptions.length > 0 && (
+            {fOrgao && orgaoOptions && orgaoOptions.length > 0 && (
               <FilterDropdown label="Órgão" value={orgao} options={orgaoOptions} onChange={handleOrgaoChange} />
             )}
-            {orgao && cargoOptions && cargoOptions.length > 0 && (
+            {fCargo && cargoOptions && cargoOptions.length > 0 && (
               <FilterDropdown label="Cargo" value={cargo} options={cargoOptions} onChange={handleCargoChange} />
             )}
-            {cargo && disciplinaOptions && disciplinaOptions.length > 0 && (
-              <FilterDropdown label="Disciplina" value={disciplina} options={disciplinaOptions} onChange={handleDisciplinaChange} />
+            {fEscolaridade && escolaridadeOptions && escolaridadeOptions.length > 0 && (
+              <FilterDropdown label="Escolaridade" value={escolaridade} options={escolaridadeOptions} onChange={handleEscolaridadeChange} />
+            )}
+            {fNivel && nivelOptions && nivelOptions.length > 0 && (
+              <FilterDropdown label="Nível" value={nivelId} options={nivelOptions} onChange={handleNivelChange} />
+            )}
+            {fDisciplina && disciplinaOptions && disciplinaOptions.length > 0 && (
+              <FilterDropdown label="Disciplina" value={disciplinaId} options={disciplinaOptions} onChange={handleDisciplinaChange} />
             )}
           </ScrollView>
           {hasActiveFilters && (
             <TouchableOpacity
-              onPress={() => { setEstado(null); setCidade(null); setOrgao(null); setCargo(null); setDisciplina(null); setPage(1) }}
+              onPress={clearAllFilters}
               className="pr-4 pl-2"
             >
               <Ionicons name="close-circle" size={22} color="#f87171" />

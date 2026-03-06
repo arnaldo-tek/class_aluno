@@ -7,7 +7,7 @@ import { useNotices, useNoticeCategories, useNoticeFilterOptions } from '@/hooks
 import { SearchInput } from '@/components/ui/SearchInput'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { FilterDropdown } from '@/components/FilterDropdown'
+import { FilterDropdown, FilterDropdownMulti } from '@/components/FilterDropdown'
 import { t } from '@/i18n'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
@@ -15,31 +15,35 @@ export default function NoticesScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [estado, setEstado] = useState<string | null>(null)
-  const [cidade, setCidade] = useState<string | null>(null)
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [estadoId, setEstadoId] = useState<string | null>(null)
+  const [municipioId, setMunicipioId] = useState<string | null>(null)
   const [orgao, setOrgao] = useState<string | null>(null)
+  const [cargo, setCargo] = useState<string | null>(null)
   const [disciplina, setDisciplina] = useState<string | null>(null)
 
   const { data: categories } = useNoticeCategories()
   const { data: notices, isLoading } = useNotices({
-    search, categoriaId: selectedCategory, estado, cidade, orgao, disciplina,
+    search, categoriaIds: selectedCategories, estadoId, municipioId, orgao, cargo, disciplina,
   })
 
-  const selectedCat = categories?.find((c) => c.id === selectedCategory)
+  const selectedCats = selectedCategories.length > 0
+    ? categories?.filter((c) => selectedCategories.includes(c.id)) ?? []
+    : []
 
-  const { data: estadoOptions } = useNoticeFilterOptions('estado')
-  const { data: cidadeOptions } = useNoticeFilterOptions('cidade')
-  const { data: orgaoOptions } = useNoticeFilterOptions('orgao')
-  const { data: disciplinaOptions } = useNoticeFilterOptions('disciplina')
+  const fEstado = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_estado)
+  const fCidade = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_cidade)
+  const fOrgao = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_orgao_editais_noticias)
+  const fCargo = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_cargo)
+  const fDisciplina = selectedCats.length > 0 && selectedCats.some((c) => c.filtro_disciplina)
 
-  const categoryOptions = (categories ?? []).map((c) => ({ label: c.nome, value: c.id }))
+  const { data: estadoOptions } = useNoticeFilterOptions('estado', selectedCategories, fEstado)
+  const { data: cidadeOptions } = useNoticeFilterOptions('cidade', selectedCategories, fCidade)
+  const { data: orgaoOptions } = useNoticeFilterOptions('orgao', selectedCategories, fOrgao)
+  const { data: cargoOptions } = useNoticeFilterOptions('cargo', selectedCategories, fCargo)
+  const { data: disciplinaOptions } = useNoticeFilterOptions('disciplina', selectedCategories, fDisciplina)
 
-  const showEstado = (!selectedCat || selectedCat.filtro_estado) && !!estadoOptions?.length
-  const showCidade = (!selectedCat || selectedCat.filtro_cidade) && !!cidadeOptions?.length
-  const showOrgao = (!selectedCat || selectedCat.filtro_orgao) && !!orgaoOptions?.length
-  const showDisciplina = (!selectedCat || selectedCat.filtro_disciplina) && !!disciplinaOptions?.length
-  const hasSubFilters = showEstado || showCidade || showOrgao || showDisciplina
+  const hasSubFilters = fEstado || fCidade || fOrgao || fCargo || fDisciplina
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
@@ -52,19 +56,17 @@ export default function NoticesScreen() {
 
       <SearchInput value={search} onChangeText={setSearch} className="flex-row items-center bg-dark-surfaceLight rounded-2xl px-4 py-2.5 mx-4 my-3" />
 
-      {/* Category filter */}
-      {categoryOptions.length > 0 && (
-        <View className="flex-row px-4 pb-1">
-          <FilterDropdown
+      {/* Category filter (multi-select) */}
+      {categories && categories.length > 0 && (
+        <View className="flex-row px-4 pt-2 pb-1">
+          <FilterDropdownMulti
             label="Todas as categorias"
-            value={selectedCategory}
-            options={categoryOptions}
-            onChange={(val) => {
-              setSelectedCategory(val)
-              setEstado(null)
-              setCidade(null)
-              setOrgao(null)
-              setDisciplina(null)
+            values={selectedCategories}
+            options={categories.map((c) => ({ label: c.nome, value: c.id }))}
+            onChange={(vals) => {
+              setSelectedCategories(vals)
+              setEstadoId(null); setMunicipioId(null); setOrgao(null)
+              setCargo(null); setDisciplina(null)
             }}
           />
         </View>
@@ -72,20 +74,33 @@ export default function NoticesScreen() {
 
       {/* Sub-filters */}
       {hasSubFilters && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-          {showEstado && (
-            <FilterDropdown label={t('news.estado')} value={estado} options={estadoOptions!} onChange={setEstado} />
+        <View className="flex-row items-center py-2 border-b border-darkBorder-subtle">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+            {fEstado && estadoOptions && estadoOptions.length > 0 && (
+              <FilterDropdown label="Estado" value={estadoId} options={estadoOptions} onChange={(val) => { setEstadoId(val); setMunicipioId(null) }} />
+            )}
+            {fCidade && cidadeOptions && cidadeOptions.length > 0 && (
+              <FilterDropdown label="Cidade" value={municipioId} options={cidadeOptions} onChange={setMunicipioId} />
+            )}
+            {fOrgao && orgaoOptions && orgaoOptions.length > 0 && (
+              <FilterDropdown label="Órgão" value={orgao} options={orgaoOptions} onChange={setOrgao} />
+            )}
+            {fCargo && cargoOptions && cargoOptions.length > 0 && (
+              <FilterDropdown label="Cargo" value={cargo} options={cargoOptions} onChange={setCargo} />
+            )}
+            {fDisciplina && disciplinaOptions && disciplinaOptions.length > 0 && (
+              <FilterDropdown label="Disciplina" value={disciplina} options={disciplinaOptions} onChange={setDisciplina} />
+            )}
+          </ScrollView>
+          {(estadoId || municipioId || orgao || cargo || disciplina) && (
+            <TouchableOpacity
+              onPress={() => { setEstadoId(null); setMunicipioId(null); setOrgao(null); setCargo(null); setDisciplina(null) }}
+              className="pr-4 pl-2"
+            >
+              <Ionicons name="close-circle" size={22} color="#f87171" />
+            </TouchableOpacity>
           )}
-          {showCidade && (
-            <FilterDropdown label={t('news.cidade')} value={cidade} options={cidadeOptions!} onChange={setCidade} />
-          )}
-          {showOrgao && (
-            <FilterDropdown label={t('news.orgao')} value={orgao} options={orgaoOptions!} onChange={setOrgao} />
-          )}
-          {showDisciplina && (
-            <FilterDropdown label={t('news.disciplina')} value={disciplina} options={disciplinaOptions!} onChange={setDisciplina} />
-          )}
-        </ScrollView>
+        </View>
       )}
 
       {/* Notices list */}

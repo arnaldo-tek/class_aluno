@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { View, Text, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Video, ResizeMode } from 'expo-av'
+import * as VideoThumbnails from 'expo-video-thumbnails'
 import { useAllProfessors } from '@/hooks/useProfessor'
 import { useProfessorCards, useFollowedProfessorCards } from '@/hooks/useProfessorCards'
 import { SearchInput } from '@/components/ui/SearchInput'
@@ -73,6 +74,18 @@ function FilterChip({ label, active, onPress }: { label: string; active: boolean
 function CardFeedItem({ item }: { item: CardItem }) {
   const router = useRouter()
   const [playing, setPlaying] = useState(false)
+  const [thumbnail, setThumbnail] = useState<string | null>(null)
+
+  // Gera thumbnail do vídeo quando não tem imagem
+  useEffect(() => {
+    if (item.video && !item.imagem) {
+      VideoThumbnails.getThumbnailAsync(item.video, { time: 1000 })
+        .then(({ uri }) => setThumbnail(uri))
+        .catch(() => {})
+    }
+  }, [item.video, item.imagem])
+
+  const previewImage = item.imagem ?? thumbnail
 
   return (
     <View className="bg-dark-surface rounded-2xl mb-4 overflow-hidden border border-darkBorder-subtle">
@@ -114,8 +127,8 @@ function CardFeedItem({ item }: { item: CardItem }) {
             className="w-full h-64 bg-dark-surfaceLight items-center justify-center"
             activeOpacity={0.8}
           >
-            {item.imagem && (
-              <Image source={{ uri: item.imagem }} className="absolute w-full h-full" resizeMode="cover" />
+            {previewImage && (
+              <Image source={{ uri: previewImage }} className="absolute w-full h-full" resizeMode="cover" />
             )}
             <View className="w-16 h-16 rounded-full bg-black/50 items-center justify-center">
               <Ionicons name="play" size={32} color="white" />

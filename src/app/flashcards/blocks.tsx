@@ -26,32 +26,33 @@ export default function FlashcardBlocksScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
-      <View className="flex-row items-center justify-between px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1 }} className="flex-row items-center justify-between px-4 pt-4 pb-3">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text className="flex-1 text-lg font-bold text-darkText" numberOfLines={1}>{folder_name ?? 'Blocos'}</Text>
+        <Text style={{ color: colors.text }} className="flex-1 text-lg font-bold" numberOfLines={1}>{folder_name ?? 'Blocos'}</Text>
         <TouchableOpacity onPress={() => setShowInput(!showInput)}>
           <Ionicons name="add-circle-outline" size={28} color="#60a5fa" />
         </TouchableOpacity>
       </View>
 
       {/* Breadcrumb */}
-      <View className="flex-row items-center px-4 py-2 bg-dark-bg">
+      <View style={{ backgroundColor: colors.bg }} className="flex-row items-center px-4 py-2">
         <TouchableOpacity onPress={() => router.push('/flashcards')}>
           <Text className="text-xs text-primary-light">Flashcards</Text>
         </TouchableOpacity>
         <Ionicons name="chevron-forward" size={12} color={colors.textMuted} style={{ marginHorizontal: 4 }} />
-        <Text className="text-xs text-darkText-muted" numberOfLines={1}>{folder_name ?? 'Pasta'}</Text>
+        <Text style={{ color: colors.textMuted }} className="text-xs" numberOfLines={1}>{folder_name ?? 'Pasta'}</Text>
       </View>
 
       {showInput && (
-        <View className="flex-row px-4 py-3 bg-dark-surface border-b border-darkBorder gap-2">
+        <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1 }} className="flex-row px-4 py-3 gap-2">
           <TextInput
-            className="flex-1 border border-darkBorder rounded-2xl px-3 py-2 text-sm bg-dark-surfaceLight text-darkText"
+            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text }}
+            className="flex-1 border rounded-2xl px-3 py-2 text-sm"
             placeholder="Nome do bloco"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.textMuted}
             value={newName}
             onChangeText={setNewName}
             autoFocus
@@ -61,7 +62,7 @@ export default function FlashcardBlocksScreen() {
             disabled={createBlock.isPending}
             className="bg-primary rounded-2xl px-4 items-center justify-center"
           >
-            <Text className="text-darkText-inverse font-semibold text-sm">Criar</Text>
+            <Text style={{ color: colors.textInverse }} className="font-semibold text-sm">Criar</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -85,13 +86,14 @@ export default function FlashcardBlocksScreen() {
                 pathname: '/flashcards/study',
                 params: { block_id: item.id, block_name: item.nome, folder_id: folder_id!, folder_name: folder_name ?? '' },
               })}
-              className="bg-dark-surface rounded-2xl px-4 py-4 mb-3 border border-darkBorder flex-row items-center"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="rounded-2xl px-4 py-4 mb-3 border flex-row items-center"
               activeOpacity={0.7}
             >
               <View className="w-10 h-10 rounded-full bg-primary-50 items-center justify-center">
                 <Ionicons name="albums-outline" size={22} color="#60a5fa" />
               </View>
-              <Text className="flex-1 text-base font-medium text-darkText ml-3">{item.nome}</Text>
+              <Text style={{ color: colors.text }} className="flex-1 text-base font-medium ml-3">{item.nome}</Text>
               <TouchableOpacity
                 onPress={() => Alert.alert('Excluir bloco', `Excluir "${item.nome}"?`, [
                   { text: 'Cancelar', style: 'cancel' },

@@ -96,13 +96,13 @@ export default function FlashcardStudyScreen() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-3">
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="close" size={24} color={colors.textMuted} />
         </TouchableOpacity>
-        <Text className="text-sm font-medium text-darkText-secondary flex-1 text-center" numberOfLines={1}>
+        <Text style={{ color: colors.textSecondary }} className="text-sm font-medium flex-1 text-center" numberOfLines={1}>
           {block_name ?? 'Flashcards'}
         </Text>
         <View className="flex-row items-center gap-3">
@@ -119,20 +119,22 @@ export default function FlashcardStudyScreen() {
 
       {/* Add card form */}
       {showForm && (
-        <View className="px-4 py-3 bg-dark-surface border-b border-darkBorder gap-2">
+        <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1 }} className="px-4 py-3 gap-2">
           <TextInput
-            className="border border-darkBorder rounded-2xl px-3 py-2 text-sm bg-dark-surfaceLight text-darkText"
+            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text }}
+            className="border rounded-2xl px-3 py-2 text-sm"
             placeholder="Pergunta (frente)"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.textMuted}
             value={pergunta}
             onChangeText={setPergunta}
             multiline
             autoFocus
           />
           <TextInput
-            className="border border-darkBorder rounded-2xl px-3 py-2 text-sm bg-dark-surfaceLight text-darkText"
+            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text }}
+            className="border rounded-2xl px-3 py-2 text-sm"
             placeholder="Resposta (verso)"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.textMuted}
             value={resposta}
             onChangeText={setResposta}
             multiline
@@ -159,11 +161,11 @@ export default function FlashcardStudyScreen() {
         <>
           {/* Progress */}
           <View className="flex-row items-center justify-center mb-1">
-            <Text className="text-sm font-medium text-darkText-secondary">
+            <Text style={{ color: colors.textSecondary }} className="text-sm font-medium">
               {currentIndex + 1} / {cards.length}
             </Text>
           </View>
-          <View className="h-1 bg-dark-surfaceLight mx-4 rounded-full mb-4">
+          <View style={{ backgroundColor: colors.surfaceLight }} className="h-1 mx-4 rounded-full mb-4">
             <View
               className="h-1 bg-accent rounded-full"
               style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
@@ -186,7 +188,7 @@ export default function FlashcardStudyScreen() {
                 pointerEvents={isFlipped ? 'none' : 'auto'}
                 style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: frontRotate }] }}
               >
-                <View style={{ flex: 1, backgroundColor: '#1e1e2e', borderRadius: 24, borderWidth: 1, borderColor: '#2a2a3a', paddingHorizontal: 32, paddingTop: 24, paddingBottom: 16 }}>
+                <View style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.borderSubtle, paddingHorizontal: 32, paddingTop: 24, paddingBottom: 16 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'center' }}>
                     <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(37,99,235,0.15)', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6' }}>F</Text>
@@ -196,11 +198,11 @@ export default function FlashcardStudyScreen() {
                     <Ionicons name="sync-outline" size={16} color={colors.textMuted} />
                   </View>
                   <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator nestedScrollEnabled contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 18, fontWeight: '600', color: '#f0f0f0', textAlign: 'justify', lineHeight: 32 }}>
+                    <Text style={{ fontSize: 18, fontWeight: '600', color: colors.text, textAlign: 'justify', lineHeight: 32 }}>
                       {cards[currentIndex].pergunta}
                     </Text>
                   </ScrollView>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2a2a3a', marginTop: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.borderSubtle, marginTop: 12 }}>
                     <Ionicons name="sync-outline" size={14} color={colors.textMuted} />
                     <Text style={{ fontSize: 12, color: colors.textMuted, marginLeft: 6 }}>Toque para virar</Text>
                   </View>
@@ -212,7 +214,7 @@ export default function FlashcardStudyScreen() {
                 pointerEvents={isFlipped ? 'auto' : 'none'}
                 style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: backRotate }] }}
               >
-                <View style={{ flex: 1, backgroundColor: '#252538', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(96,165,250,0.3)', paddingHorizontal: 32, paddingTop: 24, paddingBottom: 16 }}>
+                <View style={{ flex: 1, backgroundColor: colors.surfaceLight, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(96,165,250,0.3)', paddingHorizontal: 32, paddingTop: 24, paddingBottom: 16 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'center' }}>
                     <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(96,165,250,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#60a5fa' }}>V</Text>
@@ -222,11 +224,11 @@ export default function FlashcardStudyScreen() {
                     <Ionicons name="sync-outline" size={16} color={colors.textMuted} />
                   </View>
                   <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator nestedScrollEnabled contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 18, fontWeight: '600', color: '#f0f0f0', textAlign: 'justify', lineHeight: 32 }}>
+                    <Text style={{ fontSize: 18, fontWeight: '600', color: colors.text, textAlign: 'justify', lineHeight: 32 }}>
                       {cards[currentIndex].resposta}
                     </Text>
                   </ScrollView>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2a2a3a', marginTop: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.borderSubtle, marginTop: 12 }}>
                     <Ionicons name="sync-outline" size={14} color={colors.textMuted} />
                     <Text style={{ fontSize: 12, color: colors.textMuted, marginLeft: 6 }}>Toque para virar</Text>
                   </View>
@@ -240,14 +242,16 @@ export default function FlashcardStudyScreen() {
             <TouchableOpacity
               onPress={goPrev}
               disabled={currentIndex === 0}
-              className={`w-14 h-14 rounded-full items-center justify-center ${currentIndex === 0 ? 'bg-dark-surfaceLight' : 'bg-dark-surface border border-darkBorder-light'}`}
+              style={{ backgroundColor: currentIndex === 0 ? colors.surfaceLight : colors.surface, borderColor: colors.borderLight, borderWidth: currentIndex === 0 ? 0 : 1 }}
+              className="w-14 h-14 rounded-full items-center justify-center"
             >
               <Ionicons name="arrow-back" size={24} color={colors.textMuted} />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={flip}
-              className="w-14 h-14 rounded-full bg-dark-surface border border-darkBorder items-center justify-center"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }}
+              className="w-14 h-14 rounded-full items-center justify-center"
             >
               <Ionicons name="sync-outline" size={24} color="#f59e0b" />
             </TouchableOpacity>
@@ -259,7 +263,7 @@ export default function FlashcardStudyScreen() {
               <Ionicons
                 name={currentIndex === cards.length - 1 ? 'checkmark' : 'arrow-forward'}
                 size={24}
-                color={colors.text}
+                color={colors.textInverse}
               />
             </TouchableOpacity>
           </View>

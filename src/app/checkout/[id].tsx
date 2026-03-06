@@ -252,20 +252,22 @@ export default function CheckoutScreen() {
                 <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => navigateToPayment('pix')}
-                className="flex-row items-center bg-dark-surface border border-darkBorder rounded-2xl px-4 py-4"
-                activeOpacity={0.7}
-              >
-                <View className="w-10 h-10 rounded-full bg-success-dark items-center justify-center">
-                  <Ionicons name="qr-code-outline" size={22} color="#34d399" />
-                </View>
-                <View className="flex-1 ml-3">
-                  <Text className="text-sm font-semibold text-darkText">PIX</Text>
-                  <Text className="text-xs text-darkText-secondary">Aprovacao instantanea</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-              </TouchableOpacity>
+              {!isPacote && (
+                <TouchableOpacity
+                  onPress={() => navigateToPayment('pix')}
+                  className="flex-row items-center bg-dark-surface border border-darkBorder rounded-2xl px-4 py-4"
+                  activeOpacity={0.7}
+                >
+                  <View className="w-10 h-10 rounded-full bg-success-dark items-center justify-center">
+                    <Ionicons name="qr-code-outline" size={22} color="#34d399" />
+                  </View>
+                  <View className="flex-1 ml-3">
+                    <Text className="text-sm font-semibold text-darkText">PIX</Text>
+                    <Text className="text-xs text-darkText-secondary">Aprovacao instantanea</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
             </>
           )}
         </View>
