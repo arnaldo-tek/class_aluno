@@ -6,11 +6,11 @@ import { t } from '@/i18n'
 import { useBanners, useCategories, useTopProfessors, useRecentNews } from '@/hooks/useHome'
 import { useFeaturedCourses } from '@/hooks/useCourses'
 import { usePackages } from '@/hooks/usePackages'
-import { useUnreadNotificationsCount } from '@/hooks/useNotifications'
 import { CourseCard } from '@/components/CourseCard'
 import { ProfessorCard } from '@/components/ProfessorCard'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { DrawerMenu } from '@/components/DrawerMenu'
+import { TopBar } from '@/components/TopBar'
 import { Ionicons } from '@expo/vector-icons'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
@@ -19,34 +19,11 @@ const SCREEN_WIDTH = Dimensions.get('window').width
 export default function HomeScreen() {
   const router = useRouter()
   const colors = useThemeColors()
-  const { data: unreadNotifications } = useUnreadNotificationsCount()
   const [drawerVisible, setDrawerVisible] = useState(false)
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg" edges={['left', 'right', 'bottom']}>
-      {/* Top bar - Superclasse yellow */}
-      <View style={{ backgroundColor: '#f5ff00' }} className="px-4 pt-14 pb-3 flex-row items-center">
-        <TouchableOpacity onPress={() => setDrawerVisible(true)} className="p-1 mr-3">
-          <Ionicons name="menu" size={26} color={colors.text} />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900 flex-1">Superclasse</Text>
-        <TouchableOpacity
-          onPress={() => router.push('/student-area' as any)}
-          className="bg-white/90 rounded-full px-3.5 py-1.5 mr-3"
-          activeOpacity={0.7}
-        >
-          <Text className="text-xs font-bold text-gray-800">Aluno</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/notifications')} className="relative p-1">
-          <Ionicons name="notifications-outline" size={24} color={colors.text} />
-          {(unreadNotifications ?? 0) > 0 && (
-            <View className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-red-500 items-center justify-center">
-              <Text className="text-[10px] font-bold text-white">{unreadNotifications}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
+      <TopBar onMenuPress={() => setDrawerVisible(true)} />
       <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
 
       <ScrollView className="flex-1 pt-4" showsVerticalScrollIndicator={false}>

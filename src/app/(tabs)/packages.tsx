@@ -8,6 +8,8 @@ import { SearchInput } from '@/components/ui/SearchInput'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { TopBar } from '@/components/TopBar'
+import { DrawerMenu } from '@/components/DrawerMenu'
 import { t } from '@/i18n'
 
 export default function PackagesTab() {
@@ -17,13 +19,14 @@ export default function PackagesTab() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const { data: categories } = usePackageCategories()
   const { data: packages, isLoading } = usePackages({ search, categoriaId: selectedCategory })
+  const [drawerVisible, setDrawerVisible] = useState(false)
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
-      <View className="px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
-        <Text className="text-lg font-bold text-darkText">{t('packages.title')}</Text>
-      </View>
+    <SafeAreaView className="flex-1 bg-dark-bg" edges={['left', 'right', 'bottom']}>
+      <TopBar title="Assinaturas" onMenuPress={() => setDrawerVisible(true)} />
+      <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
 
+      <View className="pt-3" />
       <SearchInput value={search} onChangeText={setSearch} />
 
       {categories && categories.length > 0 && (
@@ -85,7 +88,7 @@ export default function PackagesTab() {
                   <Text className="text-sm text-darkText-secondary mt-1" numberOfLines={2}>{item.descricao}</Text>
                 )}
                 <View className="flex-row items-center justify-between mt-3">
-                  <Text className="text-lg font-bold text-primary-light">
+                  <Text className="text-lg font-bold text-gray-800" style={{ color: '#e6d900' }}>
                     R$ {((item.preco ?? 0) / 100).toFixed(2)}{t('packages.perMonth')}
                   </Text>
                   <Text className="text-xs text-darkText-muted">

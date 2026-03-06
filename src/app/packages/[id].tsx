@@ -50,7 +50,7 @@ export default function PackageDetailScreen() {
           )}
 
           <View className="flex-row items-center mt-4">
-            <Text className="text-2xl font-bold text-primary-light">
+            <Text className="text-2xl font-bold" style={{ color: '#e6d900' }}>
               R$ {((pkg.preco ?? 0) / 100).toFixed(2)}
             </Text>
             <Text className="text-sm text-darkText-muted ml-1">{t('packages.perMonth')}</Text>
@@ -73,6 +73,7 @@ export default function PackageDetailScreen() {
                 preco={0}
                 professor_nome={course.professor?.nome_professor}
                 hidePrice
+                fromPackage
               />
             )
           })}
@@ -86,9 +87,9 @@ export default function PackageDetailScreen() {
         ) : (
           <TouchableOpacity
             onPress={() => router.push({ pathname: '/checkout/[id]', params: { id: id!, type: 'pacote' } })}
-            className="bg-primary rounded-2xl py-4 items-center"
+            className="rounded-2xl py-4 items-center" style={{ backgroundColor: '#fef200' }}
           >
-            <Text className="text-white font-bold text-base">{t('packages.subscribe')}</Text>
+            <Text className="font-bold text-base text-gray-800">{t('packages.subscribe')}</Text>
           </TouchableOpacity>
         )}
       </View>

@@ -78,8 +78,8 @@ export default {
     profileSaved: 'Perfil salvo com sucesso',
   },
   packages: {
-    title: 'Pacotes',
-    myPackages: 'Meus Pacotes',
+    title: 'Assinaturas',
+    myPackages: 'Minhas Assinaturas',
     subscribe: 'Assinar',
     subscribed: 'Assinado',
     cancelSubscription: 'Cancelar assinatura',

@@ -15,7 +15,7 @@ import { DownloadAllButton } from '@/components/DownloadAllButton'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function CourseDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, fromPackage } = useLocalSearchParams<{ id: string; fromPackage?: string }>()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'info' | 'modules' | 'reviews' | 'chat'>('info')
   const [reviewRating, setReviewRating] = useState(0)
@@ -96,22 +96,24 @@ export default function CourseDetailScreen() {
             </View>
           </View>
 
-          {/* Price + CTA */}
-          <View className="flex-row items-center justify-between mt-5 pb-5 border-b border-darkBorder-subtle">
-            <Text className="text-2xl font-bold text-accent">
-              {(course.preco ?? 0) > 0 ? `R$ ${(course.preco ?? 0).toFixed(2)}` : t('courses.free')}
-            </Text>
-            {isEnrolled ? (
-              <Badge variant="success">{t('courses.enrolled')}</Badge>
-            ) : (
-              <TouchableOpacity
-                onPress={() => router.push({ pathname: '/checkout/[id]', params: { id: id!, type: 'curso' } })}
-                className="bg-accent rounded-2xl px-7 py-3.5"
-              >
-                <Text className="text-darkText-inverse font-bold">{t('courses.enroll')}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          {/* Price + CTA (hidden when viewing from package) */}
+          {!fromPackage && (
+            <View className="flex-row items-center justify-between mt-5 pb-5 border-b border-darkBorder-subtle">
+              <Text className="text-2xl font-bold" style={{ color: '#e6d900' }}>
+                {(course.preco ?? 0) > 0 ? `R$ ${(course.preco ?? 0).toFixed(2)}` : t('courses.free')}
+              </Text>
+              {isEnrolled ? (
+                <Badge variant="success">{t('courses.enrolled')}</Badge>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => router.push({ pathname: '/checkout/[id]', params: { id: id!, type: 'curso' } })}
+                  className="rounded-2xl px-7 py-3.5" style={{ backgroundColor: '#fef200' }}
+                >
+                  <Text className="font-bold text-gray-800">{t('courses.enroll')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
 
           {/* Download all */}
           {Platform.OS !== 'web' && isEnrolled && modules && modules.length > 0 && (

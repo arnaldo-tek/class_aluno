@@ -1,20 +1,23 @@
+import { useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { TopBar } from '@/components/TopBar'
+import { DrawerMenu } from '@/components/DrawerMenu'
 import { t } from '@/i18n'
 
 export default function MoreScreen() {
   const router = useRouter()
+  const [drawerVisible, setDrawerVisible] = useState(false)
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
-      <View className="px-4 pt-4 pb-3">
-        <Text className="text-2xl font-bold text-darkText">Mais</Text>
-      </View>
+    <SafeAreaView className="flex-1 bg-dark-bg" edges={['left', 'right', 'bottom']}>
+      <TopBar title="Mais opções" onMenuPress={() => setDrawerVisible(true)} />
+      <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
 
-      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 px-4 pt-3" showsVerticalScrollIndicator={false}>
         <View className="bg-dark-surface rounded-2xl overflow-hidden mb-4">
           <MenuItem
             icon="newspaper-outline"

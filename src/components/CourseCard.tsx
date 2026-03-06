@@ -14,18 +14,20 @@ interface CourseCardProps {
   horizontal?: boolean
   progress?: number | null
   hidePrice?: boolean
+  fromPackage?: boolean
 }
 
 export function CourseCard({
-  id, nome, imagem, preco, professor_nome, average_rating, horizontal, progress, hidePrice,
+  id, nome, imagem, preco, professor_nome, average_rating, horizontal, progress, hidePrice, fromPackage,
 }: CourseCardProps) {
   const router = useRouter()
   const colors = useThemeColors()
+  const courseParams = fromPackage ? { id, fromPackage: '1' } : { id }
 
   if (horizontal) {
     return (
       <TouchableOpacity
-        onPress={() => router.push({ pathname: '/course/[id]', params: { id } })}
+        onPress={() => router.push({ pathname: '/course/[id]', params: courseParams })}
         className="w-56 mr-3"
         activeOpacity={0.7}
       >
@@ -39,8 +41,8 @@ export function CourseCard({
               </View>
             )}
             {!hidePrice && (
-              <View className="absolute bottom-2 right-2 bg-accent rounded-lg px-2.5 py-1">
-                <Text className="text-xs font-bold text-white">
+              <View className="absolute bottom-2 right-2 rounded-lg px-2.5 py-1" style={{ backgroundColor: '#fef200' }}>
+                <Text className="text-xs font-bold text-gray-800">
                   {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
                 </Text>
               </View>
@@ -66,7 +68,7 @@ export function CourseCard({
   // List mode - horizontal card layout
   return (
     <TouchableOpacity
-      onPress={() => router.push({ pathname: '/course/[id]', params: { id } })}
+      onPress={() => router.push({ pathname: '/course/[id]', params: courseParams })}
       className="mb-3 mx-4"
       activeOpacity={0.7}
     >
@@ -111,8 +113,8 @@ export function CourseCard({
                 <View />
               )}
               {!hidePrice && (
-                <View className="bg-accent rounded-lg px-2.5 py-1">
-                  <Text className="text-xs font-bold text-white">
+                <View className="rounded-lg px-2.5 py-1" style={{ backgroundColor: '#fef200' }}>
+                  <Text className="text-xs font-bold text-gray-800">
                     {preco > 0 ? `R$ ${preco.toFixed(2)}` : t('courses.free')}
                   </Text>
                 </View>

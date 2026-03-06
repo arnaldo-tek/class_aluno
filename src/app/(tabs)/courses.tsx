@@ -9,6 +9,8 @@ import { SearchInput } from '@/components/ui/SearchInput'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { FilterDropdown } from '@/components/FilterDropdown'
+import { TopBar } from '@/components/TopBar'
+import { DrawerMenu } from '@/components/DrawerMenu'
 import { Ionicons } from '@expo/vector-icons'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
@@ -23,6 +25,7 @@ export default function CoursesScreen() {
   const [disciplina, setDisciplina] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [page, setPage] = useState(1)
+  const [drawerVisible, setDrawerVisible] = useState(false)
 
   const { data, isLoading, refetch, isRefetching } = useCourses({
     search: search || undefined,
@@ -65,9 +68,10 @@ export default function CoursesScreen() {
   }, [refetch])
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
-      <View className="bg-dark-surface px-4 pt-4 pb-3 border-b border-darkBorder-subtle">
-        <Text className="text-2xl font-bold text-darkText mb-3">{t('courses.title')}</Text>
+    <SafeAreaView className="flex-1 bg-dark-bg" edges={['left', 'right', 'bottom']}>
+      <TopBar title="Catálogo" onMenuPress={() => setDrawerVisible(true)} />
+      <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
+      <View className="px-4 py-3 bg-dark-surface border-b border-darkBorder-subtle">
         <View className="flex-row items-center">
           <View className="flex-1">
             <SearchInput value={search} onChangeText={(v) => { setSearch(v); setPage(1) }} className="flex-row items-center bg-dark-surfaceLight rounded-xl px-3" style={{ height: 44 }} />

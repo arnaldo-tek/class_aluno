@@ -27,16 +27,16 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#f59e0b',
+        tabBarActiveTintColor: '#fef200',
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
           borderTopWidth: 0,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 16,
           paddingTop: 8,
-          height: Platform.OS === 'ios' ? 85 : 65,
+          height: Platform.OS === 'ios' ? 90 : 72,
           marginHorizontal: 16,
-          marginBottom: Platform.OS === 'ios' ? 0 : 8,
+          marginBottom: Platform.OS === 'ios' ? 8 : 16,
           borderRadius: 24,
           position: 'absolute',
           shadowColor: colors.tabBarShadow,
@@ -64,7 +64,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="courses"
         options={{
-          title: t('tabs.courses'),
+          title: 'Catálogo',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'book' : 'book-outline'} size={22} color={color} />
           ),
@@ -91,7 +91,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="more"
         options={{
-          title: 'Mais',
+          title: 'Mais opções',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} />
           ),

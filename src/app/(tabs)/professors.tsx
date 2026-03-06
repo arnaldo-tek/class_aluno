@@ -3,14 +3,17 @@ import { View, Text, FlatList, TouchableOpacity, Image, ScrollView } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { Video, ResizeMode } from 'expo-av'
 import { useAllProfessors } from '@/hooks/useProfessor'
 import { useProfessorCards, useFollowedProfessorCards } from '@/hooks/useProfessorCards'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { TopBar } from '@/components/TopBar'
+import { DrawerMenu } from '@/components/DrawerMenu'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
-type Filter = 'feed' | 'following' | 'all'
+type Filter = 'all' | 'following'
 
 type CardItem = {
   id: string
@@ -26,29 +29,27 @@ type CardItem = {
 
 export default function ProfessorsScreen() {
   const router = useRouter()
-  const [filter, setFilter] = useState<Filter>('feed')
+  const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
+  const [drawerVisible, setDrawerVisible] = useState(false)
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
-      <View className="px-4 pt-4 pb-3">
-        <Text className="text-2xl font-bold text-darkText">Professores</Text>
-      </View>
+    <SafeAreaView className="flex-1 bg-dark-bg" edges={['left', 'right', 'bottom']}>
+      <TopBar title="Professores" onMenuPress={() => setDrawerVisible(true)} />
+      <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
 
       {/* Filter tabs */}
-      <View className="flex-row px-4 mb-3">
-        <FilterChip label="Feed" active={filter === 'feed'} onPress={() => setFilter('feed')} />
-        <FilterChip label="Seguindo" active={filter === 'following'} onPress={() => setFilter('following')} />
+      <View className="flex-row px-4 mt-3 mb-3">
         <FilterChip label="Todos" active={filter === 'all'} onPress={() => setFilter('all')} />
+        <FilterChip label="Seguindo" active={filter === 'following'} onPress={() => setFilter('following')} />
       </View>
 
       {filter === 'all' && (
         <SearchInput value={search} onChangeText={setSearch} />
       )}
 
-      {filter === 'feed' && <ProfessorFeed />}
-      {filter === 'following' && <FollowingFeed />}
       {filter === 'all' && <AllProfessorsFeed search={search} />}
+      {filter === 'following' && <FollowingFeed />}
     </SafeAreaView>
   )
 }
@@ -71,15 +72,16 @@ function FilterChip({ label, active, onPress }: { label: string; active: boolean
 
 function CardFeedItem({ item }: { item: CardItem }) {
   const router = useRouter()
+  const [playing, setPlaying] = useState(false)
 
   return (
-    <TouchableOpacity
-      onPress={() => router.push({ pathname: '/professor/[id]', params: { id: item.professor_id } })}
-      className="bg-dark-surface rounded-2xl mb-4 overflow-hidden border border-darkBorder-subtle"
-      activeOpacity={0.8}
-    >
-      {/* Professor info */}
-      <View className="flex-row items-center px-4 py-3">
+    <View className="bg-dark-surface rounded-2xl mb-4 overflow-hidden border border-darkBorder-subtle">
+      {/* Professor info - only this navigates to professor page */}
+      <TouchableOpacity
+        onPress={() => router.push({ pathname: '/professor/[id]', params: { id: item.professor_id } })}
+        className="flex-row items-center px-4 py-3"
+        activeOpacity={0.7}
+      >
         {item.professor_foto ? (
           <Image source={{ uri: item.professor_foto }} className="w-10 h-10 rounded-full" />
         ) : (
@@ -91,17 +93,38 @@ function CardFeedItem({ item }: { item: CardItem }) {
           <Text className="text-sm font-semibold text-darkText">{item.professor_nome}</Text>
           <Text className="text-xs text-darkText-muted">Professor</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Media */}
-      {item.imagem && (
+      {item.video ? (
+        playing ? (
+          <Video
+            source={{ uri: item.video }}
+            useNativeControls
+            shouldPlay
+            resizeMode={ResizeMode.CONTAIN}
+            style={{ width: '100%', height: 256 }}
+            onPlaybackStatusUpdate={(status) => {
+              if ('didJustFinish' in status && status.didJustFinish) setPlaying(false)
+            }}
+          />
+        ) : (
+          <TouchableOpacity
+            onPress={() => setPlaying(true)}
+            className="w-full h-64 bg-dark-surfaceLight items-center justify-center"
+            activeOpacity={0.8}
+          >
+            {item.imagem && (
+              <Image source={{ uri: item.imagem }} className="absolute w-full h-full" resizeMode="cover" />
+            )}
+            <View className="w-16 h-16 rounded-full bg-black/50 items-center justify-center">
+              <Ionicons name="play" size={32} color="white" />
+            </View>
+          </TouchableOpacity>
+        )
+      ) : item.imagem ? (
         <Image source={{ uri: item.imagem }} className="w-full h-64" resizeMode="cover" />
-      )}
-      {item.video && !item.imagem && (
-        <View className="w-full h-64 bg-dark-surfaceLight items-center justify-center">
-          <Ionicons name="play-circle-outline" size={48} color="#3b82f6" />
-        </View>
-      )}
+      ) : null}
 
       {/* Text */}
       {item.texto && (
@@ -109,33 +132,7 @@ function CardFeedItem({ item }: { item: CardItem }) {
           <Text className="text-sm text-darkText leading-5">{item.texto}</Text>
         </View>
       )}
-    </TouchableOpacity>
-  )
-}
-
-function ProfessorFeed() {
-  const colors = useThemeColors()
-  const { data: cards, isLoading } = useProfessorCards()
-
-  if (isLoading) return <LoadingSpinner />
-  if (!cards?.length) {
-    return (
-      <EmptyState
-        title="Nenhum card ainda"
-        description="Os professores ainda não publicaram cards."
-        icon={<Ionicons name="images-outline" size={48} color={colors.textMuted} />}
-      />
-    )
-  }
-
-  return (
-    <FlatList
-      data={cards}
-      keyExtractor={(item) => item.id}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ padding: 16, paddingTop: 0 }}
-      renderItem={({ item }) => <CardFeedItem item={item} />}
-    />
+    </View>
   )
 }
 

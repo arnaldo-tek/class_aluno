@@ -26,7 +26,7 @@ export default function PackagesScreen() {
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">{t('packages.title')}</Text>
         <TouchableOpacity onPress={() => router.push('/packages/my')}>
-          <Text className="text-sm font-medium text-primary-light">{t('packages.myPackages')}</Text>
+          <Text className="text-sm font-medium text-blue-500">{t('packages.myPackages')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -91,7 +91,7 @@ export default function PackagesScreen() {
                   <Text className="text-sm text-darkText-secondary mt-1" numberOfLines={2}>{item.descricao}</Text>
                 )}
                 <View className="flex-row items-center justify-between mt-3">
-                  <Text className="text-lg font-bold text-primary-light">
+                  <Text className="text-lg font-bold" style={{ color: '#e6d900' }}>
                     R$ {((item.preco ?? 0) / 100).toFixed(2)}{t('packages.perMonth')}
                   </Text>
                   <Text className="text-xs text-darkText-muted">
