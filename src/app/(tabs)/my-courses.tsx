@@ -1,5 +1,6 @@
-import { View, Text, FlatList, RefreshControl } from 'react-native'
+import { View, Text, FlatList, RefreshControl, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 import { t } from '@/i18n'
 import { useMyEnrollments } from '@/hooks/useEnrollments'
 import { CourseCard } from '@/components/CourseCard'
@@ -9,13 +10,17 @@ import { Ionicons } from '@expo/vector-icons'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function MyCoursesScreen() {
+  const router = useRouter()
   const colors = useThemeColors()
   const { data: enrollments, isLoading, refetch, isRefetching } = useMyEnrollments()
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
-      <View className="px-4 pt-4 pb-4">
-        <Text className="text-2xl font-bold text-darkText">{t('tabs.myCourses')}</Text>
+      <View className="flex-row items-center px-4 pt-4 pb-3 bg-dark-surface border-b border-darkBorder-subtle">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text className="text-lg font-bold text-darkText">{t('tabs.myCourses')}</Text>
       </View>
 
       {isLoading ? (

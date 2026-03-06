@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, Image, TouchableOpacity, Linking, FlatList } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, Linking, FlatList, Dimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -11,6 +11,9 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { t } from '@/i18n'
 import { format } from 'date-fns'
+
+const SCREEN_WIDTH = Dimensions.get('window').width
+const DESTAQUE_HEIGHT = 200
 
 type TabKey = 'courses' | 'cards' | 'about' | 'reviews'
 
@@ -29,6 +32,8 @@ export default function ProfessorDetailScreen() {
 
   if (isLoading) return <LoadingSpinner />
   if (!professor) return null
+
+  const destaques: string[] = (professor as any).fotos_destaque ?? []
 
   const socialLinks = [
     { key: 'instagram', icon: 'logo-instagram' as const, url: professor.instagram },
@@ -109,38 +114,32 @@ export default function ProfessorDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Meus Destaques */}
-        {courses && courses.length > 0 && (
+        {/* Meus Destaques - image carousel */}
+        {destaques.length > 0 && (
           <View className="mt-5">
             <Text className="text-base font-bold text-darkText px-4 mb-3">Meus Destaques</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-              {courses.slice(0, 6).map((c) => (
-                <TouchableOpacity
-                  key={c.id}
-                  onPress={() => router.push({ pathname: '/course/[id]', params: { id: c.id } })}
-                  className="bg-dark-surface rounded-2xl mr-3 overflow-hidden border border-darkBorder-subtle"
-                  style={{ width: 160 }}
-                  activeOpacity={0.7}
-                >
-                  {c.imagem ? (
-                    <Image source={{ uri: c.imagem }} style={{ width: 160, height: 100 }} resizeMode="cover" />
-                  ) : (
-                    <View style={{ width: 160, height: 100 }} className="bg-dark-surfaceLight items-center justify-center">
-                      <Ionicons name="book-outline" size={28} color={colors.textMuted} />
-                    </View>
-                  )}
-                  <View className="p-2.5">
-                    <Text className="text-xs font-semibold text-darkText" numberOfLines={2}>{c.nome}</Text>
-                    {(c.average_rating ?? 0) > 0 && (
-                      <View className="flex-row items-center mt-1">
-                        <Ionicons name="star" size={10} color="#f59e0b" />
-                        <Text className="text-[10px] text-darkText-muted ml-0.5">{(c.average_rating ?? 0).toFixed(1)}</Text>
-                      </View>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            <FlatList
+              data={destaques}
+              keyExtractor={(_, i) => `dest-${i}`}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              style={{ height: DESTAQUE_HEIGHT }}
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: item }}
+                  style={{ width: SCREEN_WIDTH, height: DESTAQUE_HEIGHT }}
+                  resizeMode="cover"
+                />
+              )}
+            />
+            {destaques.length > 1 && (
+              <View className="flex-row justify-center mt-2 gap-1.5">
+                {destaques.map((_, i) => (
+                  <View key={i} className="w-2 h-2 rounded-full bg-darkText-muted opacity-40" />
+                ))}
+              </View>
+            )}
           </View>
         )}
 

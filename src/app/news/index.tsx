@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput } from 'react-native'
+import { View, Text, FlatList, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -20,8 +20,6 @@ export default function NewsScreen() {
   const [cidade, setCidade] = useState<string | null>(null)
   const [orgao, setOrgao] = useState<string | null>(null)
   const [disciplina, setDisciplina] = useState<string | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
-
   const { data: categories } = useNewsCategories()
   const { data: news, isLoading } = useNews({
     search, categoriaIds: selectedCategories, estado, cidade, orgao, disciplina,
@@ -33,8 +31,11 @@ export default function NewsScreen() {
   const { data: orgaoOptions } = useNewsFilterOptions('orgao')
   const { data: disciplinaOptions } = useNewsFilterOptions('disciplina')
 
-  const hasActiveFilters = !!(estado || cidade || orgao || disciplina)
-  const hasFilterOptions = !!(estadoOptions?.length || cidadeOptions?.length || orgaoOptions?.length || disciplinaOptions?.length)
+  const showEstado = (!selectedCat || selectedCat.filtro_estado) && !!estadoOptions?.length
+  const showCidade = (!selectedCat || selectedCat.filtro_cidade) && !!cidadeOptions?.length
+  const showOrgao = (!selectedCat || selectedCat.filtro_orgao) && !!orgaoOptions?.length
+  const showDisciplina = (!selectedCat || selectedCat.filtro_disciplina) && !!disciplinaOptions?.length
+  const hasSubFilters = showEstado || showCidade || showOrgao || showDisciplina
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
@@ -44,11 +45,6 @@ export default function NewsScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text className="text-base font-bold text-darkText flex-1">{t('news.title')}</Text>
-        {hasFilterOptions && (
-          <TouchableOpacity onPress={() => setShowFilters(!showFilters)} className="p-1">
-            <Ionicons name="options-outline" size={20} color={hasActiveFilters ? '#60a5fa' : colors.textMuted} />
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Search */}
@@ -72,27 +68,33 @@ export default function NewsScreen() {
             label="Todas as categorias"
             values={selectedCategories}
             options={categories.map((c) => ({ label: c.nome, value: c.id }))}
-            onChange={setSelectedCategories}
+            onChange={(vals) => {
+              setSelectedCategories(vals)
+              setEstado(null)
+              setCidade(null)
+              setOrgao(null)
+              setDisciplina(null)
+            }}
           />
         </View>
       )}
 
-      {/* Filter dropdowns (collapsible) */}
-      {showFilters && (
-        <View className="flex-row flex-wrap px-4 pb-2">
-          {(!selectedCat || selectedCat.filtro_estado) && estadoOptions && estadoOptions.length > 0 && (
-            <FilterDropdown label={t('news.estado')} value={estado} options={estadoOptions} onChange={setEstado} />
+      {/* Sub-filters - show when category has filter flags */}
+      {hasSubFilters && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          {showEstado && (
+            <FilterDropdown label={t('news.estado')} value={estado} options={estadoOptions!} onChange={setEstado} />
           )}
-          {(!selectedCat || selectedCat.filtro_cidade) && cidadeOptions && cidadeOptions.length > 0 && (
-            <FilterDropdown label={t('news.cidade')} value={cidade} options={cidadeOptions} onChange={setCidade} />
+          {showCidade && (
+            <FilterDropdown label={t('news.cidade')} value={cidade} options={cidadeOptions!} onChange={setCidade} />
           )}
-          {(!selectedCat || selectedCat.filtro_orgao) && orgaoOptions && orgaoOptions.length > 0 && (
-            <FilterDropdown label={t('news.orgao')} value={orgao} options={orgaoOptions} onChange={setOrgao} />
+          {showOrgao && (
+            <FilterDropdown label={t('news.orgao')} value={orgao} options={orgaoOptions!} onChange={setOrgao} />
           )}
-          {(!selectedCat || selectedCat.filtro_disciplina) && disciplinaOptions && disciplinaOptions.length > 0 && (
-            <FilterDropdown label={t('news.disciplina')} value={disciplina} options={disciplinaOptions} onChange={setDisciplina} />
+          {showDisciplina && (
+            <FilterDropdown label={t('news.disciplina')} value={disciplina} options={disciplinaOptions!} onChange={setDisciplina} />
           )}
-        </View>
+        </ScrollView>
       )}
 
       {/* News list */}

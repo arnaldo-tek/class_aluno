@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, FlatList, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -33,7 +33,13 @@ export default function NoticesScreen() {
   const { data: orgaoOptions } = useNoticeFilterOptions('orgao')
   const { data: disciplinaOptions } = useNoticeFilterOptions('disciplina')
 
-  const showCategoryGrid = !selectedCategory && categories && categories.length > 0
+  const categoryOptions = (categories ?? []).map((c) => ({ label: c.nome, value: c.id }))
+
+  const showEstado = (!selectedCat || selectedCat.filtro_estado) && !!estadoOptions?.length
+  const showCidade = (!selectedCat || selectedCat.filtro_cidade) && !!cidadeOptions?.length
+  const showOrgao = (!selectedCat || selectedCat.filtro_orgao) && !!orgaoOptions?.length
+  const showDisciplina = (!selectedCat || selectedCat.filtro_disciplina) && !!disciplinaOptions?.length
+  const hasSubFilters = showEstado || showCidade || showOrgao || showDisciplina
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
@@ -46,97 +52,86 @@ export default function NoticesScreen() {
 
       <SearchInput value={search} onChangeText={setSearch} className="flex-row items-center bg-dark-surfaceLight rounded-2xl px-4 py-2.5 mx-4 my-3" />
 
-      {showCategoryGrid && !search ? (
+      {/* Category filter */}
+      {categoryOptions.length > 0 && (
+        <View className="flex-row px-4 pb-1">
+          <FilterDropdown
+            label="Todas as categorias"
+            value={selectedCategory}
+            options={categoryOptions}
+            onChange={(val) => {
+              setSelectedCategory(val)
+              setEstado(null)
+              setCidade(null)
+              setOrgao(null)
+              setDisciplina(null)
+            }}
+          />
+        </View>
+      )}
+
+      {/* Sub-filters */}
+      {hasSubFilters && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          {showEstado && (
+            <FilterDropdown label={t('news.estado')} value={estado} options={estadoOptions!} onChange={setEstado} />
+          )}
+          {showCidade && (
+            <FilterDropdown label={t('news.cidade')} value={cidade} options={cidadeOptions!} onChange={setCidade} />
+          )}
+          {showOrgao && (
+            <FilterDropdown label={t('news.orgao')} value={orgao} options={orgaoOptions!} onChange={setOrgao} />
+          )}
+          {showDisciplina && (
+            <FilterDropdown label={t('news.disciplina')} value={disciplina} options={disciplinaOptions!} onChange={setDisciplina} />
+          )}
+        </ScrollView>
+      )}
+
+      {/* Notices list */}
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : (
         <FlatList
-          data={categories}
-          numColumns={2}
+          data={notices}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, paddingTop: 0 }}
-          columnWrapperStyle={{ gap: 12 }}
-          ItemSeparatorComponent={() => <View className="h-3" />}
+          contentContainerStyle={{ padding: 16, paddingTop: 8 }}
+          className="flex-1"
+          ListEmptyComponent={
+            <EmptyState
+              title={t('notices.noNotices')}
+              icon={<Ionicons name="document-text-outline" size={48} color={colors.textMuted} />}
+            />
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
-              onPress={() => setSelectedCategory(item.id)}
-              className="flex-1 bg-dark-surface rounded-2xl p-4 items-center"
+              onPress={() => router.push({ pathname: '/notices/[id]', params: { id: item.id } })}
+              className="bg-dark-surface rounded-2xl mb-3 p-4 border border-darkBorder-subtle"
+              activeOpacity={0.7}
             >
-              <Ionicons name="document-text-outline" size={32} color="#60a5fa" />
-              <Text className="text-sm font-medium text-darkText mt-2 text-center">{item.nome}</Text>
+              <Text className="text-base font-semibold text-darkText" numberOfLines={2}>
+                {item.titulo}
+              </Text>
+              {item.resumo && (
+                <Text className="text-sm text-darkText-secondary mt-1" numberOfLines={2}>
+                  {item.resumo}
+                </Text>
+              )}
+              <View className="flex-row items-center mt-2 flex-wrap gap-1">
+                {(item as any).categorias?.nome && (
+                  <View className="bg-primary-50 px-2.5 py-1 rounded-full">
+                    <Text className="text-xs text-primary-light font-medium">{(item as any).categorias.nome}</Text>
+                  </View>
+                )}
+                {(item as any).professor_profiles?.nome_professor && (
+                  <Text className="text-xs text-darkText-muted ml-2">
+                    {t('notices.professor')}: {(item as any).professor_profiles.nome_professor}
+                  </Text>
+                )}
+              </View>
             </TouchableOpacity>
           )}
         />
-      ) : (
-        <View className="flex-1">
-          {selectedCategory && (
-            <View className="px-4 pb-2">
-              <TouchableOpacity
-                onPress={() => setSelectedCategory(null)}
-                className="flex-row items-center mb-2"
-              >
-                <Ionicons name="arrow-back" size={16} color="#60a5fa" />
-                <Text className="text-sm text-primary-light ml-1">{t('notices.categories')}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 pb-3" style={{ flexGrow: 0 }}>
-            {(!selectedCat || selectedCat.filtro_estado) && estadoOptions && estadoOptions.length > 0 && (
-              <FilterDropdown label={t('news.estado')} value={estado} options={estadoOptions} onChange={setEstado} />
-            )}
-            {(!selectedCat || selectedCat.filtro_cidade) && cidadeOptions && cidadeOptions.length > 0 && (
-              <FilterDropdown label={t('news.cidade')} value={cidade} options={cidadeOptions} onChange={setCidade} />
-            )}
-            {(!selectedCat || selectedCat.filtro_orgao) && orgaoOptions && orgaoOptions.length > 0 && (
-              <FilterDropdown label={t('news.orgao')} value={orgao} options={orgaoOptions} onChange={setOrgao} />
-            )}
-            {(!selectedCat || selectedCat.filtro_disciplina) && disciplinaOptions && disciplinaOptions.length > 0 && (
-              <FilterDropdown label={t('news.disciplina')} value={disciplina} options={disciplinaOptions} onChange={setDisciplina} />
-            )}
-          </ScrollView>
-
-          {isLoading ? (
-            <LoadingSpinner />
-          ) : (
-            <FlatList
-              data={notices}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ padding: 16, paddingTop: 0 }}
-              className="flex-1"
-              ListEmptyComponent={
-                <EmptyState
-                  title={t('notices.noNotices')}
-                  icon={<Ionicons name="document-text-outline" size={48} color={colors.textMuted} />}
-                />
-              }
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => router.push({ pathname: '/notices/[id]', params: { id: item.id } })}
-                  className="bg-dark-surface rounded-2xl mb-3 p-4"
-                >
-                  <Text className="text-base font-semibold text-darkText" numberOfLines={2}>
-                    {item.titulo}
-                  </Text>
-                  {item.resumo && (
-                    <Text className="text-sm text-darkText-secondary mt-1" numberOfLines={2}>
-                      {item.resumo}
-                    </Text>
-                  )}
-                  <View className="flex-row items-center mt-2 flex-wrap gap-1">
-                    {(item as any).categorias?.nome && (
-                      <View className="bg-primary-50 px-2.5 py-1 rounded-full">
-                        <Text className="text-xs text-primary-light font-medium">{(item as any).categorias.nome}</Text>
-                      </View>
-                    )}
-                    {(item as any).professor_profiles?.nome_professor && (
-                      <Text className="text-xs text-darkText-muted ml-2">
-                        {t('notices.professor')}: {(item as any).professor_profiles.nome_professor}
-                      </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-          )}
-        </View>
       )}
     </SafeAreaView>
   )

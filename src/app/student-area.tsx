@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { BannerCarousel } from '@/components/BannerCarousel'
 import { useUnreadNotificationsCount } from '@/hooks/useNotifications'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
@@ -28,19 +29,23 @@ export default function StudentAreaScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <View className="pt-4">
+          <BannerCarousel />
+        </View>
+
         {/* Grid of options */}
-        <View className="flex-row flex-wrap justify-between mt-2">
+        <View className="flex-row flex-wrap justify-between px-4">
           <AreaCard icon="book" color="#3b82f6" label="Meus Cursos" onPress={() => router.push('/(tabs)/my-courses')} />
           <AreaCard icon="card" color="#f59e0b" label="Minhas Assinaturas" onPress={() => router.push('/packages/my')} />
-          <AreaCard icon="musical-notes" color="#c084fc" label="Meus Áudio Cursos" onPress={() => router.push('/audio')} />
+          <AreaCard icon="musical-notes" color="#c084fc" label="Meus Áudio Cursos" onPress={() => router.push('/audio/my')} />
           <AreaCard icon="layers" color="#34d399" label="Meus Flashcards" onPress={() => router.push('/flashcards')} />
-          <AreaCard icon="document-text" color="#60a5fa" label="Meus Editais" onPress={() => router.push('/notices')} />
-          <AreaCard icon="newspaper" color="#fbbf24" label="Minhas Notícias" onPress={() => router.push('/news')} />
+          <AreaCard icon="document-text" color="#60a5fa" label="Meus Editais" onPress={() => router.push('/notices/my')} />
+          <AreaCard icon="newspaper" color="#fbbf24" label="Minhas Notícias" onPress={() => router.push('/news/my')} />
           <AreaCard icon="heart" color="#f87171" label="Favoritos" onPress={() => router.push('/favorites')} />
         </View>
 
-        <View className="h-8" />
+        <View className="h-8 px-4" />
       </ScrollView>
     </SafeAreaView>
   )

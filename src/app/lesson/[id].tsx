@@ -1,15 +1,16 @@
-import { useState, useRef, useCallback } from 'react'
-import { View, Text, ScrollView, FlatList, TouchableOpacity, Dimensions, Platform, TextInput, Alert, PanResponder, GestureResponderEvent, PanResponderGestureState } from 'react-native'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { View, Text, ScrollView, FlatList, TouchableOpacity, Dimensions, Platform, TextInput, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { Video, ResizeMode, Audio } from 'expo-av'
+import { Video, ResizeMode } from 'expo-av'
 import { Animated as RNAnimated } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useLessonDetail, useLessonTexts, useLessonAudios, useLessonQuestions, useLessonProgress, useMarkLessonComplete } from '@/hooks/useLesson'
 import { useLessonFlashcards } from '@/hooks/useFlashcards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { DownloadButton } from '@/components/DownloadButton'
+import { AudioPlayerList, AudioSpeedControl } from '@/components/AudioPlayer'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { useOfflineUri } from '@/hooks/useDownloads'
 import { t } from '@/i18n'
@@ -140,58 +141,81 @@ export default function LessonScreen() {
       )}
 
       {/* Content */}
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        {activeTab === 'video' && <VideoTab lesson={lesson} lessonId={id!} />}
-        {activeTab === 'text' && <TextTab texts={texts ?? []} mainText={lesson.texto_aula} />}
-        {activeTab === 'audio' && <AudioTab audios={audios ?? []} />}
-        {activeTab === 'pdf' && lesson.pdf && <PdfTab url={lesson.pdf} />}
-        {activeTab === 'quiz' && (
-          <TouchableOpacity
-            onPress={() => router.push({ pathname: '/lesson/quiz', params: { lesson_id: id! } })}
-            className="mx-4 mt-6 bg-accent rounded-2xl py-4 items-center"
-          >
-            <Text className="text-darkText-inverse font-bold text-base">
-              Iniciar Questoes ({questions?.length ?? 0})
-            </Text>
-          </TouchableOpacity>
-        )}
-        {activeTab === 'flashcards' && (
+      {activeTab === 'flashcards' ? (
+        <View className="flex-1">
           <FlashcardsTab
             aulaId={id!}
             cursoId={(lesson.curso as any)?.id ?? lesson.curso_id}
           />
-        )}
-
-        {/* Mark as complete */}
-        <View className="px-4 mt-6">
-          {progress?.is_completed ? (
-            <View className="flex-row items-center justify-center py-3.5 bg-success/10 rounded-2xl border border-success/30">
-              <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
-              <Text className="text-success font-semibold ml-2">Aula concluida</Text>
-            </View>
-          ) : (
+          {/* Mark as complete */}
+          <View className="px-4 pb-4">
+            {progress?.is_completed ? (
+              <View className="flex-row items-center justify-center py-3 bg-success/10 rounded-2xl border border-success/30">
+                <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                <Text className="text-success font-semibold ml-2">Aula concluida</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  const cursoId = (lesson.curso as any)?.id ?? lesson.curso_id
+                  if (cursoId) markComplete.mutate({ aulaId: id!, cursoId })
+                }}
+                disabled={markComplete.isPending}
+                className="bg-primary rounded-2xl py-3 items-center"
+              >
+                <Text className="text-white font-bold text-base">
+                  {markComplete.isPending ? 'Salvando...' : 'Marcar a aula como concluída'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      ) : (
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
+          {activeTab === 'video' && <VideoTab lesson={lesson} lessonId={id!} />}
+          {activeTab === 'text' && <TextTab texts={texts ?? []} mainText={lesson.texto_aula} />}
+          {activeTab === 'audio' && <AudioTab audios={audios ?? []} />}
+          {activeTab === 'pdf' && lesson.pdf && <PdfTab url={lesson.pdf} />}
+          {activeTab === 'quiz' && (
             <TouchableOpacity
-              onPress={() => {
-                const cursoId = (lesson.curso as any)?.id ?? lesson.curso_id
-                if (cursoId) markComplete.mutate({ aulaId: id!, cursoId })
-              }}
-              disabled={markComplete.isPending}
-              className="bg-primary rounded-2xl py-3.5 items-center"
+              onPress={() => router.push({ pathname: '/lesson/quiz', params: { lesson_id: id! } })}
+              className="mx-4 mt-6 bg-accent rounded-2xl py-4 items-center"
             >
-              <Text className="text-white font-bold text-base">
-                {markComplete.isPending ? 'Salvando...' : 'Marcar a aula como concluída'}
+              <Text className="text-darkText-inverse font-bold text-base">
+                Iniciar Questoes ({questions?.length ?? 0})
               </Text>
             </TouchableOpacity>
           )}
-        </View>
-      </ScrollView>
+
+          {/* Mark as complete */}
+          <View className="px-4 mt-6">
+            {progress?.is_completed ? (
+              <View className="flex-row items-center justify-center py-3.5 bg-success/10 rounded-2xl border border-success/30">
+                <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                <Text className="text-success font-semibold ml-2">Aula concluida</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  const cursoId = (lesson.curso as any)?.id ?? lesson.curso_id
+                  if (cursoId) markComplete.mutate({ aulaId: id!, cursoId })
+                }}
+                disabled={markComplete.isPending}
+                className="bg-primary rounded-2xl py-3.5 items-center"
+              >
+                <Text className="text-white font-bold text-base">
+                  {markComplete.isPending ? 'Salvando...' : 'Marcar a aula como concluída'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   )
 }
 
 // --- Video Tab ---
-
-const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
 function VideoTab({ lesson, lessonId }: { lesson: any; lessonId: string }) {
   const colors = useThemeColors()
@@ -215,7 +239,7 @@ function VideoTab({ lesson, lessonId }: { lesson: any; lessonId: string }) {
             shouldPlay={false}
             rate={speed}
           />
-          <SpeedControl speed={speed} onSpeedChange={(s) => { setSpeed(s); videoRef.current?.setRateAsync?.(s, true) }} />
+          <AudioSpeedControl speed={speed} onSpeedChange={(s) => { setSpeed(s); videoRef.current?.setRateAsync?.(s, true) }} />
         </View>
       ) : (
         <View className="w-full bg-black items-center justify-center" style={{ height: SCREEN_WIDTH * 9 / 16 }}>
@@ -258,269 +282,17 @@ function TextTab({ texts, mainText }: { texts: Array<{ id: string; texto: string
   )
 }
 
-// --- Speed Control ---
-
-function SpeedControl({ speed, onSpeedChange }: { speed: number; onSpeedChange: (s: number) => void }) {
-  return (
-    <View className="flex-row items-center justify-center py-2 gap-1">
-      {SPEED_OPTIONS.map((s) => (
-        <TouchableOpacity
-          key={s}
-          onPress={() => onSpeedChange(s)}
-          className={`px-3 py-1.5 rounded-full ${speed === s ? 'bg-primary' : 'bg-dark-surfaceLight'}`}
-        >
-          <Text className={`text-xs font-semibold ${speed === s ? 'text-white' : 'text-darkText-muted'}`}>
-            {s}x
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  )
-}
-
 // --- Audio Tab ---
 
-function formatTime(ms: number) {
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-}
-
-const THUMB_SIZE = 16
-const TRACK_H = 6
-const SEEK_BAR_HORIZONTAL_PADDING = 16
-
-function AudioSeekBar({ progress, positionMs, durationMs, onSeekStart, onSeek }: {
-  progress: number
-  positionMs: number
-  durationMs: number
-  onSeekStart: () => void
-  onSeek: (ratio: number) => void
-}) {
-  const barWidth = SCREEN_WIDTH - 32 - SEEK_BAR_HORIZONTAL_PADDING * 2 // card px-4 + inner px-4
-  const [dragging, setDragging] = useState(false)
-  const [dragRatio, setDragRatio] = useState(0)
-  const barRef = useRef<View>(null)
-  const barX = useRef(0)
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => {
-        onSeekStart()
-        setDragging(true)
-        barRef.current?.measureInWindow((x) => {
-          barX.current = x
-          const ratio = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / barWidth))
-          setDragRatio(ratio)
-        })
-      },
-      onPanResponderMove: (e) => {
-        const ratio = Math.max(0, Math.min(1, (e.nativeEvent.pageX - barX.current) / barWidth))
-        setDragRatio(ratio)
-      },
-      onPanResponderRelease: (e) => {
-        const ratio = Math.max(0, Math.min(1, (e.nativeEvent.pageX - barX.current) / barWidth))
-        setDragging(false)
-        onSeek(ratio)
-      },
-    })
-  ).current
-
-  const displayProgress = dragging ? dragRatio : progress
-  const displayPosition = dragging ? dragRatio * durationMs : positionMs
-
-  return (
-    <View className="px-4 pb-3">
-      <View
-        ref={barRef}
-        {...panResponder.panHandlers}
-        style={{ height: THUMB_SIZE + 8, justifyContent: 'center' }}
-      >
-        {/* Track background */}
-        <View
-          className="bg-dark-surfaceLight rounded-full"
-          style={{ height: TRACK_H, width: '100%' }}
-        >
-          {/* Track fill */}
-          <View
-            className="bg-primary rounded-full"
-            style={{ height: TRACK_H, width: `${displayProgress * 100}%` }}
-          />
-        </View>
-
-        {/* Thumb */}
-        <View
-          style={{
-            position: 'absolute',
-            left: displayProgress * barWidth - THUMB_SIZE / 2,
-            top: (THUMB_SIZE + 8 - THUMB_SIZE) / 2,
-            width: THUMB_SIZE,
-            height: THUMB_SIZE,
-            borderRadius: THUMB_SIZE / 2,
-            backgroundColor: '#3b82f6',
-            borderWidth: 2,
-            borderColor: '#ffffff',
-            ...(dragging ? {
-              transform: [{ scale: 1.25 }],
-              shadowColor: '#3b82f6',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.4,
-              shadowRadius: 4,
-              elevation: 4,
-            } : {}),
-          }}
-        />
-      </View>
-      <View className="flex-row justify-between mt-0.5">
-        <Text className="text-[10px] text-darkText-muted">{formatTime(displayPosition)}</Text>
-        <Text className="text-[10px] text-darkText-muted">{formatTime(durationMs)}</Text>
-      </View>
-    </View>
-  )
-}
-
 function AudioTab({ audios }: { audios: Array<{ id: string; titulo: string | null; audio_url: string }> }) {
-  const [currentIndex, setCurrentIndex] = useState<number | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [speed, setSpeed] = useState(1)
-  const [positionMs, setPositionMs] = useState(0)
-  const [durationMs, setDurationMs] = useState(0)
-  const soundRef = useRef<Audio.Sound | null>(null)
-  const isSeeking = useRef(false)
-
-  const playAudio = useCallback(async (index: number) => {
-    if (soundRef.current) {
-      await soundRef.current.stopAsync()
-      await soundRef.current.unloadAsync()
-      soundRef.current = null
-    }
-
-    setPositionMs(0)
-    setDurationMs(0)
-
-    const audio = audios[index]
-    if (!audio) return
-
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: audio.audio_url },
-      { shouldPlay: true, rate: speed, shouldCorrectPitch: true },
-      (status: any) => {
-        if (!status.isLoaded) return
-        if (!isSeeking.current) {
-          setPositionMs(status.positionMillis ?? 0)
-        }
-        if (status.durationMillis) {
-          setDurationMs(status.durationMillis)
-        }
-        if (status.didJustFinish) {
-          const nextIndex = index + 1
-          if (nextIndex < audios.length) {
-            playAudio(nextIndex)
-          } else {
-            setIsPlaying(false)
-            setCurrentIndex(null)
-            setPositionMs(0)
-            setDurationMs(0)
-          }
-        }
-      },
-    )
-
-    soundRef.current = sound
-    setCurrentIndex(index)
-    setIsPlaying(true)
-  }, [audios, speed])
-
-  const togglePlayPause = useCallback(async (index: number) => {
-    if (currentIndex === index && isPlaying) {
-      await soundRef.current?.pauseAsync()
-      setIsPlaying(false)
-    } else if (currentIndex === index && !isPlaying) {
-      await soundRef.current?.playAsync()
-      setIsPlaying(true)
-    } else {
-      await playAudio(index)
-    }
-  }, [currentIndex, isPlaying, playAudio])
-
-  async function handleSpeedChange(s: number) {
-    setSpeed(s)
-    if (soundRef.current) {
-      await soundRef.current.setRateAsync(s, true)
-    }
-  }
-
-  const handleSeek = useCallback(async (ratio: number) => {
-    if (soundRef.current && durationMs > 0) {
-      const seekTo = ratio * durationMs
-      await soundRef.current.setPositionAsync(seekTo)
-      setPositionMs(seekTo)
-    }
-    isSeeking.current = false
-  }, [durationMs])
-
-  const progress = durationMs > 0 ? positionMs / durationMs : 0
-
   return (
     <View className="px-4 pt-5">
-      <Text className="text-sm font-bold text-darkText mb-2">
-        Áudios ({audios.length})
-      </Text>
-      <SpeedControl speed={speed} onSpeedChange={handleSpeedChange} />
-      <View className="mt-2">
-        {audios.map((audio, i) => (
-          <View key={audio.id} className={`mb-2.5 rounded-2xl overflow-hidden ${
-            currentIndex === i ? 'bg-primary-50 border border-primary/30' : 'bg-dark-surface'
-          }`}>
-            <TouchableOpacity
-              onPress={() => togglePlayPause(i)}
-              className="flex-row items-center px-4 py-3.5"
-            >
-              <View className={`w-10 h-10 rounded-full items-center justify-center ${
-                currentIndex === i && isPlaying ? 'bg-primary' : 'bg-dark-surfaceLight'
-              }`}>
-                <Ionicons
-                  name={currentIndex === i && isPlaying ? 'pause' : 'play'}
-                  size={18}
-                  color={currentIndex === i && isPlaying ? 'white' : '#3b82f6'}
-                />
-              </View>
-              <View className="flex-1 ml-3">
-                <Text className="text-sm font-medium text-darkText">
-                  {audio.titulo ?? `Áudio ${i + 1}`}
-                </Text>
-              </View>
-              {currentIndex === i && (
-                <Ionicons name="musical-notes" size={16} color="#fbbf24" />
-              )}
-            </TouchableOpacity>
-
-            {/* Progress bar - shown for current audio */}
-            {currentIndex === i && (
-              <AudioSeekBar
-                progress={progress}
-                positionMs={positionMs}
-                durationMs={durationMs}
-                onSeekStart={() => { isSeeking.current = true }}
-                onSeek={handleSeek}
-              />
-            )}
-          </View>
-        ))}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: '#f7f6f3' }}>
+          Áudios ({audios.length})
+        </Text>
       </View>
-
-      {/* Play all button */}
-      {audios.length > 1 && (
-        <TouchableOpacity
-          onPress={() => playAudio(0)}
-          className="mt-3 bg-primary rounded-2xl py-3.5 items-center"
-        >
-          <Text className="text-white font-bold text-sm">Reproduzir todos sequencialmente</Text>
-        </TouchableOpacity>
-      )}
+      <AudioPlayerList audios={audios} accentColor="#3b82f6" />
     </View>
   )
 }
@@ -559,7 +331,6 @@ function PdfTab({ url }: { url: string }) {
 // --- Flashcards Tab ---
 
 // Card height: screen minus header (~56), tabs (~52), "mark complete" area (~80), padding
-const CARD_HEIGHT = SCREEN_HEIGHT - 240
 
 function FlashcardsTab({ aulaId, cursoId }: { aulaId: string; cursoId?: string }) {
   const { data: cards = [], isLoading } = useLessonFlashcards(aulaId)
@@ -582,27 +353,28 @@ function FlashcardsTab({ aulaId, cursoId }: { aulaId: string; cursoId?: string }
   }
 
   return (
-    <View className="pt-4">
+    <View style={{ flex: 1, paddingTop: 8 }}>
       <FlatList
         data={cards}
         keyExtractor={(item) => item.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        style={{ flex: 1 }}
         onMomentumScrollEnd={(e) => {
           const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH)
           setCurrentIndex(index)
         }}
         renderItem={({ item }) => (
-          <View style={{ width: SCREEN_WIDTH, paddingHorizontal: 16 }}>
+          <View style={{ width: SCREEN_WIDTH, paddingHorizontal: 16, flex: 1 }}>
             <FlipCard pergunta={item.pergunta} resposta={item.resposta} />
           </View>
         )}
       />
 
       {/* Counter */}
-      <View className="flex-row items-center justify-center mt-3">
-        <Text className="text-sm font-semibold text-darkText-secondary">
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8 }}>
+        <Text style={{ fontSize: 14, fontWeight: '600', color: '#a0a0b0' }}>
           {currentIndex + 1} / {cards.length}
         </Text>
       </View>
@@ -614,6 +386,7 @@ function FlipCard({ pergunta, resposta }: { pergunta: string; resposta: string }
   const colors = useThemeColors()
   const [isFlipped, setIsFlipped] = useState(false)
   const animValue = useRef(new RNAnimated.Value(0)).current
+  const touchStartRef = useRef({ x: 0, y: 0 })
 
   const flip = useCallback(() => {
     RNAnimated.timing(animValue, {
@@ -635,46 +408,58 @@ function FlipCard({ pergunta, resposta }: { pergunta: string; resposta: string }
   })
 
   return (
-    <TouchableOpacity onPress={flip} activeOpacity={0.95} style={{ height: CARD_HEIGHT }}>
-      <View className="flex-1 relative">
+    <View
+      style={{ flex: 1 }}
+      onTouchStart={(e) => { touchStartRef.current = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY } }}
+      onTouchEnd={(e) => {
+        const dx = Math.abs(e.nativeEvent.pageX - touchStartRef.current.x)
+        const dy = Math.abs(e.nativeEvent.pageY - touchStartRef.current.y)
+        if (dx < 10 && dy < 10) flip()
+      }}
+    >
+      <View style={{ flex: 1, position: 'relative' }}>
         {/* Front - Frente */}
-        <RNAnimated.View style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: frontRotate }] }}>
-          <View className="flex-1 bg-dark-surface rounded-2xl border border-darkBorder-subtle p-6">
-            <View className="flex-row items-center mb-4">
-              <View className="w-7 h-7 rounded-full bg-primary/15 items-center justify-center">
-                <Text className="text-xs font-bold text-primary">F</Text>
+        <RNAnimated.View pointerEvents={isFlipped ? 'none' : 'auto'} style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: frontRotate }] }}>
+          <View style={{ flex: 1, backgroundColor: '#1e1e2e', borderRadius: 16, borderWidth: 1, borderColor: '#2a2a3a', padding: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(37,99,235,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6' }}>F</Text>
               </View>
-              <Text className="text-xs font-bold text-primary ml-2 tracking-wider">FRENTE</Text>
+              <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6', marginLeft: 8, letterSpacing: 1.5 }}>FRENTE</Text>
+              <View style={{ flex: 1 }} />
+              <Ionicons name="sync-outline" size={16} color={colors.textMuted} />
             </View>
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-              <Text className="text-base text-darkText leading-6" style={{ textAlign: 'justify' }}>{pergunta}</Text>
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator nestedScrollEnabled>
+              <Text style={{ fontSize: 16, color: '#f0f0f0', lineHeight: 24, textAlign: 'justify' }}>{pergunta}</Text>
             </ScrollView>
-            <View className="flex-row items-center justify-center pt-3 border-t border-darkBorder-subtle mt-3">
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2a2a3a', marginTop: 12 }}>
               <Ionicons name="sync-outline" size={14} color={colors.textMuted} />
-              <Text className="text-xs text-darkText-muted ml-1.5">Toque para virar</Text>
+              <Text style={{ fontSize: 12, color: colors.textMuted, marginLeft: 6 }}>Toque para virar</Text>
             </View>
           </View>
         </RNAnimated.View>
 
         {/* Back - Verso */}
-        <RNAnimated.View style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: backRotate }] }}>
-          <View className="flex-1 bg-dark-surfaceLight rounded-2xl border border-accent/30 p-6">
-            <View className="flex-row items-center mb-4">
-              <View className="w-7 h-7 rounded-full bg-accent/20 items-center justify-center">
-                <Text className="text-xs font-bold text-accent">V</Text>
+        <RNAnimated.View pointerEvents={isFlipped ? 'auto' : 'none'} style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', transform: [{ rotateY: backRotate }] }}>
+          <View style={{ flex: 1, backgroundColor: '#252538', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(96,165,250,0.3)', padding: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(96,165,250,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#60a5fa' }}>V</Text>
               </View>
-              <Text className="text-xs font-bold text-accent ml-2 tracking-wider">VERSO</Text>
+              <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#60a5fa', marginLeft: 8, letterSpacing: 1.5 }}>VERSO</Text>
+              <View style={{ flex: 1 }} />
+              <Ionicons name="sync-outline" size={16} color={colors.textMuted} />
             </View>
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-              <Text className="text-base text-darkText leading-6" style={{ textAlign: 'justify' }}>{resposta}</Text>
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator nestedScrollEnabled>
+              <Text style={{ fontSize: 16, color: '#f0f0f0', lineHeight: 24, textAlign: 'justify' }}>{resposta}</Text>
             </ScrollView>
-            <View className="flex-row items-center justify-center pt-3 border-t border-darkBorder-subtle mt-3">
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2a2a3a', marginTop: 12 }}>
               <Ionicons name="sync-outline" size={14} color={colors.textMuted} />
-              <Text className="text-xs text-darkText-muted ml-1.5">Toque para virar</Text>
+              <Text style={{ fontSize: 12, color: colors.textMuted, marginLeft: 6 }}>Toque para virar</Text>
             </View>
           </View>
         </RNAnimated.View>
       </View>
-    </TouchableOpacity>
+    </View>
   )
 }

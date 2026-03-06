@@ -1,32 +1,44 @@
-import { View, Text, ScrollView, FlatList, Image, TouchableOpacity, Dimensions, Linking } from 'react-native'
+import { View, Text, ScrollView, FlatList, Image, TouchableOpacity, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { useRef, useEffect, useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { t } from '@/i18n'
-import { useBanners, useCategories, useTopProfessors, useRecentNews } from '@/hooks/useHome'
+import { useCategories, useTopProfessors, useRecentNews } from '@/hooks/useHome'
 import { useFeaturedCourses } from '@/hooks/useCourses'
 import { usePackages } from '@/hooks/usePackages'
 import { CourseCard } from '@/components/CourseCard'
 import { ProfessorCard } from '@/components/ProfessorCard'
 import { SectionHeader } from '@/components/ui/SectionHeader'
+import { BannerCarousel } from '@/components/BannerCarousel'
 import { DrawerMenu } from '@/components/DrawerMenu'
 import { TopBar } from '@/components/TopBar'
 import { Ionicons } from '@expo/vector-icons'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
-const SCREEN_WIDTH = Dimensions.get('window').width
-
 export default function HomeScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const [drawerVisible, setDrawerVisible] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const qc = useQueryClient()
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await qc.invalidateQueries()
+    setRefreshing(false)
+  }, [qc])
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg" edges={['left', 'right', 'bottom']}>
       <TopBar onMenuPress={() => setDrawerVisible(true)} />
       <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
 
-      <ScrollView className="flex-1 pt-4" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1 pt-4"
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" colors={['#3b82f6']} />}
+      >
         {/* Banners */}
         <BannerCarousel />
 
@@ -48,77 +60,6 @@ export default function HomeScreen() {
         <View className="h-28" />
       </ScrollView>
     </SafeAreaView>
-  )
-}
-
-function BannerCarousel() {
-  const { data: banners } = useBanners()
-  const flatListRef = useRef<FlatList>(null)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const BANNER_GAP = 12
-  const BANNER_WIDTH = SCREEN_WIDTH - 32
-  const SNAP_WIDTH = BANNER_WIDTH + BANNER_GAP
-
-  useEffect(() => {
-    if (!banners?.length || banners.length <= 1) return
-    const interval = setInterval(() => {
-      const next = (currentIndex + 1) % banners.length
-      flatListRef.current?.scrollToOffset({ offset: next * SNAP_WIDTH, animated: true })
-      setCurrentIndex(next)
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [currentIndex, banners?.length])
-
-  if (!banners?.length) return null
-
-  return (
-    <View className="mb-5">
-      <FlatList
-        ref={flatListRef}
-        data={banners}
-        horizontal
-        pagingEnabled={false}
-        decelerationRate="fast"
-        snapToInterval={SNAP_WIDTH}
-        snapToAlignment="start"
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-        ItemSeparatorComponent={() => <View style={{ width: BANNER_GAP }} />}
-        onMomentumScrollEnd={(e) => {
-          const index = Math.round(e.nativeEvent.contentOffset.x / SNAP_WIDTH)
-          setCurrentIndex(index)
-        }}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            activeOpacity={item.redirecionamento ? 0.8 : 1}
-            onPress={() => {
-              if (item.redirecionamento) Linking.openURL(item.redirecionamento)
-            }}
-            style={{ width: BANNER_WIDTH }}
-            className="h-44 rounded-2xl overflow-hidden"
-          >
-            {item.imagem ? (
-              <Image source={{ uri: item.imagem }} className="w-full h-full" resizeMode="cover" />
-            ) : (
-              <View className="w-full h-full bg-primary-50 items-center justify-center">
-                <Ionicons name="megaphone-outline" size={32} color="#3b82f6" />
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
-      />
-      {banners.length > 1 && (
-        <View className="flex-row justify-center mt-3">
-          {banners.map((_, i) => (
-            <View
-              key={i}
-              className={`h-1.5 rounded-full mx-1 ${i === currentIndex ? 'w-6 bg-accent' : 'w-1.5 bg-darkBorder-light'}`}
-            />
-          ))}
-        </View>
-      )}
-    </View>
   )
 }
 

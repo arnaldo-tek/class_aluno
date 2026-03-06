@@ -67,10 +67,6 @@ export default function CommunityChatScreen() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
     <SafeAreaView className="flex-1 bg-dark-bg" edges={['top']}>
       <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
@@ -85,6 +81,12 @@ export default function CommunityChatScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -117,9 +119,9 @@ export default function CommunityChatScreen() {
 
         {/* Input or join banner */}
         {isMember ? (
-          <View className="flex-row items-center px-4 pt-3 pb-4 bg-dark-surface border-t border-darkBorder" style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16 }}>
+          <View className="flex-row items-center px-4 py-3 bg-dark-surface border-t border-darkBorder">
             <TextInput
-              className="flex-1 bg-dark-surfaceLight rounded-2xl px-4 py-2.5 text-base text-darkText mr-3"
+              className="flex-1 bg-dark-surfaceLight rounded-2xl px-4 py-2.5 text-base text-darkText mr-3 max-h-24"
               placeholder={t('community.sendMessage')}
               placeholderTextColor="#9ca3af"
               value={text}
@@ -136,7 +138,7 @@ export default function CommunityChatScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <View className="px-4 pt-3 pb-4 bg-dark-surface border-t border-darkBorder" style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 16 }}>
+          <View className="px-4 py-3 bg-dark-surface border-t border-darkBorder">
             <TouchableOpacity
               onPress={handleJoin}
               disabled={toggleMembership.isPending}
@@ -148,6 +150,8 @@ export default function CommunityChatScreen() {
             </TouchableOpacity>
           </View>
         )}
+        <SafeAreaView edges={['bottom']} className="bg-dark-surface" />
+      </KeyboardAvoidingView>
 
       {/* Nickname Modal */}
       <Modal visible={showNicknameModal} transparent animationType="fade">
@@ -187,6 +191,5 @@ export default function CommunityChatScreen() {
         </View>
       </Modal>
     </SafeAreaView>
-    </KeyboardAvoidingView>
   )
 }

@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/contexts/AuthContext'
 import * as ImagePicker from 'expo-image-picker'
-import * as FileSystem from 'expo-file-system'
 
 export function useProfile(userId: string | undefined) {
   return useQuery({
@@ -53,6 +52,7 @@ export function useUploadAvatar() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
+        base64: true,
       })
 
       if (result.canceled || !result.assets[0]) return null
@@ -61,13 +61,11 @@ export function useUploadAvatar() {
       const ext = asset.uri.split('.').pop() ?? 'jpg'
       const fileName = `${user.id}.${ext}`
 
-      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      })
+      if (!asset.base64) throw new Error('Não foi possível processar a imagem.')
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, decode(base64), {
+        .upload(fileName, decode(asset.base64), {
           contentType: asset.mimeType ?? `image/${ext}`,
           upsert: true,
         })

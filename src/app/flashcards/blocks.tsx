@@ -82,7 +82,7 @@ export default function FlashcardBlocksScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => router.push({
-                pathname: '/flashcards/cards',
+                pathname: '/flashcards/study',
                 params: { block_id: item.id, block_name: item.nome, folder_id: folder_id!, folder_name: folder_name ?? '' },
               })}
               className="bg-dark-surface rounded-2xl px-4 py-4 mb-3 border border-darkBorder flex-row items-center"

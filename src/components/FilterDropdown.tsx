@@ -150,7 +150,7 @@ export function FilterDropdownMulti({ label, values, options, onChange }: Filter
                 )
               }}
             />
-            <View className="px-5 pt-2 pb-6 border-t border-darkBorder">
+            <View className="px-5 pt-3 pb-10 border-t border-darkBorder">
               <TouchableOpacity
                 onPress={() => setVisible(false)}
                 className="bg-primary rounded-2xl py-3.5 items-center"

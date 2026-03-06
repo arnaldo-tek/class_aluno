@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { useAuthContext } from '@/contexts/AuthContext'
 
 export function useAudioPackages(tipo: number) {
   return useQuery({
@@ -91,12 +92,59 @@ export function useAudioLawQuestions(leiId: string) {
         .from('questoes_leis')
         .select('id, pergunta, resposta, alternativas, video')
         .eq('lei_id', leiId)
-        .order('created_at')
 
       if (error) throw error
       return data ?? []
     },
     enabled: !!leiId,
+  })
+}
+
+export function useIsAudioFavorite(tipo: string, referenciaId: string) {
+  const { user } = useAuthContext()
+  return useQuery({
+    queryKey: ['is-favorite', user?.id, tipo, referenciaId],
+    queryFn: async () => {
+      if (!user) return false
+      const { data } = await supabase
+        .from('favoritos')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('tipo', tipo)
+        .eq('referencia_id', referenciaId)
+        .maybeSingle()
+      return !!data
+    },
+    enabled: !!user && !!referenciaId,
+  })
+}
+
+export function useToggleAudioFavorite() {
+  const { user } = useAuthContext()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ referenciaId, tipo, isFavorite }: { referenciaId: string; tipo: string; isFavorite: boolean }) => {
+      if (!user) throw new Error('Not authenticated')
+      if (isFavorite) {
+        const { error } = await supabase
+          .from('favoritos')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('tipo', tipo)
+          .eq('referencia_id', referenciaId)
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('favoritos')
+          .insert({ user_id: user.id, tipo, referencia_id: referenciaId })
+        if (error) throw error
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['is-favorite'] })
+      qc.invalidateQueries({ queryKey: ['favoritos-list'] })
+      qc.invalidateQueries({ queryKey: ['my-favorite'] })
+    },
   })
 }
 

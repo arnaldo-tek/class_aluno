@@ -23,6 +23,7 @@ export default function QuizScreen() {
   const [showResult, setShowResult] = useState(false)
   const [score, setScore] = useState({ correct: 0, total: 0 })
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [finished, setFinished] = useState(false)
 
   if (isLoading) return <LoadingSpinner />
   if (!questions?.length) return null
@@ -30,7 +31,6 @@ export default function QuizScreen() {
   const question = questions[currentIndex]
   const isCorrect = selectedAnswer === question.resposta
   const isLastQuestion = currentIndex === questions.length - 1
-  const isFinished = score.total === questions.length && showResult && isLastQuestion
 
   function handleSelectAnswer(answer: string) {
     if (showResult) return
@@ -46,11 +46,31 @@ export default function QuizScreen() {
   function handleNext() {
     if (isLastQuestion) return
     setCurrentIndex((i) => i + 1)
-    setSelectedAnswer(null)
-    setShowResult(false)
+    const nextQ = questions[currentIndex + 1]
+    if (answers[nextQ.id]) {
+      setSelectedAnswer(answers[nextQ.id])
+      setShowResult(true)
+    } else {
+      setSelectedAnswer(null)
+      setShowResult(false)
+    }
+  }
+
+  function handlePrevious() {
+    if (currentIndex === 0) return
+    setCurrentIndex((i) => i - 1)
+    const prevQ = questions[currentIndex - 1]
+    if (answers[prevQ.id]) {
+      setSelectedAnswer(answers[prevQ.id])
+      setShowResult(true)
+    } else {
+      setSelectedAnswer(null)
+      setShowResult(false)
+    }
   }
 
   function handleFinish() {
+    setFinished(true)
     saveAttempt.mutate({
       aulaId: lesson_id!,
       cursoId: curso_id!,
@@ -66,6 +86,7 @@ export default function QuizScreen() {
     setShowResult(false)
     setScore({ correct: 0, total: 0 })
     setAnswers({})
+    setFinished(false)
   }
 
   return (
@@ -94,7 +115,7 @@ export default function QuizScreen() {
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
         {/* Finished state */}
-        {isFinished ? (
+        {finished ? (
           <View className="items-center pt-12">
             <View className="w-20 h-20 rounded-full bg-accent-muted items-center justify-center mb-4">
               <Ionicons name="trophy" size={40} color="#fbbf24" />
@@ -192,23 +213,36 @@ export default function QuizScreen() {
               </View>
             )}
 
-            {/* Next button */}
-            {showResult && !isLastQuestion && (
-              <TouchableOpacity
-                onPress={handleNext}
-                className="mt-6 bg-primary rounded-2xl py-4 items-center"
-              >
-                <Text className="text-white font-bold">Proxima questao</Text>
-              </TouchableOpacity>
-            )}
+            {/* Navigation buttons */}
+            {showResult && (
+              <View className="mt-6 gap-3">
+                {!isLastQuestion && (
+                  <TouchableOpacity
+                    onPress={handleNext}
+                    className="bg-primary rounded-2xl py-4 items-center"
+                  >
+                    <Text className="text-white font-bold">Proxima questao</Text>
+                  </TouchableOpacity>
+                )}
 
-            {showResult && isLastQuestion && (
-              <TouchableOpacity
-                onPress={handleFinish}
-                className="mt-6 bg-accent rounded-2xl py-4 items-center"
-              >
-                <Text className="text-darkText-inverse font-bold">Ver resultado</Text>
-              </TouchableOpacity>
+                {isLastQuestion && (
+                  <TouchableOpacity
+                    onPress={handleFinish}
+                    className="bg-accent rounded-2xl py-4 items-center"
+                  >
+                    <Text className="text-darkText-inverse font-bold">Ver resultado</Text>
+                  </TouchableOpacity>
+                )}
+
+                {currentIndex > 0 && (
+                  <TouchableOpacity
+                    onPress={handlePrevious}
+                    className="bg-dark-surfaceLight rounded-2xl py-4 items-center"
+                  >
+                    <Text className="text-darkText-secondary font-semibold">Questao anterior</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
           </>
         )}

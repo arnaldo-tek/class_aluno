@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, Platform, Dimensions, PanResponder } from 'react-native'
+import { useState } from 'react'
+import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -7,278 +7,27 @@ import { Video, ResizeMode } from 'expo-av'
 import { useAudioLawDetail, useAudioLawQuestions } from '@/hooks/useAudio'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { DownloadButton } from '@/components/DownloadButton'
+import { AudioPlayerList } from '@/components/AudioPlayer'
 import { t } from '@/i18n'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import type { AudioItem } from '@/components/AudioPlayer'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
 type TabKey = 'audio' | 'text' | 'questions'
-
-// --- Seek bar ---
-
-const THUMB_SIZE = 16
-const TRACK_H = 6
-const SEEK_BAR_H_PAD = 16
-
-function formatTime(ms: number) {
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-}
-
-function AudioSeekBar({ progress, positionMs, durationMs, onSeekStart, onSeek }: {
-  progress: number
-  positionMs: number
-  durationMs: number
-  onSeekStart: () => void
-  onSeek: (ratio: number) => void
-}) {
-  const barWidth = SCREEN_WIDTH - 32 - SEEK_BAR_H_PAD * 2
-  const [dragging, setDragging] = useState(false)
-  const [dragRatio, setDragRatio] = useState(0)
-  const barRef = useRef<View>(null)
-  const barX = useRef(0)
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => {
-        onSeekStart()
-        setDragging(true)
-        barRef.current?.measureInWindow((x) => {
-          barX.current = x
-          const ratio = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / barWidth))
-          setDragRatio(ratio)
-        })
-      },
-      onPanResponderMove: (e) => {
-        const ratio = Math.max(0, Math.min(1, (e.nativeEvent.pageX - barX.current) / barWidth))
-        setDragRatio(ratio)
-      },
-      onPanResponderRelease: (e) => {
-        const ratio = Math.max(0, Math.min(1, (e.nativeEvent.pageX - barX.current) / barWidth))
-        setDragging(false)
-        onSeek(ratio)
-      },
-    })
-  ).current
-
-  const displayProgress = dragging ? dragRatio : progress
-  const displayPosition = dragging ? dragRatio * durationMs : positionMs
-
-  return (
-    <View className="px-4 pb-3">
-      <View
-        ref={barRef}
-        {...panResponder.panHandlers}
-        style={{ height: THUMB_SIZE + 8, justifyContent: 'center' }}
-      >
-        <View className="bg-dark-surfaceLight rounded-full" style={{ height: TRACK_H, width: '100%' }}>
-          <View className="bg-accent rounded-full" style={{ height: TRACK_H, width: `${displayProgress * 100}%` }} />
-        </View>
-        <View
-          style={{
-            position: 'absolute',
-            left: displayProgress * barWidth - THUMB_SIZE / 2,
-            top: (THUMB_SIZE + 8 - THUMB_SIZE) / 2,
-            width: THUMB_SIZE,
-            height: THUMB_SIZE,
-            borderRadius: THUMB_SIZE / 2,
-            backgroundColor: '#f59e0b',
-            borderWidth: 2,
-            borderColor: '#ffffff',
-            ...(dragging ? {
-              transform: [{ scale: 1.25 }],
-              shadowColor: '#f59e0b',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.4,
-              shadowRadius: 4,
-              elevation: 4,
-            } : {}),
-          }}
-        />
-      </View>
-      <View className="flex-row justify-between mt-0.5">
-        <Text className="text-[10px] text-darkText-muted">{formatTime(displayPosition)}</Text>
-        <Text className="text-[10px] text-darkText-muted">{formatTime(durationMs)}</Text>
-      </View>
-    </View>
-  )
-}
-
-// --- Audio player hook ---
-
-function useAudioPlayer() {
-  const [currentIndex, setCurrentIndex] = useState<number | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [speed, setSpeed] = useState(1)
-  const [positionMs, setPositionMs] = useState(0)
-  const [durationMs, setDurationMs] = useState(0)
-  const audioRef = useRef<any>(null)
-  const isSeeking = useRef(false)
-  const webTimerRef = useRef<any>(null)
-
-  const stopWebTimer = useCallback(() => {
-    if (webTimerRef.current) {
-      clearInterval(webTimerRef.current)
-      webTimerRef.current = null
-    }
-  }, [])
-
-  const play = useCallback(async (url: string, index: number, audios: any[]) => {
-    stopWebTimer()
-
-    if (audioRef.current) {
-      if (Platform.OS === 'web') {
-        audioRef.current.pause()
-        audioRef.current.src = ''
-      } else {
-        try {
-          await audioRef.current.stopAsync?.()
-          await audioRef.current.unloadAsync?.()
-        } catch {}
-      }
-      audioRef.current = null
-    }
-
-    setPositionMs(0)
-    setDurationMs(0)
-
-    if (Platform.OS === 'web') {
-      const audio = new window.Audio(url)
-      audio.playbackRate = speed
-      audio.onloadedmetadata = () => {
-        setDurationMs(audio.duration * 1000)
-      }
-      audio.onended = () => {
-        stopWebTimer()
-        const nextIdx = index + 1
-        if (nextIdx < audios.length) {
-          play(audios[nextIdx].audio_url, nextIdx, audios)
-        } else {
-          setIsPlaying(false)
-          setCurrentIndex(null)
-          setPositionMs(0)
-          setDurationMs(0)
-        }
-      }
-      audioRef.current = audio
-      audio.play()
-      setCurrentIndex(index)
-      setIsPlaying(true)
-      webTimerRef.current = setInterval(() => {
-        if (!isSeeking.current) {
-          setPositionMs(audio.currentTime * 1000)
-        }
-      }, 250)
-    } else {
-      try {
-        const { Audio } = require('expo-av')
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: url },
-          { shouldPlay: true, rate: speed, shouldCorrectPitch: true },
-          (status: any) => {
-            if (!status.isLoaded) return
-            if (!isSeeking.current) {
-              setPositionMs(status.positionMillis ?? 0)
-            }
-            if (status.durationMillis) {
-              setDurationMs(status.durationMillis)
-            }
-            if (status.didJustFinish) {
-              const nextIdx = index + 1
-              if (nextIdx < audios.length) {
-                play(audios[nextIdx].audio_url, nextIdx, audios)
-              } else {
-                setIsPlaying(false)
-                setCurrentIndex(null)
-                setPositionMs(0)
-                setDurationMs(0)
-              }
-            }
-          },
-        )
-        audioRef.current = sound
-        setCurrentIndex(index)
-        setIsPlaying(true)
-      } catch {
-        setIsPlaying(false)
-        setCurrentIndex(null)
-      }
-    }
-  }, [speed, stopWebTimer])
-
-  const togglePlayPause = useCallback(async (index: number, url: string, audios: any[]) => {
-    if (currentIndex === index && isPlaying) {
-      if (Platform.OS === 'web') {
-        audioRef.current?.pause()
-        stopWebTimer()
-      } else {
-        await audioRef.current?.pauseAsync?.()
-      }
-      setIsPlaying(false)
-    } else if (currentIndex === index && !isPlaying) {
-      if (Platform.OS === 'web') {
-        audioRef.current?.play()
-        webTimerRef.current = setInterval(() => {
-          if (!isSeeking.current && audioRef.current) {
-            setPositionMs(audioRef.current.currentTime * 1000)
-          }
-        }, 250)
-      } else {
-        await audioRef.current?.playAsync?.()
-      }
-      setIsPlaying(true)
-    } else {
-      await play(url, index, audios)
-    }
-  }, [currentIndex, isPlaying, play, stopWebTimer])
-
-  const changeSpeed = useCallback(async (s: number) => {
-    setSpeed(s)
-    if (audioRef.current) {
-      if (Platform.OS === 'web') {
-        audioRef.current.playbackRate = s
-      } else {
-        await audioRef.current.setRateAsync?.(s, true)
-      }
-    }
-  }, [])
-
-  const seek = useCallback(async (ratio: number) => {
-    if (audioRef.current && durationMs > 0) {
-      const seekTo = ratio * durationMs
-      if (Platform.OS === 'web') {
-        audioRef.current.currentTime = seekTo / 1000
-      } else {
-        await audioRef.current.setPositionAsync?.(seekTo)
-      }
-      setPositionMs(seekTo)
-    }
-    isSeeking.current = false
-  }, [durationMs])
-
-  const startSeeking = useCallback(() => {
-    isSeeking.current = true
-  }, [])
-
-  const progress = durationMs > 0 ? positionMs / durationMs : 0
-
-  return { currentIndex, isPlaying, speed, positionMs, durationMs, progress, play, togglePlayPause, changeSpeed, seek, startSeeking }
-}
 
 export default function AudioPlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const colors = useThemeColors()
   const { data, isLoading } = useAudioLawDetail(id!)
-  const { currentIndex, isPlaying, speed, positionMs, durationMs, progress, play, togglePlayPause, changeSpeed, seek, startSeeking } = useAudioPlayer()
   const [activeTab, setActiveTab] = useState<TabKey>('audio')
 
-  const audios = data?.audios ?? []
+  const audios: AudioItem[] = (data?.audios ?? []).map((a: any) => ({
+    id: a.id,
+    titulo: a.titulo,
+    audio_url: a.audio_url,
+  }))
 
   if (isLoading) return <LoadingSpinner />
   if (!data?.lei) return null
@@ -325,94 +74,28 @@ export default function AudioPlayerScreen() {
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {activeTab === 'audio' && (
           <View className="px-4 pt-4">
-            {/* Speed control */}
-            <View className="flex-row items-center justify-center py-2 gap-1 mb-2">
-              {SPEED_OPTIONS.map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  onPress={() => changeSpeed(s)}
-                  className={`px-3 py-1.5 rounded-full ${speed === s ? 'bg-accent' : 'bg-dark-surfaceLight'}`}
-                >
-                  <Text className={`text-xs font-semibold ${speed === s ? 'text-dark-bg' : 'text-darkText-muted'}`}>
-                    {s}x
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             {audios.length > 0 && (
               <>
                 <Text className="text-sm font-semibold text-darkText mb-3">
                   {t('audio.title')} ({audios.length})
                 </Text>
-                {audios.map((audio, i) => (
-                  <View
-                    key={audio.id}
-                    className={`mb-2.5 rounded-2xl overflow-hidden border ${
-                      currentIndex === i
-                        ? 'border-accent bg-accent/10'
-                        : 'border-darkBorder bg-dark-surface'
-                    }`}
-                  >
-                    <TouchableOpacity
-                      onPress={() => togglePlayPause(i, audio.audio_url, audios)}
-                      className="flex-row items-center px-4 py-3"
-                    >
-                      <View className={`w-10 h-10 rounded-full items-center justify-center ${
-                        currentIndex === i && isPlaying ? 'bg-accent' : 'bg-dark-surfaceLight'
-                      }`}>
-                        <Ionicons
-                          name={currentIndex === i && isPlaying ? 'pause' : 'play'}
-                          size={18}
-                          color={currentIndex === i && isPlaying ? colors.text : '#60a5fa'}
-                        />
-                      </View>
-                      <View className="flex-1 ml-3">
-                        <Text className="text-sm font-medium text-darkText">
-                          {audio.titulo ?? `${t('audio.title')} ${i + 1}`}
-                        </Text>
-                      </View>
-                      {currentIndex === i && (
-                        <Ionicons name="musical-notes" size={16} color="#f59e0b" />
-                      )}
-                      {Platform.OS !== 'web' && (
-                        <View className="ml-2">
-                          <DownloadButton
-                            lessonId={audio.id}
-                            courseId={lei.id ?? ''}
-                            courseTitle={lei.nome ?? ''}
-                            lessonTitle={audio.titulo ?? `Audio ${i + 1}`}
-                            contentType="audio"
-                            remoteUrl={audio.audio_url}
-                            size={28}
-                          />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-
-                    {/* Progress bar with draggable thumb */}
-                    {currentIndex === i && (
-                      <AudioSeekBar
-                        progress={progress}
-                        positionMs={positionMs}
-                        durationMs={durationMs}
-                        onSeekStart={startSeeking}
-                        onSeek={seek}
+                <AudioPlayerList
+                  audios={audios}
+                  accentColor="#f59e0b"
+                  renderItemRight={(audio, i) => (
+                    <View style={{ marginLeft: 8 }}>
+                      <DownloadButton
+                        lessonId={audio.id}
+                        courseId={lei.id ?? ''}
+                        courseTitle={lei.nome ?? ''}
+                        lessonTitle={audio.titulo ?? `Audio ${i + 1}`}
+                        contentType="audio"
+                        remoteUrl={audio.audio_url}
+                        size={28}
                       />
-                    )}
-                  </View>
-                ))}
-
-                {audios.length > 1 && (
-                  <TouchableOpacity
-                    onPress={() => play(audios[0].audio_url, 0, audios)}
-                    className="mt-2 bg-accent rounded-2xl py-3.5 items-center"
-                  >
-                    <Text className="text-dark-bg font-semibold text-sm">
-                      Reproduzir todos sequencialmente
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                    </View>
+                  )}
+                />
               </>
             )}
           </View>
@@ -450,6 +133,7 @@ function AudioQuizSection({ leiId }: { leiId: string }) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [score, setScore] = useState({ correct: 0, total: 0 })
+  const [finished, setFinished] = useState(false)
 
   if (!questions?.length) {
     return (
@@ -462,7 +146,6 @@ function AudioQuizSection({ leiId }: { leiId: string }) {
 
   const question = questions[currentIndex]
   const isLastQuestion = currentIndex === questions.length - 1
-  const isFinished = score.total === questions.length && showResult && isLastQuestion
 
   function handleSelectAnswer(answer: string) {
     if (showResult) return
@@ -480,11 +163,19 @@ function AudioQuizSection({ leiId }: { leiId: string }) {
     setShowResult(false)
   }
 
+  function handlePrevious() {
+    if (currentIndex === 0) return
+    setCurrentIndex((i) => i - 1)
+    setSelectedAnswer(null)
+    setShowResult(true)
+  }
+
   function handleRestart() {
     setCurrentIndex(0)
     setSelectedAnswer(null)
     setShowResult(false)
     setScore({ correct: 0, total: 0 })
+    setFinished(false)
     setStarted(true)
   }
 
@@ -504,7 +195,7 @@ function AudioQuizSection({ leiId }: { leiId: string }) {
     )
   }
 
-  if (isFinished) {
+  if (finished) {
     return (
       <View className="px-4 pt-6 items-center">
         <View className="w-16 h-16 rounded-full bg-accent/20 items-center justify-center mb-3">
@@ -613,22 +304,35 @@ function AudioQuizSection({ leiId }: { leiId: string }) {
         </View>
       )}
 
-      {showResult && !isLastQuestion && (
-        <TouchableOpacity
-          onPress={handleNext}
-          className="mt-4 bg-primary rounded-2xl py-3.5 items-center"
-        >
-          <Text className="text-white font-bold">Próxima questão</Text>
-        </TouchableOpacity>
-      )}
+      {showResult && (
+        <View className="mt-4 gap-3">
+          {!isLastQuestion && (
+            <TouchableOpacity
+              onPress={handleNext}
+              className="bg-primary rounded-2xl py-3.5 items-center"
+            >
+              <Text className="text-white font-bold">Próxima questão</Text>
+            </TouchableOpacity>
+          )}
 
-      {showResult && isLastQuestion && (
-        <TouchableOpacity
-          onPress={() => setScore((s) => ({ ...s }))}
-          className="mt-4 bg-accent rounded-2xl py-3.5 items-center"
-        >
-          <Text className="text-dark-bg font-bold">Ver resultado</Text>
-        </TouchableOpacity>
+          {isLastQuestion && (
+            <TouchableOpacity
+              onPress={() => setFinished(true)}
+              className="bg-accent rounded-2xl py-3.5 items-center"
+            >
+              <Text className="text-dark-bg font-bold">Ver resultado</Text>
+            </TouchableOpacity>
+          )}
+
+          {currentIndex > 0 && (
+            <TouchableOpacity
+              onPress={handlePrevious}
+              className="bg-dark-surfaceLight rounded-2xl py-3.5 items-center"
+            >
+              <Text className="text-darkText-secondary font-semibold">Questão anterior</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
     </View>
   )

@@ -64,7 +64,7 @@ export default function ChamadoChatScreen() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-bg">
+    <SafeAreaView className="flex-1 bg-dark-bg" edges={['top']}>
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 bg-dark-surface border-b border-darkBorder">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
@@ -149,6 +149,7 @@ export default function ChamadoChatScreen() {
             <Ionicons name="send" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
+        <SafeAreaView edges={['bottom']} className="bg-dark-surface" />
       </KeyboardAvoidingView>
     </SafeAreaView>
   )

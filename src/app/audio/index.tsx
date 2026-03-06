@@ -1,12 +1,14 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, Dimensions, ScrollView, Platform, PanResponder } from 'react-native'
+import { useState, useRef, useEffect } from 'react'
+import { View, Text, FlatList, TouchableOpacity, Image, Dimensions, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Video, ResizeMode } from 'expo-av'
-import { useAudioPackages, useAudioBanners, useAudioFolders, useAudioLaws, useAudioLawDetail, useAudioLawQuestions } from '@/hooks/useAudio'
+import { useAudioPackages, useAudioBanners, useAudioFolders, useAudioLaws, useAudioLawDetail, useAudioLawQuestions, useIsAudioFavorite, useToggleAudioFavorite } from '@/hooks/useAudio'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { AudioPlayerList } from '@/components/AudioPlayer'
+import type { AudioItem } from '@/components/AudioPlayer'
 import { t } from '@/i18n'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
@@ -21,181 +23,6 @@ const TAB_CONFIG: Array<{ tipo: TabType; key: string; icon: string; color: strin
   { tipo: 3, key: 'audio.stateLaws', icon: 'flag-outline', color: '#fbbf24' },
   { tipo: 4, key: 'audio.municipalLaws', icon: 'business-outline', color: '#c084fc' },
 ]
-
-const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
-const THUMB_SIZE = 16
-const TRACK_H = 6
-const SEEK_BAR_H_PAD = 16
-
-function formatTime(ms: number) {
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-}
-
-function AudioSeekBar({ progress, positionMs, durationMs, onSeekStart, onSeek }: {
-  progress: number; positionMs: number; durationMs: number; onSeekStart: () => void; onSeek: (ratio: number) => void
-}) {
-  const barWidth = SCREEN_WIDTH - 32 - SEEK_BAR_H_PAD * 2
-  const [dragging, setDragging] = useState(false)
-  const [dragRatio, setDragRatio] = useState(0)
-  const barRef = useRef<View>(null)
-  const barX = useRef(0)
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => {
-        onSeekStart()
-        setDragging(true)
-        barRef.current?.measureInWindow((x) => {
-          barX.current = x
-          setDragRatio(Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / barWidth)))
-        })
-      },
-      onPanResponderMove: (e) => {
-        setDragRatio(Math.max(0, Math.min(1, (e.nativeEvent.pageX - barX.current) / barWidth)))
-      },
-      onPanResponderRelease: (e) => {
-        const ratio = Math.max(0, Math.min(1, (e.nativeEvent.pageX - barX.current) / barWidth))
-        setDragging(false)
-        onSeek(ratio)
-      },
-    })
-  ).current
-
-  const dp = dragging ? dragRatio : progress
-  const dPos = dragging ? dragRatio * durationMs : positionMs
-
-  return (
-    <View className="px-4 pb-3">
-      <View ref={barRef} {...panResponder.panHandlers} style={{ height: THUMB_SIZE + 8, justifyContent: 'center' }}>
-        <View className="bg-dark-surfaceLight rounded-full" style={{ height: TRACK_H, width: '100%' }}>
-          <View className="bg-primary rounded-full" style={{ height: TRACK_H, width: `${dp * 100}%` }} />
-        </View>
-        <View style={{
-          position: 'absolute', left: dp * barWidth - THUMB_SIZE / 2, top: 4,
-          width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: THUMB_SIZE / 2,
-          backgroundColor: '#3b82f6', borderWidth: 2, borderColor: '#fff',
-          ...(dragging ? { transform: [{ scale: 1.25 }], shadowColor: '#3b82f6', shadowOpacity: 0.4, shadowRadius: 4, elevation: 4 } : {}),
-        }} />
-      </View>
-      <View className="flex-row justify-between mt-0.5">
-        <Text className="text-[10px] text-darkText-muted">{formatTime(dPos)}</Text>
-        <Text className="text-[10px] text-darkText-muted">{formatTime(durationMs)}</Text>
-      </View>
-    </View>
-  )
-}
-
-function useWebAudio() {
-  const [currentIndex, setCurrentIndex] = useState<number | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [speed, setSpeed] = useState(1)
-  const [positionMs, setPositionMs] = useState(0)
-  const [durationMs, setDurationMs] = useState(0)
-  const audioRef = useRef<any>(null)
-  const isSeeking = useRef(false)
-  const webTimerRef = useRef<any>(null)
-
-  const stopWebTimer = useCallback(() => {
-    if (webTimerRef.current) { clearInterval(webTimerRef.current); webTimerRef.current = null }
-  }, [])
-
-  const stop = useCallback(() => {
-    stopWebTimer()
-    if (audioRef.current) {
-      if (Platform.OS === 'web') { audioRef.current.pause(); audioRef.current.src = '' }
-      else { audioRef.current.stopAsync?.().catch(() => {}); audioRef.current.unloadAsync?.().catch(() => {}) }
-      audioRef.current = null
-    }
-    setIsPlaying(false)
-    setCurrentIndex(null)
-    setPositionMs(0)
-    setDurationMs(0)
-  }, [stopWebTimer])
-
-  const play = useCallback(async (url: string, index: number, audios: any[]) => {
-    stop()
-    if (Platform.OS === 'web') {
-      const a = new window.Audio(url)
-      a.playbackRate = speed
-      a.onloadedmetadata = () => setDurationMs(a.duration * 1000)
-      a.onended = () => {
-        stopWebTimer()
-        const next = index + 1
-        if (next < audios.length) play(audios[next].audio_url, next, audios)
-        else { setIsPlaying(false); setCurrentIndex(null); setPositionMs(0); setDurationMs(0) }
-      }
-      audioRef.current = a
-      a.play()
-      webTimerRef.current = setInterval(() => { if (!isSeeking.current) setPositionMs(a.currentTime * 1000) }, 250)
-    } else {
-      try {
-        const { Audio } = require('expo-av')
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: url },
-          { shouldPlay: true, rate: speed, shouldCorrectPitch: true },
-          (s: any) => {
-            if (!s.isLoaded) return
-            if (!isSeeking.current) setPositionMs(s.positionMillis ?? 0)
-            if (s.durationMillis) setDurationMs(s.durationMillis)
-            if (s.didJustFinish) {
-              const next = index + 1
-              if (next < audios.length) play(audios[next].audio_url, next, audios)
-              else { setIsPlaying(false); setCurrentIndex(null); setPositionMs(0); setDurationMs(0) }
-            }
-          },
-        )
-        audioRef.current = sound
-      } catch { return }
-    }
-    setCurrentIndex(index)
-    setIsPlaying(true)
-  }, [stop, speed, stopWebTimer])
-
-  const toggle = useCallback(async (index: number, url: string, audios: any[]) => {
-    if (currentIndex === index && isPlaying) {
-      if (Platform.OS === 'web') { audioRef.current?.pause(); stopWebTimer() }
-      else await audioRef.current?.pauseAsync?.()
-      setIsPlaying(false)
-    } else if (currentIndex === index) {
-      if (Platform.OS === 'web') {
-        audioRef.current?.play()
-        webTimerRef.current = setInterval(() => { if (!isSeeking.current && audioRef.current) setPositionMs(audioRef.current.currentTime * 1000) }, 250)
-      } else await audioRef.current?.playAsync?.()
-      setIsPlaying(true)
-    } else {
-      await play(url, index, audios)
-    }
-  }, [currentIndex, isPlaying, play, stopWebTimer])
-
-  const changeSpeed = useCallback(async (s: number) => {
-    setSpeed(s)
-    if (audioRef.current) {
-      if (Platform.OS === 'web') audioRef.current.playbackRate = s
-      else await audioRef.current.setRateAsync?.(s, true)
-    }
-  }, [])
-
-  const seek = useCallback(async (ratio: number) => {
-    if (audioRef.current && durationMs > 0) {
-      const seekTo = ratio * durationMs
-      if (Platform.OS === 'web') audioRef.current.currentTime = seekTo / 1000
-      else await audioRef.current.setPositionAsync?.(seekTo)
-      setPositionMs(seekTo)
-    }
-    isSeeking.current = false
-  }, [durationMs])
-
-  const startSeeking = useCallback(() => { isSeeking.current = true }, [])
-
-  const progress = durationMs > 0 ? positionMs / durationMs : 0
-
-  return { currentIndex, isPlaying, speed, positionMs, durationMs, progress, play, toggle, stop, changeSpeed, seek, startSeeking }
-}
 
 export default function AudioScreen() {
   const router = useRouter()
@@ -214,7 +41,6 @@ export default function AudioScreen() {
   const { data: laws, isLoading: loadingLaws } = useAudioLaws(selectedFolderId ?? '')
   const { data: lawDetail, isLoading: loadingDetail } = useAudioLawDetail(selectedLawId ?? '')
   const { data: lawQuestions } = useAudioLawQuestions(selectedLawId ?? '')
-  const audio = useWebAudio()
 
   const bannerRef = useRef<FlatList>(null)
   const [bannerIndex, setBannerIndex] = useState(0)
@@ -231,7 +57,6 @@ export default function AudioScreen() {
   }, [bannerIndex, banners?.length])
 
   function resetToPackages() {
-    audio.stop()
     setLevel('packages')
     setSelectedPackageId(null)
     setSelectedFolderId(null)
@@ -260,7 +85,6 @@ export default function AudioScreen() {
 
   function goBack() {
     if (level === 'player') {
-      audio.stop()
       setSelectedLawId(null)
       setLevel('laws')
       setBreadcrumb(prev => prev.slice(0, 2))
@@ -431,6 +255,7 @@ export default function AudioScreen() {
                   </View>
                 )}
                 <Text className="flex-1 text-sm font-medium text-darkText ml-3">{item.nome}</Text>
+                {activeTab === 1 && <FavoriteHeart id={item.id} tipo="pacote_lei" />}
                 <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
@@ -456,6 +281,7 @@ export default function AudioScreen() {
                   <Ionicons name="play" size={16} color={activeColor} />
                 </View>
                 <Text className="flex-1 text-sm font-medium text-darkText ml-3" numberOfLines={2}>{item.nome}</Text>
+                {activeTab !== 1 && <FavoriteHeart id={item.id} tipo="lei" />}
                 <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
@@ -491,73 +317,15 @@ export default function AudioScreen() {
               {playerTab === 'audio' && (
                 <View className="px-4 pt-4">
                   {lawDetail.audios.length > 0 ? (
-                    <View>
-                      {/* Speed control */}
-                      <View className="flex-row items-center justify-center py-2 gap-1 mb-3">
-                        {SPEED_OPTIONS.map((s) => (
-                          <TouchableOpacity
-                            key={s}
-                            onPress={() => audio.changeSpeed(s)}
-                            className={`px-3 py-1.5 rounded-full ${audio.speed === s ? 'bg-primary' : 'bg-dark-surfaceLight'}`}
-                          >
-                            <Text className={`text-xs font-semibold ${audio.speed === s ? 'text-white' : 'text-darkText-muted'}`}>
-                              {s}x
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-
-                      <Text className="text-sm font-semibold text-darkText mb-2">
+                    <>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#f0f0f0', marginBottom: 8 }}>
                         Áudios ({lawDetail.audios.length})
                       </Text>
-
-                      {lawDetail.audios.map((a, i) => (
-                        <View
-                          key={a.id}
-                          className={`mb-2.5 rounded-2xl overflow-hidden border ${
-                            audio.currentIndex === i ? 'border-primary bg-primary-50' : 'border-darkBorder-subtle bg-dark-surface'
-                          }`}
-                        >
-                          <TouchableOpacity
-                            onPress={() => audio.toggle(i, a.audio_url, lawDetail.audios)}
-                            className="flex-row items-center px-4 py-3"
-                          >
-                            <View className={`w-10 h-10 rounded-full items-center justify-center ${
-                              audio.currentIndex === i && audio.isPlaying ? 'bg-primary' : 'bg-dark-surfaceLight'
-                            }`}>
-                              <Ionicons
-                                name={audio.currentIndex === i && audio.isPlaying ? 'pause' : 'play'}
-                                size={18}
-                                color={audio.currentIndex === i && audio.isPlaying ? '#fff' : activeColor}
-                              />
-                            </View>
-                            <Text className="flex-1 text-sm font-medium text-darkText ml-3">
-                              {a.titulo ?? `Audio ${i + 1}`}
-                            </Text>
-                            {audio.currentIndex === i && <Ionicons name="musical-notes" size={16} color="#f59e0b" />}
-                          </TouchableOpacity>
-
-                          {audio.currentIndex === i && (
-                            <AudioSeekBar
-                              progress={audio.progress}
-                              positionMs={audio.positionMs}
-                              durationMs={audio.durationMs}
-                              onSeekStart={audio.startSeeking}
-                              onSeek={audio.seek}
-                            />
-                          )}
-                        </View>
-                      ))}
-
-                      {lawDetail.audios.length > 1 && (
-                        <TouchableOpacity
-                          onPress={() => audio.play(lawDetail.audios[0].audio_url, 0, lawDetail.audios)}
-                          className="mt-1 bg-primary rounded-2xl py-3.5 items-center"
-                        >
-                          <Text className="text-white font-semibold text-sm">Reproduzir todos sequencialmente</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
+                      <AudioPlayerList
+                        audios={(lawDetail.audios as AudioItem[])}
+                        accentColor={activeColor}
+                      />
+                    </>
                   ) : (
                     <View className="items-center py-12">
                       <Ionicons name="musical-notes-outline" size={40} color={colors.textMuted} />
@@ -596,6 +364,28 @@ export default function AudioScreen() {
   )
 }
 
+function FavoriteHeart({ id, tipo }: { id: string; tipo: string }) {
+  const { data: isFav } = useIsAudioFavorite(tipo, id)
+  const toggle = useToggleAudioFavorite()
+
+  return (
+    <TouchableOpacity
+      onPress={(e) => {
+        e.stopPropagation?.()
+        toggle.mutate({ referenciaId: id, tipo, isFavorite: !!isFav })
+      }}
+      className="p-2 ml-1"
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <Ionicons
+        name={isFav ? 'heart' : 'heart-outline'}
+        size={20}
+        color={isFav ? '#f87171' : '#9ca3af'}
+      />
+    </TouchableOpacity>
+  )
+}
+
 function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergunta: string; resposta: string; alternativas: string[]; video?: string | null }> }) {
   const colors = useThemeColors()
   const [started, setStarted] = useState(false)
@@ -603,6 +393,7 @@ function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergu
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [score, setScore] = useState({ correct: 0, total: 0 })
+  const [finished, setFinished] = useState(false)
 
   if (!questions.length) {
     return (
@@ -615,7 +406,6 @@ function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergu
 
   const question = questions[currentIndex]
   const isLastQuestion = currentIndex === questions.length - 1
-  const isFinished = score.total === questions.length && showResult && isLastQuestion
 
   function handleSelectAnswer(answer: string) {
     if (showResult) return
@@ -633,11 +423,19 @@ function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergu
     setShowResult(false)
   }
 
+  function handlePrevious() {
+    if (currentIndex === 0) return
+    setCurrentIndex((i) => i - 1)
+    setSelectedAnswer(null)
+    setShowResult(true)
+  }
+
   function handleRestart() {
     setCurrentIndex(0)
     setSelectedAnswer(null)
     setShowResult(false)
     setScore({ correct: 0, total: 0 })
+    setFinished(false)
     setStarted(true)
   }
 
@@ -657,7 +455,7 @@ function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergu
     )
   }
 
-  if (isFinished) {
+  if (finished) {
     return (
       <View className="px-4 pt-6 items-center">
         <View className="w-16 h-16 rounded-full bg-primary/20 items-center justify-center mb-3">
@@ -746,16 +544,26 @@ function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergu
         </View>
       )}
 
-      {showResult && !isLastQuestion && (
-        <TouchableOpacity onPress={handleNext} className="mt-4 bg-primary rounded-2xl py-3.5 items-center">
-          <Text className="text-white font-bold">Próxima questão</Text>
-        </TouchableOpacity>
-      )}
+      {showResult && (
+        <View className="mt-4 gap-3">
+          {!isLastQuestion && (
+            <TouchableOpacity onPress={handleNext} className="bg-primary rounded-2xl py-3.5 items-center">
+              <Text className="text-white font-bold">Próxima questão</Text>
+            </TouchableOpacity>
+          )}
 
-      {showResult && isLastQuestion && (
-        <TouchableOpacity onPress={() => setScore((s) => ({ ...s }))} className="mt-4 bg-primary rounded-2xl py-3.5 items-center">
-          <Text className="text-white font-bold">Ver resultado</Text>
-        </TouchableOpacity>
+          {isLastQuestion && (
+            <TouchableOpacity onPress={() => setFinished(true)} className="bg-accent rounded-2xl py-3.5 items-center">
+              <Text className="text-dark-bg font-bold">Ver resultado</Text>
+            </TouchableOpacity>
+          )}
+
+          {currentIndex > 0 && (
+            <TouchableOpacity onPress={handlePrevious} className="bg-dark-surfaceLight rounded-2xl py-3.5 items-center">
+              <Text className="text-darkText-secondary font-semibold">Questão anterior</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
     </View>
   )
