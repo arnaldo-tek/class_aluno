@@ -304,6 +304,13 @@ function AudioQuizSection({ leiId }: { leiId: string }) {
         </View>
       )}
 
+      {showResult && question.resposta_escrita && (
+        <View className="mt-2 mb-2 bg-blue-50 rounded-2xl p-4">
+          <Text className="text-sm font-bold text-darkText mb-1">Comentário:</Text>
+          <Text className="text-sm text-gray-700">{question.resposta_escrita}</Text>
+        </View>
+      )}
+
       {showResult && (
         <View className="mt-4 gap-3">
           {!isLastQuestion && (

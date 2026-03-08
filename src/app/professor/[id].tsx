@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView, Image, TouchableOpacity, Linking, FlatList, Dimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { useProfessorDetail, useProfessorCourses, useProfessorReviews } from '@/hooks/useProfessor'
 import { useIsFollowing, useToggleFollow } from '@/hooks/useProfessor'
 import { useProfessorCardsByProfessor } from '@/hooks/useProfessorCards'
+import { Video, ResizeMode } from 'expo-av'
+import * as VideoThumbnails from 'expo-video-thumbnails'
 import { CourseCard } from '@/components/CourseCard'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useThemeColors } from '@/hooks/useThemeColors'
@@ -16,6 +18,68 @@ const SCREEN_WIDTH = Dimensions.get('window').width
 const DESTAQUE_HEIGHT = 200
 
 type TabKey = 'courses' | 'cards' | 'about' | 'reviews'
+
+function ProfileCardItem({ card }: { card: any }) {
+  const [playing, setPlaying] = useState(false)
+  const [thumbnail, setThumbnail] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (card.video && !card.imagem) {
+      VideoThumbnails.getThumbnailAsync(card.video, { time: 1000 })
+        .then(({ uri }) => setThumbnail(uri))
+        .catch(() => {})
+    }
+  }, [card.video, card.imagem])
+
+  const previewImage = card.imagem ?? thumbnail
+
+  return (
+    <View className="bg-dark-surface rounded-2xl mb-3 overflow-hidden border border-darkBorder-subtle">
+      {card.video ? (
+        playing ? (
+          <Video
+            source={{ uri: card.video }}
+            useNativeControls
+            shouldPlay
+            resizeMode={ResizeMode.CONTAIN}
+            style={{ width: '100%', height: 256 }}
+            onPlaybackStatusUpdate={(status) => {
+              if ('didJustFinish' in status && status.didJustFinish) setPlaying(false)
+            }}
+          />
+        ) : (
+          <TouchableOpacity
+            onPress={() => setPlaying(true)}
+            className="w-full h-48 bg-dark-surfaceLight items-center justify-center"
+            activeOpacity={0.8}
+          >
+            {previewImage && (
+              <Image source={{ uri: previewImage }} className="w-full h-48 absolute" resizeMode="cover" />
+            )}
+            <View className="items-center justify-center w-14 h-14 rounded-full bg-black/50">
+              <Ionicons name="play" size={28} color="#fff" />
+            </View>
+          </TouchableOpacity>
+        )
+      ) : card.imagem ? (
+        <Image source={{ uri: card.imagem }} className="w-full h-48" resizeMode="cover" />
+      ) : null}
+      <View className="p-4">
+        {card.titulo && (
+          <Text className="text-base font-semibold text-darkText mb-1">{card.titulo}</Text>
+        )}
+        {card.descricao && (
+          <Text className="text-sm text-darkText-secondary leading-5">{card.descricao}</Text>
+        )}
+        {card.created_at && (
+          <Text className="text-xs text-darkText-muted mt-2">
+            {format(new Date(card.created_at), 'dd/MM/yyyy')}
+          </Text>
+        )}
+      </View>
+    </View>
+  )
+}
 
 export default function ProfessorDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -116,31 +180,7 @@ export default function ProfessorDetailScreen() {
 
         {/* Meus Destaques - image carousel */}
         {destaques.length > 0 && (
-          <View className="mt-5">
-            <Text className="text-base font-bold text-darkText px-4 mb-3">Meus Destaques</Text>
-            <FlatList
-              data={destaques}
-              keyExtractor={(_, i) => `dest-${i}`}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              style={{ height: DESTAQUE_HEIGHT }}
-              renderItem={({ item }) => (
-                <Image
-                  source={{ uri: item }}
-                  style={{ width: SCREEN_WIDTH, height: DESTAQUE_HEIGHT }}
-                  resizeMode="cover"
-                />
-              )}
-            />
-            {destaques.length > 1 && (
-              <View className="flex-row justify-center mt-2 gap-1.5">
-                {destaques.map((_, i) => (
-                  <View key={i} className="w-2 h-2 rounded-full bg-darkText-muted opacity-40" />
-                ))}
-              </View>
-            )}
-          </View>
+          <DestaqueCarousel destaques={destaques} />
         )}
 
         {/* Redes Sociais */}
@@ -207,24 +247,7 @@ export default function ProfessorDetailScreen() {
                 <Text className="text-sm text-darkText-muted">Nenhum card publicado.</Text>
               ) : (
                 cards.map((card: any) => (
-                  <View key={card.id} className="bg-dark-surface rounded-2xl mb-3 overflow-hidden border border-darkBorder-subtle">
-                    {card.imagem && (
-                      <Image source={{ uri: card.imagem }} className="w-full h-48" resizeMode="cover" />
-                    )}
-                    <View className="p-4">
-                      {card.titulo && (
-                        <Text className="text-base font-semibold text-darkText mb-1">{card.titulo}</Text>
-                      )}
-                      {card.descricao && (
-                        <Text className="text-sm text-darkText-secondary leading-5">{card.descricao}</Text>
-                      )}
-                      {card.created_at && (
-                        <Text className="text-xs text-darkText-muted mt-2">
-                          {format(new Date(card.created_at), 'dd/MM/yyyy')}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
+                  <ProfileCardItem key={card.id} card={card} />
                 ))
               )}
             </View>
@@ -282,5 +305,66 @@ export default function ProfessorDetailScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  )
+}
+
+function DestaqueCarousel({ destaques }: { destaques: string[] }) {
+  const [activeIndex, setActiveIndex] = useState(0)
+  const flatListRef = useRef<FlatList>(null)
+
+  const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      setActiveIndex(viewableItems[0].index ?? 0)
+    }
+  }, [])
+
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current
+
+  useEffect(() => {
+    if (destaques.length <= 1) return
+
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % destaques.length
+        flatListRef.current?.scrollToIndex({ index: next, animated: true })
+        return next
+      })
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [destaques.length])
+
+  return (
+    <View className="mt-5">
+      <Text className="text-base font-bold text-darkText px-4 mb-3">Meus Destaques</Text>
+      <FlatList
+        ref={flatListRef}
+        data={destaques}
+        keyExtractor={(_, i) => `dest-${i}`}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        style={{ height: DESTAQUE_HEIGHT }}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        renderItem={({ item }) => (
+          <Image
+            source={{ uri: item }}
+            style={{ width: SCREEN_WIDTH, height: DESTAQUE_HEIGHT }}
+            resizeMode="cover"
+          />
+        )}
+      />
+      {destaques.length > 1 && (
+        <View className="flex-row justify-center mt-2 gap-1.5">
+          {destaques.map((_, i) => (
+            <View
+              key={i}
+              className={`w-2 h-2 rounded-full ${i === activeIndex ? 'bg-primary' : 'bg-darkText-muted opacity-40'}`}
+            />
+          ))}
+        </View>
+      )}
+    </View>
   )
 }

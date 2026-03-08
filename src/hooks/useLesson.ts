@@ -64,7 +64,7 @@ export function useLessonQuestions(lessonId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('questoes_da_aula')
-        .select('id, pergunta, resposta, alternativas, video, sort_order')
+        .select('id, pergunta, resposta, alternativas, video, resposta_escrita, sort_order')
         .eq('aula_id', lessonId)
         .order('sort_order')
 

@@ -213,6 +213,14 @@ export default function QuizScreen() {
               </View>
             )}
 
+            {/* Written explanation */}
+            {showResult && question.resposta_escrita && (
+              <View className="mt-4 bg-blue-50 rounded-2xl p-4">
+                <Text className="text-sm font-bold text-darkText mb-1">Comentario:</Text>
+                <Text className="text-sm text-gray-700">{question.resposta_escrita}</Text>
+              </View>
+            )}
+
             {/* Navigation buttons */}
             {showResult && (
               <View className="mt-6 gap-3">

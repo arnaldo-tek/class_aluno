@@ -90,7 +90,7 @@ export function useAudioLawQuestions(leiId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('questoes_leis')
-        .select('id, pergunta, resposta, alternativas, video')
+        .select('id, pergunta, resposta, alternativas, video, resposta_escrita')
         .eq('lei_id', leiId)
 
       if (error) throw error
