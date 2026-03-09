@@ -305,9 +305,9 @@ function AudioQuizSection({ leiId }: { leiId: string }) {
       )}
 
       {showResult && question.resposta_escrita && (
-        <View className="mt-2 mb-2 bg-blue-50 rounded-2xl p-4">
-          <Text className="text-sm font-bold text-darkText mb-1">Comentário:</Text>
-          <Text className="text-sm text-gray-700">{question.resposta_escrita}</Text>
+        <View className="mt-2 mb-2 bg-dark-surfaceLight rounded-2xl p-4 border border-accent/20">
+          <Text className="text-sm font-bold text-accent mb-1">Comentário:</Text>
+          <Text className="text-sm text-darkText-secondary leading-6">{question.resposta_escrita}</Text>
         </View>
       )}
 

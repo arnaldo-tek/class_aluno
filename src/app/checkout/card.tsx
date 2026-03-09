@@ -62,16 +62,12 @@ export default function CardCheckoutScreen() {
     if (!exp) return
 
     try {
-      // Ensure customer has CPF before checkout (non-blocking)
+      // Ensure customer has CPF before checkout
       if (params.cpf) {
-        try {
-          await updateDoc.mutateAsync({
-            customer_id: params.customer_id!,
-            document: params.cpf,
-          })
-        } catch (e) {
-          console.warn('Failed to update customer document:', e)
-        }
+        await updateDoc.mutateAsync({
+          customer_id: params.customer_id!,
+          document: params.cpf,
+        })
       }
 
       const result = await checkout.mutateAsync({
@@ -98,7 +94,11 @@ export default function CardCheckoutScreen() {
         router.replace({ pathname: '/checkout/success', params: { course_name: params.course_name, pending: '1' } })
       }
     } catch (err: any) {
-      router.replace('/checkout/failed')
+      console.error('Card checkout error:', err)
+      Alert.alert('Erro no pagamento', err.message ?? 'Não foi possível processar o pagamento.', [
+        { text: 'Tentar novamente' },
+        { text: 'Voltar', onPress: () => router.replace('/checkout/failed') },
+      ])
     }
   }
 

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { useAuthContext } from '@/contexts/AuthContext'
 
 export function useFeaturedCourses() {
   return useQuery({
@@ -207,5 +208,25 @@ export function useCourseReviews(courseId: string) {
       return data ?? []
     },
     enabled: !!courseId,
+  })
+}
+
+export function useHasReviewedCourse(courseId: string) {
+  const { user } = useAuthContext()
+
+  return useQuery({
+    queryKey: ['has-reviewed-course', user?.id, courseId],
+    queryFn: async () => {
+      if (!user) return false
+      const { data } = await supabase
+        .from('avaliacoes')
+        .select('id')
+        .eq('curso_id', courseId)
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      return !!data
+    },
+    enabled: !!user && !!courseId,
   })
 }

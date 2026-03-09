@@ -26,6 +26,7 @@ export default function CommunityChatScreen() {
   const [text, setText] = useState('')
   const [showNicknameModal, setShowNicknameModal] = useState(false)
   const [nicknameInput, setNicknameInput] = useState('')
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null)
   const flatListRef = useRef<FlatList>(null)
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function CommunityChatScreen() {
     toggleMembership.mutate({ comunidadeId: id!, isMember: false })
   }
 
-  async function handleSetNicknameAndJoin() {
+  async function handleSetNicknameAndContinue() {
     const trimmed = nicknameInput.trim()
     if (!trimmed || trimmed.length < 3) {
       Alert.alert('Apelido', 'O apelido deve ter pelo menos 3 caracteres.')
@@ -51,15 +52,26 @@ export default function CommunityChatScreen() {
     try {
       await setNickname.mutateAsync(trimmed)
       setShowNicknameModal(false)
-      toggleMembership.mutate({ comunidadeId: id!, isMember: false })
+      if (pendingMessage) {
+        setText('')
+        sendMessage.mutate({ comunidadeId: id!, texto: pendingMessage })
+        setPendingMessage(null)
+      } else {
+        toggleMembership.mutate({ comunidadeId: id!, isMember: false })
+      }
     } catch {
       Alert.alert('Erro', 'Não foi possível salvar o apelido.')
     }
   }
 
-  async function handleSend() {
+  function handleSend() {
     const trimmed = text.trim()
     if (!trimmed) return
+    if (!nickname) {
+      setPendingMessage(trimmed)
+      setShowNicknameModal(true)
+      return
+    }
     setText('')
     sendMessage.mutate({ comunidadeId: id!, texto: trimmed })
   }
@@ -84,7 +96,7 @@ export default function CommunityChatScreen() {
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         keyboardVerticalOffset={0}
       >
         <FlatList
@@ -178,7 +190,7 @@ export default function CommunityChatScreen() {
                 <Text className="text-sm font-semibold text-darkText-muted">Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={handleSetNicknameAndJoin}
+                onPress={handleSetNicknameAndContinue}
                 disabled={!nicknameInput.trim() || nicknameInput.trim().length < 3 || setNickname.isPending}
                 className={`flex-1 py-3 rounded-2xl items-center ${nicknameInput.trim().length >= 3 ? 'bg-primary' : 'bg-dark-surfaceLight'}`}
               >

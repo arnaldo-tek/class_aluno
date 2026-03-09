@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useState, useRef, useEffect } from 'react'
 import { t } from '@/i18n'
-import { useCourseDetail, useCourseModules, useCourseReviews } from '@/hooks/useCourses'
+import { useCourseDetail, useCourseModules, useCourseReviews, useHasReviewedCourse } from '@/hooks/useCourses'
 import { useIsEnrolled } from '@/hooks/useEnrollments'
 import { useSubmitReview } from '@/hooks/useFavorites'
 import { useStartChat, useChatMessages, useSendMessage } from '@/hooks/useChat'
@@ -28,6 +28,7 @@ export default function CourseDetailScreen() {
   const { data: reviews } = useCourseReviews(id!)
   const { data: isEnrolled } = useIsEnrolled(id!)
   const submitReview = useSubmitReview()
+  const { data: hasReviewed } = useHasReviewedCourse(id!)
 
   if (isLoading) return <LoadingSpinner />
   if (!course) return null
@@ -204,8 +205,8 @@ export default function CourseDetailScreen() {
 
           {activeTab === 'reviews' && (
             <View>
-              {/* Review form */}
-              {isEnrolled && user && (
+              {/* Review form - only shown once */}
+              {isEnrolled && user && !hasReviewed && (
                 <View className="mb-6 pb-6 border-b border-darkBorder-subtle">
                   <Text className="text-sm font-bold text-darkText mb-3">Deixe sua avaliação</Text>
                   <View className="flex-row gap-1 mb-3">

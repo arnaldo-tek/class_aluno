@@ -46,7 +46,30 @@ async function invokeEdgeFunction<T>(name: string, body: unknown): Promise<T> {
   const { data, error } = await supabase.functions.invoke(name, {
     body,
   })
-  if (error) throw new Error(error.message ?? `Edge function ${name} failed`)
+
+  // On non-2xx, supabase-js puts the parsed body in `data` and sets `error`
+  if (error) {
+    // `data` may contain the JSON error body from our edge function
+    if (data && typeof data === 'object' && 'error' in data) {
+      const details = (data as any).details
+        ? JSON.stringify((data as any).details)
+        : (data as any).error
+      console.error(`[${name}] API error:`, JSON.stringify(data))
+      throw new Error(details)
+    }
+    console.error(`[${name}] Edge function error:`, error)
+    throw new Error(error.message ?? `Edge function ${name} failed`)
+  }
+
+  // Handle error in 2xx responses (shouldn't happen but just in case)
+  if (data && typeof data === 'object' && 'error' in data) {
+    const details = (data as any).details
+      ? JSON.stringify((data as any).details)
+      : (data as any).error
+    console.error(`[${name}] API error:`, JSON.stringify(data))
+    throw new Error(details)
+  }
+
   return data as T
 }
 
@@ -92,22 +115,18 @@ export function useCustomerId() {
 export function useUpdateCustomerDocument() {
   return useMutation({
     mutationFn: async ({ customer_id, document }: { customer_id: string; document: string }) => {
-      const { data, error } = await supabase.functions.invoke('payment-create-customer', {
-        body: {
-          customer_id_update: customer_id,
-          document,
-          document_type: 'CPF',
-          phones: {
-            mobile_phone: {
-              country_code: '55',
-              area_code: '11',
-              number: '999999999',
-            },
+      return invokeEdgeFunction('payment-create-customer', {
+        customer_id_update: customer_id,
+        document,
+        document_type: 'CPF',
+        phones: {
+          mobile_phone: {
+            country_code: '55',
+            area_code: '11',
+            number: '999999999',
           },
         },
       })
-      if (error) throw new Error(error.message ?? 'Failed to update customer')
-      return data
     },
   })
 }

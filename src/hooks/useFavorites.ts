@@ -91,6 +91,7 @@ export function useSubmitReview() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['course-reviews'] })
       qc.invalidateQueries({ queryKey: ['professor-reviews'] })
+      qc.invalidateQueries({ queryKey: ['has-reviewed-course'] })
     },
   })
 }

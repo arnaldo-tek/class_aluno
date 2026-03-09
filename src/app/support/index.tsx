@@ -79,7 +79,7 @@ export default function SupportScreen() {
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         {/* New ticket form */}
         {showForm && (

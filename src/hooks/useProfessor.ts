@@ -106,7 +106,7 @@ export function useIsFollowing(professorId: string) {
       if (!user) return false
       const { data } = await supabase
         .from('user_following_professors')
-        .select('id')
+        .select('professor_id')
         .eq('user_id', user.id)
         .eq('professor_id', professorId)
         .maybeSingle()
@@ -142,6 +142,7 @@ export function useToggleFollow() {
     onSuccess: (_d, { professorId }) => {
       qc.invalidateQueries({ queryKey: ['is-following'] })
       qc.invalidateQueries({ queryKey: ['followed-professors'] })
+      qc.invalidateQueries({ queryKey: ['following-professors'] })
     },
   })
 }

@@ -59,15 +59,18 @@ export function useHasPackageAccess(pacoteId: string) {
     queryKey: ['package-access', user?.id, pacoteId],
     queryFn: async () => {
       if (!user) return false
+      // Check for access: either no expiry (null) or expiry in the future
       const { data } = await supabase
         .from('package_access')
         .select('id, access_expire_date')
         .eq('user_id', user.id)
         .eq('pacote_id', pacoteId)
-        .gte('access_expire_date', new Date().toISOString())
         .maybeSingle()
 
-      return !!data
+      if (!data) return false
+      // null = no expiry = permanent access
+      if (!data.access_expire_date) return true
+      return new Date(data.access_expire_date) >= new Date()
     },
     enabled: !!user && !!pacoteId,
   })

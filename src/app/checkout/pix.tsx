@@ -39,16 +39,12 @@ export default function PixCheckoutScreen() {
 
     async function generatePix() {
       try {
-        // Ensure customer has CPF before checkout (non-blocking)
+        // Ensure customer has CPF before checkout
         if (params.cpf) {
-          try {
-            await updateDoc.mutateAsync({
-              customer_id: params.customer_id!,
-              document: params.cpf,
-            })
-          } catch (e) {
-            console.warn('Failed to update customer document:', e)
-          }
+          await updateDoc.mutateAsync({
+            customer_id: params.customer_id!,
+            document: params.cpf,
+          })
         }
 
         const result = await checkoutPix.mutateAsync({
