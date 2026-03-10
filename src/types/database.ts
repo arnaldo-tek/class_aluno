@@ -2331,6 +2331,7 @@ export type Database = {
           lei_id: string
           pergunta: string
           resposta: string
+          resposta_escrita: string | null
           video: string | null
         }
         Insert: {
@@ -2339,6 +2340,7 @@ export type Database = {
           lei_id: string
           pergunta: string
           resposta: string
+          resposta_escrita?: string | null
           video?: string | null
         }
         Update: {
@@ -2347,6 +2349,7 @@ export type Database = {
           lei_id?: string
           pergunta?: string
           resposta?: string
+          resposta_escrita?: string | null
           video?: string | null
         }
         Relationships: [

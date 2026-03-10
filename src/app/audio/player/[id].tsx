@@ -127,13 +127,27 @@ export default function AudioPlayerScreen() {
 
 function AudioQuizSection({ leiId }: { leiId: string }) {
   const colors = useThemeColors()
-  const { data: questions } = useAudioLawQuestions(leiId)
+  const { data: questions, isLoading: loadingQuestions, error: questionsError } = useAudioLawQuestions(leiId)
+
   const [started, setStarted] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [score, setScore] = useState({ correct: 0, total: 0 })
   const [finished, setFinished] = useState(false)
+
+  if (loadingQuestions) {
+    return <LoadingSpinner />
+  }
+
+  if (questionsError) {
+    return (
+      <View className="items-center py-12 px-4">
+        <Ionicons name="alert-circle-outline" size={40} color="#f87171" />
+        <Text className="text-sm text-error mt-2">Erro ao carregar questões</Text>
+      </View>
+    )
+  }
 
   if (!questions?.length) {
     return (

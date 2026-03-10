@@ -386,7 +386,7 @@ function FavoriteHeart({ id, tipo }: { id: string; tipo: string }) {
   )
 }
 
-function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergunta: string; resposta: string; alternativas: string[]; video?: string | null }> }) {
+function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergunta: string; resposta: string; alternativas: string[]; video?: string | null; resposta_escrita?: string | null }> }) {
   const colors = useThemeColors()
   const [started, setStarted] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -541,6 +541,13 @@ function InlineQuizSection({ questions }: { questions: Array<{ id: string; pergu
               useNativeControls
             />
           </View>
+        </View>
+      )}
+
+      {showResult && question.resposta_escrita && (
+        <View className="mt-2 mb-2 bg-dark-surfaceLight rounded-2xl p-4 border border-primary/20">
+          <Text className="text-sm font-bold text-primary mb-1">Comentário:</Text>
+          <Text className="text-sm text-darkText-secondary leading-6">{question.resposta_escrita}</Text>
         </View>
       )}
 

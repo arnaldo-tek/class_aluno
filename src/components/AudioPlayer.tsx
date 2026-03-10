@@ -124,12 +124,19 @@ function AudioSeekBar({ progress, positionMs, durationMs, onSeekStart, onSeek, a
   const barRef = useRef<View>(null)
   const barX = useRef(0)
 
+  const onSeekRef = useRef(onSeek)
+  onSeekRef.current = onSeek
+  const onSeekStartRef = useRef(onSeekStart)
+  onSeekStartRef.current = onSeekStart
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
       onPanResponderGrant: (e) => {
-        onSeekStart()
+        onSeekStartRef.current()
         setDragging(true)
         barRef.current?.measureInWindow((x) => {
           barX.current = x
@@ -144,7 +151,7 @@ function AudioSeekBar({ progress, positionMs, durationMs, onSeekStart, onSeek, a
       onPanResponderRelease: (e) => {
         const ratio = Math.max(0, Math.min(1, (e.nativeEvent.pageX - barX.current) / barWidth))
         setDragging(false)
-        onSeek(ratio)
+        onSeekRef.current(ratio)
       },
     })
   ).current
