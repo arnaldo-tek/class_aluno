@@ -46,8 +46,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "$EXPO_PUBLIC_SUPABASE_URL",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "$EXPO_PUBLIC_SUPABASE_ANON_KEY",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://xvzonuasohsawpeigbzb.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2em9udWFzb2hzYXdwZWlnYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2OTUxNjUsImV4cCI6MjA4NzI3MTE2NX0.8xlkFtTssuJTKaoTryK_PrVE-PBtVeLWYAo7faCkFIQ",
         "EXPO_PUBLIC_ENV": "preview"
       }
     },

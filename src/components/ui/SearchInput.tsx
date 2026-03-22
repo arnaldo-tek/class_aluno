@@ -14,7 +14,7 @@ interface SearchInputProps {
 export function SearchInput({ value, onChangeText, placeholder, className, style }: SearchInputProps) {
   const colors = useThemeColors()
   return (
-    <View className={className ?? "flex-row items-center bg-dark-surfaceLight rounded-xl px-3 mx-4 mb-3"} style={style ?? { height: 36 }}>
+    <View className={className ?? "flex-row items-center rounded-xl px-3 mx-4 mb-3"} style={{ ...(className ? {} : { height: 36 }), backgroundColor: colors.surfaceLight, ...style }}>
       <Ionicons name="search" size={16} color={colors.textMuted} />
       <TextInput
         className="flex-1 ml-2 text-sm text-darkText"
