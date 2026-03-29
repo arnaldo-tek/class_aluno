@@ -121,23 +121,25 @@ export default function FlashcardStudyScreen() {
       {showForm && (
         <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1 }} className="px-4 py-3 gap-2">
           <TextInput
-            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text }}
+            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text, maxHeight: 200 }}
             className="border rounded-2xl px-3 py-2 text-sm"
             placeholder="Pergunta (frente)"
             placeholderTextColor={colors.textMuted}
             value={pergunta}
             onChangeText={setPergunta}
             multiline
+            textAlignVertical="top"
             autoFocus
           />
           <TextInput
-            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text }}
+            style={{ borderColor: colors.border, backgroundColor: colors.surfaceLight, color: colors.text, maxHeight: 200 }}
             className="border rounded-2xl px-3 py-2 text-sm"
             placeholder="Resposta (verso)"
             placeholderTextColor={colors.textMuted}
             value={resposta}
             onChangeText={setResposta}
             multiline
+            textAlignVertical="top"
           />
           <TouchableOpacity
             onPress={handleCreate}

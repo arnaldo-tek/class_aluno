@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, Dimensions, ScrollView } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Image, Dimensions, ScrollView, TextInput } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -42,6 +42,9 @@ export default function AudioScreen() {
   const { data: lawDetail, isLoading: loadingDetail } = useAudioLawDetail(selectedLawId ?? '')
   const { data: lawQuestions } = useAudioLawQuestions(selectedLawId ?? '')
 
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+
   const bannerRef = useRef<FlatList>(null)
   const [bannerIndex, setBannerIndex] = useState(0)
   const BANNER_WIDTH = SCREEN_WIDTH - 32
@@ -56,24 +59,32 @@ export default function AudioScreen() {
     return () => clearInterval(interval)
   }, [bannerIndex, banners?.length])
 
+  function resetSearch() {
+    setSearchQuery('')
+    setIsSearchOpen(false)
+  }
+
   function resetToPackages() {
     setLevel('packages')
     setSelectedPackageId(null)
     setSelectedFolderId(null)
     setSelectedLawId(null)
     setBreadcrumb([])
+    resetSearch()
   }
 
   function selectPackage(pkg: any) {
     setSelectedPackageId(pkg.id)
     setLevel('folders')
     setBreadcrumb([{ label: pkg.nome, level: 'packages' }])
+    resetSearch()
   }
 
   function selectFolder(folder: any) {
     setSelectedFolderId(folder.id)
     setLevel('laws')
     setBreadcrumb(prev => [...prev.slice(0, 1), { label: folder.nome, level: 'folders', id: selectedPackageId! }])
+    resetSearch()
   }
 
   function selectLaw(law: any) {
@@ -81,6 +92,7 @@ export default function AudioScreen() {
     setLevel('player')
     setPlayerTab('audio')
     setBreadcrumb(prev => [...prev.slice(0, 2), { label: law.nome, level: 'laws', id: selectedFolderId! }])
+    resetSearch()
   }
 
   function goBack() {
@@ -104,18 +116,49 @@ export default function AudioScreen() {
   function handleTabChange(tipo: TabType) {
     setActiveTab(tipo)
     resetToPackages()
+    resetSearch()
   }
+
+  const filteredPackages = packages?.filter(p => p.nome.toLowerCase().includes(searchQuery.toLowerCase())) ?? []
+  const filteredFolders = folders?.filter(f => f.nome.toLowerCase().includes(searchQuery.toLowerCase())) ?? []
+  const filteredLaws = laws?.filter(l => l.nome.toLowerCase().includes(searchQuery.toLowerCase())) ?? []
 
   const activeColor = TAB_CONFIG.find(t => t.tipo === activeTab)?.color ?? '#60a5fa'
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
       {/* Header */}
-      <View className="flex-row items-center px-4 pt-2 pb-3 border-b border-darkBorder bg-dark-surface">
-        <TouchableOpacity onPress={goBack} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text className="text-base font-bold text-darkText flex-1">{t('audio.title')}</Text>
+      <View className="border-b border-darkBorder bg-dark-surface">
+        <View className="flex-row items-center px-4 pt-2 pb-3">
+          <TouchableOpacity onPress={goBack} className="mr-3">
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text className="text-base font-bold text-darkText flex-1">{t('audio.title')}</Text>
+          {level !== 'player' && (
+            <TouchableOpacity onPress={() => { setIsSearchOpen(v => !v); setSearchQuery('') }} className="ml-2 p-1">
+              <Ionicons name={isSearchOpen ? 'close' : 'search'} size={22} color={isSearchOpen ? '#3b82f6' : colors.text} />
+            </TouchableOpacity>
+          )}
+        </View>
+        {isSearchOpen && level !== 'player' && (
+          <View className="flex-row items-center mx-4 mb-3 px-3 py-2 rounded-xl bg-dark-surfaceLight border border-darkBorder-subtle">
+            <Ionicons name="search-outline" size={16} color={colors.textSecondary} />
+            <TextInput
+              autoFocus
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Pesquisar..."
+              placeholderTextColor={colors.textMuted}
+              className="flex-1 ml-2 text-sm text-darkText"
+              style={{ color: colors.text }}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Banner */}
@@ -213,7 +256,7 @@ export default function AudioScreen() {
           <EmptyState title={t('audio.noAudio')} icon={<Ionicons name="musical-notes-outline" size={48} color={colors.textMuted} />} />
         ) : (
           <FlatList
-            data={packages}
+            data={filteredPackages}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ padding: 16, paddingTop: 4 }}
             renderItem={({ item }) => (
@@ -238,7 +281,7 @@ export default function AudioScreen() {
           <EmptyState title="Nenhuma subpasta" icon={<Ionicons name="folder-open-outline" size={48} color={colors.textMuted} />} />
         ) : (
           <FlatList
-            data={folders}
+            data={filteredFolders}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ padding: 16, paddingTop: 4 }}
             renderItem={({ item }) => (
@@ -268,7 +311,7 @@ export default function AudioScreen() {
           <EmptyState title="Nenhuma lei" icon={<Ionicons name="document-text-outline" size={48} color={colors.textMuted} />} />
         ) : (
           <FlatList
-            data={laws}
+            data={filteredLaws}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ padding: 16, paddingTop: 4 }}
             renderItem={({ item }) => (
