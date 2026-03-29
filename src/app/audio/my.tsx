@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -63,6 +63,25 @@ function useFavoriteAudioPackageDetails(ids: string[]) {
   })
 }
 
+function useRemoveFavorito() {
+  const { user } = useAuthContext()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ tipo, referenciaId }: { tipo: string; referenciaId: string }) => {
+      const { error } = await supabase
+        .from('favoritos')
+        .delete()
+        .eq('user_id', user!.id)
+        .eq('tipo', tipo)
+        .eq('referencia_id', referenciaId)
+      if (error) throw error
+    },
+    onSuccess: (_data, { tipo }) => {
+      qc.invalidateQueries({ queryKey: ['favoritos-list', user?.id, tipo] })
+    },
+  })
+}
+
 export default function MyAudioScreen() {
   const router = useRouter()
   const colors = useThemeColors()
@@ -76,6 +95,18 @@ export default function MyAudioScreen() {
 
   const { data: lawDetails, isLoading: loadingLaws } = useFavoriteLawDetails(leiIds)
   const { data: packageDetails, isLoading: loadingPackages } = useFavoriteAudioPackageDetails(pacoteIds)
+  const removeFavorito = useRemoveFavorito()
+
+  function confirmRemove(tipo: string, referenciaId: string, nome: string) {
+    Alert.alert(
+      'Desfavoritar',
+      `Remover "${nome}" dos seus favoritos?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Remover', style: 'destructive', onPress: () => removeFavorito.mutate({ tipo, referenciaId }) },
+      ]
+    )
+  }
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: 'leis', label: 'Minhas Leis', count: favLeis?.length ?? 0 },
@@ -121,19 +152,27 @@ export default function MyAudioScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ padding: 16 }}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => router.push({ pathname: '/audio/player/[id]', params: { id: item.id } })}
-                className="bg-dark-surface rounded-2xl px-4 py-3.5 mb-3 flex-row items-center"
-                activeOpacity={0.7}
-              >
-                <View className="w-10 h-10 rounded-full bg-dark-surfaceLight items-center justify-center">
-                  <Ionicons name="musical-notes" size={18} color="#c084fc" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-darkText ml-3" numberOfLines={2}>
-                  {item.nome}
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-              </TouchableOpacity>
+              <View className="bg-dark-surface rounded-2xl px-4 py-3.5 mb-3 flex-row items-center">
+                <TouchableOpacity
+                  onPress={() => router.push({ pathname: '/audio/player/[id]', params: { id: item.id } })}
+                  className="flex-1 flex-row items-center"
+                  activeOpacity={0.7}
+                >
+                  <View className="w-10 h-10 rounded-full bg-dark-surfaceLight items-center justify-center">
+                    <Ionicons name="musical-notes" size={18} color="#c084fc" />
+                  </View>
+                  <Text className="flex-1 text-base font-medium text-darkText ml-3" numberOfLines={2}>
+                    {item.nome}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => confirmRemove('lei', item.id, item.nome)}
+                  className="ml-2 p-2"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="heart" size={22} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
             )}
           />
         )
@@ -153,19 +192,27 @@ export default function MyAudioScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ padding: 16 }}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => router.push({ pathname: '/audio/laws/[id]', params: { id: item.id } })}
-                className="bg-dark-surface rounded-2xl px-4 py-3.5 mb-3 flex-row items-center"
-                activeOpacity={0.7}
-              >
-                <View className="w-10 h-10 rounded-full bg-dark-surfaceLight items-center justify-center">
-                  <Ionicons name="library" size={18} color="#60a5fa" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-darkText ml-3" numberOfLines={2}>
-                  {item.nome}
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-              </TouchableOpacity>
+              <View className="bg-dark-surface rounded-2xl px-4 py-3.5 mb-3 flex-row items-center">
+                <TouchableOpacity
+                  onPress={() => router.push({ pathname: '/audio/laws/[id]', params: { id: item.id } })}
+                  className="flex-1 flex-row items-center"
+                  activeOpacity={0.7}
+                >
+                  <View className="w-10 h-10 rounded-full bg-dark-surfaceLight items-center justify-center">
+                    <Ionicons name="library" size={18} color="#60a5fa" />
+                  </View>
+                  <Text className="flex-1 text-base font-medium text-darkText ml-3" numberOfLines={2}>
+                    {item.nome}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => confirmRemove('pacote_lei', item.id, item.nome)}
+                  className="ml-2 p-2"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="heart" size={22} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
             )}
           />
         )
