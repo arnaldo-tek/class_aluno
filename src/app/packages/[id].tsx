@@ -83,7 +83,18 @@ export default function PackageDetailScreen() {
       {/* Bottom action */}
       <View className="absolute bottom-0 left-0 right-0 bg-dark-surface border-t border-darkBorder px-4 py-4 pb-8">
         {hasAccess ? (
-          <Badge variant="success">{t('packages.subscribed')}</Badge>
+          <View className="flex-row items-center gap-3">
+            <View className="flex-1 flex-row items-center justify-center bg-success/20 rounded-2xl py-4 gap-2">
+              <Ionicons name="checkmark-circle" size={20} color="#34d399" />
+              <Text className="font-bold text-base text-success">Assinado</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push('/packages/my')}
+              className="flex-1 rounded-2xl py-4 items-center bg-primary"
+            >
+              <Text className="font-bold text-base text-white">Acessar pacote</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <TouchableOpacity
             onPress={() => router.push({ pathname: '/checkout/[id]', params: { id: id!, type: 'pacote' } })}

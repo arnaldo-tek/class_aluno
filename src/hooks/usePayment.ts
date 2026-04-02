@@ -137,6 +137,8 @@ export function useCheckoutCard() {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['my-enrollments'] })
       qc.invalidateQueries({ queryKey: ['purchase-history'] })
+      qc.invalidateQueries({ queryKey: ['my-packages'] })
+      qc.invalidateQueries({ queryKey: ['package-access'] })
       if (data.status === 'paid') {
         qc.invalidateQueries({ queryKey: ['enrollment-check'] })
       }
@@ -154,6 +156,8 @@ export function useCheckoutPix() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-enrollments'] })
       qc.invalidateQueries({ queryKey: ['purchase-history'] })
+      qc.invalidateQueries({ queryKey: ['my-packages'] })
+      qc.invalidateQueries({ queryKey: ['package-access'] })
     },
   })
 }
