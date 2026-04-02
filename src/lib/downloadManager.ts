@@ -3,6 +3,7 @@ import {
   insertDownload,
   updateDownloadProgress,
   updateDownloadStatus,
+  updateFileSize,
   getDownload,
   deleteDownload as dbDelete,
   getDownloadsByCourse,
@@ -97,9 +98,7 @@ async function executeDownload(id: string) {
       const fileSize = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : record.file_size
       await updateDownloadStatus(id, 'completed', result.uri)
       if (fileSize !== record.file_size) {
-        const db = await import('./offlineDb').then(m => m.getDb())
-        const database = await db
-        await database.runAsync(`UPDATE downloads SET file_size = ? WHERE id = ?`, fileSize, id)
+        await updateFileSize(id, fileSize)
       }
       onStatusChange?.(id, 'completed')
     }
