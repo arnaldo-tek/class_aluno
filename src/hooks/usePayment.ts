@@ -114,7 +114,7 @@ export function useCustomerId() {
   })
 }
 
-/** Update customer document (CPF) and phone on Pagar.me */
+/** Update customer document (CPF) on Pagar.me */
 export function useUpdateCustomerDocument() {
   return useMutation({
     mutationFn: async ({ customer_id, document }: { customer_id: string; document: string }) => {
@@ -122,13 +122,6 @@ export function useUpdateCustomerDocument() {
         customer_id_update: customer_id,
         document,
         document_type: 'CPF',
-        phones: {
-          mobile_phone: {
-            country_code: '55',
-            area_code: '11',
-            number: '999999999',
-          },
-        },
       })
     },
   })
