@@ -5,6 +5,7 @@ import { useDownloadStatus, useStartDownload, usePauseDownload, useResumeDownloa
 import type { ContentType } from '@/lib/offlineDb'
 import { t } from '@/i18n'
 import Svg, { Circle } from 'react-native-svg'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 // --- Types ---
 
@@ -128,6 +129,7 @@ export function DownloadButton({ lessonId, courseId, courseTitle, lessonTitle, c
 // --- DownloadRow (full row, used in lesson screen) ---
 
 export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize, icon, label }: DownloadRowProps) {
+  const colors = useThemeColors()
   const { data: download } = useDownloadStatus(lessonId, contentType)
   const startDownload = useStartDownload()
   const pauseDownload = usePauseDownload()
@@ -183,7 +185,7 @@ export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, cont
     }
   }
 
-  const statusColor = status === 'completed' ? '#34d399' : status === 'failed' ? '#f87171' : '#9ca3af'
+  const statusColor = status === 'completed' ? '#34d399' : status === 'failed' ? '#f87171' : colors.textMuted
 
   return (
     <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
@@ -195,10 +197,10 @@ export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, cont
 
         {/* Info */}
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#f7f6f3' }}>{label}</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>{label}</Text>
           <Text style={{ fontSize: 12, color: statusColor, marginTop: 2 }}>{statusText()}</Text>
           {status === 'downloading' && (
-            <View style={{ height: 3, borderRadius: 99, backgroundColor: '#1e2a3a', marginTop: 6, overflow: 'hidden' }}>
+            <View style={{ height: 3, borderRadius: 99, backgroundColor: colors.borderSubtle, marginTop: 6, overflow: 'hidden' }}>
               <View style={{ height: '100%', width: `${progress}%`, backgroundColor: typeColor, borderRadius: 99 }} />
             </View>
           )}
@@ -207,7 +209,7 @@ export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, cont
         {/* Action */}
         {status === 'completed' ? (
           <Pressable onPress={handleDelete} hitSlop={10} style={{ padding: 4 }}>
-            <Ionicons name="trash-outline" size={18} color="#4b5563" />
+            <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
           </Pressable>
         ) : status === 'downloading' ? (
           <Pressable onPress={handleAction} hitSlop={10} style={{ padding: 4 }}>
@@ -218,7 +220,7 @@ export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, cont
             <Ionicons
               name={status === 'paused' ? 'play-circle-outline' : status === 'failed' ? 'refresh-circle-outline' : 'arrow-down-circle-outline'}
               size={26}
-              color={status === 'failed' ? '#f87171' : '#4b5563'}
+              color={status === 'failed' ? '#f87171' : colors.textSecondary}
             />
           </Pressable>
         )}
@@ -230,6 +232,8 @@ export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, cont
 // --- DownloadSection (full section with all content types) ---
 
 export function DownloadSection({ lessonId, courseId, courseTitle, lessonTitle, videoUrl, audioUrl, pdfUrl }: DownloadSectionProps) {
+  const colors = useThemeColors()
+
   if (!videoUrl && !audioUrl && !pdfUrl) return null
 
   const items = [
@@ -239,18 +243,18 @@ export function DownloadSection({ lessonId, courseId, courseTitle, lessonTitle, 
   ].filter(Boolean) as Array<{ contentType: ContentType; url: string; icon: keyof typeof Ionicons.glyphMap; label: string }>
 
   return (
-    <View style={{ marginHorizontal: 16, marginTop: 20, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#1e2a3a', backgroundColor: '#0d1b2a' }}>
+    <View style={{ marginHorizontal: 16, marginTop: 20, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#1e2a3a' }}>
-        <Ionicons name="save-outline" size={14} color="#6b7280" />
-        <Text style={{ fontSize: 11, fontWeight: '700', color: '#6b7280', marginLeft: 6, letterSpacing: 0.8, textTransform: 'uppercase' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+        <Ionicons name="save-outline" size={14} color={colors.textMuted} />
+        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textMuted, marginLeft: 6, letterSpacing: 0.8, textTransform: 'uppercase' }}>
           Salvar para assistir offline
         </Text>
       </View>
 
       {items.map((item, idx) => (
         <View key={item.contentType}>
-          {idx > 0 && <View style={{ height: 1, backgroundColor: '#1e2a3a', marginLeft: 66 }} />}
+          {idx > 0 && <View style={{ height: 1, backgroundColor: colors.borderSubtle, marginLeft: 66 }} />}
           <DownloadRow
             lessonId={lessonId}
             courseId={courseId}
