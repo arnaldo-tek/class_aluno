@@ -1,20 +1,266 @@
-import { useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, Alert, Platform, ToastAndroid } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Video, ResizeMode } from 'expo-av'
 import { useAudioLawDetail, useAudioLawQuestions } from '@/hooks/useAudio'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { DownloadButton } from '@/components/DownloadButton'
 import { AudioPlayerList } from '@/components/AudioPlayer'
 import { t } from '@/i18n'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import {
+  useDownloadStatus,
+  useStartDownload,
+  usePauseDownload,
+  useResumeDownload,
+  useCancelDownload,
+  useAllDownloads,
+  useClearCourseDownloads,
+} from '@/hooks/useDownloads'
 import type { AudioItem } from '@/components/AudioPlayer'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 type TabKey = 'audio' | 'text' | 'questions'
+
+// ---------------------------------------------------------------------------
+// AudioDownloadChip
+// ---------------------------------------------------------------------------
+
+interface AudioDownloadChipProps {
+  audioId: string
+  audioUrl: string
+  title: string
+}
+
+function AudioDownloadChip({ audioId, audioUrl, title }: AudioDownloadChipProps) {
+  const colors = useThemeColors()
+  const status = useDownloadStatus(audioId, 'audio')
+  const startDownload = useStartDownload()
+  const pauseDownload = usePauseDownload()
+  const resumeDownload = useResumeDownload()
+  const cancelDownload = useCancelDownload()
+
+  const prevStatusRef = useRef<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (prevStatusRef.current === 'downloading' && status?.state === 'completed') {
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(`"${title}" salvo offline`, ToastAndroid.SHORT)
+      }
+    }
+    prevStatusRef.current = status?.state
+  }, [status?.state, title])
+
+  const state = status?.state ?? 'idle'
+  const progress = status?.progress ?? 0
+
+  if (state === 'completed') {
+    return (
+      <TouchableOpacity
+        onPress={() => {
+          Alert.alert(
+            'Remover download',
+            `Deseja remover "${title}" dos downloads?`,
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              {
+                text: 'Remover',
+                style: 'destructive',
+                onPress: () => cancelDownload(audioId),
+              },
+            ],
+          )
+        }}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#34d39920',
+          borderRadius: 20,
+          paddingHorizontal: 10,
+          paddingVertical: 4,
+          marginLeft: 8,
+        }}
+        activeOpacity={0.7}
+      >
+        <Text style={{ fontSize: 11, color: '#34d399', fontWeight: '600' }}>Salvo</Text>
+      </TouchableOpacity>
+    )
+  }
+
+  if (state === 'downloading') {
+    return (
+      <TouchableOpacity
+        onPress={() => pauseDownload(audioId)}
+        style={{ marginLeft: 8, alignItems: 'center', justifyContent: 'center', minWidth: 36 }}
+        activeOpacity={0.7}
+      >
+        <Text style={{ fontSize: 11, color: '#93c5fd', fontWeight: '700' }}>
+          {Math.round(progress)}%
+        </Text>
+      </TouchableOpacity>
+    )
+  }
+
+  if (state === 'paused') {
+    return (
+      <TouchableOpacity
+        onPress={() => resumeDownload(audioId)}
+        style={{ marginLeft: 8 }}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="play-circle-outline" size={24} color="#93c5fd" />
+      </TouchableOpacity>
+    )
+  }
+
+  if (state === 'failed') {
+    return (
+      <TouchableOpacity
+        onPress={() => startDownload({ id: audioId, url: audioUrl, contentType: 'audio', title })}
+        style={{ marginLeft: 8 }}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="refresh-circle-outline" size={24} color="#f87171" />
+      </TouchableOpacity>
+    )
+  }
+
+  // idle / not downloaded
+  return (
+    <TouchableOpacity
+      onPress={() => startDownload({ id: audioId, url: audioUrl, contentType: 'audio', title })}
+      style={{ marginLeft: 8 }}
+      activeOpacity={0.7}
+    >
+      <Ionicons name="arrow-down-circle-outline" size={24} color={colors.textSecondary} />
+    </TouchableOpacity>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// AudioDownloadHeader
+// ---------------------------------------------------------------------------
+
+interface AudioDownloadHeaderProps {
+  audios: AudioItem[]
+  leiId: string
+}
+
+function AudioDownloadHeader({ audios, leiId }: AudioDownloadHeaderProps) {
+  const colors = useThemeColors()
+  const allDownloads = useAllDownloads()
+  const startDownload = useStartDownload()
+  const clearCourseDownloads = useClearCourseDownloads()
+
+  const audioIds = new Set(audios.map((a) => a.id))
+  const total = audios.length
+
+  const savedCount = allDownloads.filter(
+    (d) => audioIds.has(d.id) && d.content_type === 'audio' && d.state === 'completed',
+  ).length
+
+  const allSaved = savedCount === total && total > 0
+
+  function handleDownloadAll() {
+    for (const audio of audios) {
+      const existing = allDownloads.find((d) => d.id === audio.id && d.content_type === 'audio')
+      if (!existing || existing.state === 'failed' || existing.state === 'idle') {
+        startDownload({ id: audio.id, url: audio.audio_url, contentType: 'audio', title: audio.titulo ?? '' })
+      }
+    }
+  }
+
+  function handleRemoveAll() {
+    Alert.alert(
+      'Remover todos os downloads',
+      `Deseja remover todos os ${savedCount} áudios salvos?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: () => clearCourseDownloads(leiId, 'audio'),
+        },
+      ],
+    )
+  }
+
+  if (total === 0) return null
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+        gap: 8,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>
+          {t('audio.title')} ({total})
+        </Text>
+        {savedCount > 0 && (
+          <View
+            style={{
+              backgroundColor: '#34d39920',
+              borderRadius: 12,
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+            }}
+          >
+            <Text style={{ fontSize: 11, color: '#34d399', fontWeight: '600' }}>
+              {savedCount}/{total} salvos
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {!allSaved && (
+          <TouchableOpacity
+            onPress={handleDownloadAll}
+            style={{
+              backgroundColor: '#93c5fd20',
+              borderRadius: 20,
+              paddingHorizontal: 12,
+              paddingVertical: 5,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="cloud-download-outline" size={14} color="#93c5fd" />
+            <Text style={{ fontSize: 12, color: '#93c5fd', fontWeight: '600' }}>Baixar tudo</Text>
+          </TouchableOpacity>
+        )}
+
+        {savedCount > 0 && (
+          <TouchableOpacity
+            onPress={handleRemoveAll}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="trash-outline" size={14} color={colors.textMuted} />
+            <Text style={{ fontSize: 12, color: colors.textMuted, fontWeight: '500' }}>Remover tudo</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// AudioPlayerScreen
+// ---------------------------------------------------------------------------
 
 export default function AudioPlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -22,11 +268,25 @@ export default function AudioPlayerScreen() {
   const colors = useThemeColors()
   const { data, isLoading } = useAudioLawDetail(id!)
   const [activeTab, setActiveTab] = useState<TabKey>('audio')
+  const allDownloads = useAllDownloads()
 
   const audios: AudioItem[] = (data?.audios ?? []).map((a: any) => ({
     id: a.id,
     titulo: a.titulo,
     audio_url: a.audio_url,
+  }))
+
+  // Build offline URI map for completed audio downloads
+  const offlineUriMap = new Map<string, string>()
+  for (const dl of allDownloads) {
+    if (dl.content_type === 'audio' && dl.state === 'completed' && dl.file_uri) {
+      offlineUriMap.set(dl.id, dl.file_uri)
+    }
+  }
+
+  const resolvedAudios = audios.map((a) => ({
+    ...a,
+    audio_url: offlineUriMap.get(a.id) ?? a.audio_url,
   }))
 
   if (isLoading) return <LoadingSpinner />
@@ -74,26 +334,18 @@ export default function AudioPlayerScreen() {
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {activeTab === 'audio' && (
           <View className="px-4 pt-4">
-            {audios.length > 0 && (
+            {resolvedAudios.length > 0 && (
               <>
-                <Text className="text-sm font-semibold text-darkText mb-3">
-                  {t('audio.title')} ({audios.length})
-                </Text>
+                <AudioDownloadHeader audios={audios} leiId={lei.id ?? ''} />
                 <AudioPlayerList
-                  audios={audios}
+                  audios={resolvedAudios}
                   accentColor="#93c5fd"
                   renderItemRight={(audio, i) => (
-                    <View style={{ marginLeft: 8 }}>
-                      <DownloadButton
-                        lessonId={audio.id}
-                        courseId={lei.id ?? ''}
-                        courseTitle={lei.nome ?? ''}
-                        lessonTitle={audio.titulo ?? `Audio ${i + 1}`}
-                        contentType="audio"
-                        remoteUrl={audio.audio_url}
-                        size={28}
-                      />
-                    </View>
+                    <AudioDownloadChip
+                      audioId={audio.id}
+                      audioUrl={audios.find((a) => a.id === audio.id)?.audio_url ?? audio.audio_url}
+                      title={audio.titulo ?? `Audio ${i + 1}`}
+                    />
                   )}
                 />
               </>
@@ -124,6 +376,10 @@ export default function AudioPlayerScreen() {
     </SafeAreaView>
   )
 }
+
+// ---------------------------------------------------------------------------
+// AudioQuizSection — não modificado
+// ---------------------------------------------------------------------------
 
 function AudioQuizSection({ leiId }: { leiId: string }) {
   const colors = useThemeColors()
