@@ -123,6 +123,7 @@ export function useCancelDownload() {
     mutationFn: dmCancel,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DOWNLOAD_KEYS.all })
+      qc.invalidateQueries({ queryKey: ['offline-uri'] })
     },
   })
 }
