@@ -25,196 +25,158 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 type TabKey = 'audio' | 'text' | 'questions'
 
 // ---------------------------------------------------------------------------
-// AudioDownloadChip
+// AudioDownloadChip — ícone de status por faixa
 // ---------------------------------------------------------------------------
 
 interface AudioDownloadChipProps {
   audioId: string
   audioUrl: string
   title: string
+  courseId: string
+  courseTitle: string
 }
 
-function AudioDownloadChip({ audioId, audioUrl, title }: AudioDownloadChipProps) {
+function AudioDownloadChip({ audioId, audioUrl, title, courseId, courseTitle }: AudioDownloadChipProps) {
   const colors = useThemeColors()
-  const status = useDownloadStatus(audioId, 'audio')
+  const { data: download } = useDownloadStatus(audioId, 'audio')
   const startDownload = useStartDownload()
   const pauseDownload = usePauseDownload()
   const resumeDownload = useResumeDownload()
   const cancelDownload = useCancelDownload()
-
   const prevStatusRef = useRef<string | undefined>(undefined)
 
+  const status = download?.status
+  const progress = Math.round(download?.progress ?? 0)
+  const downloadId = `${audioId}_audio`
+
   useEffect(() => {
-    if (prevStatusRef.current === 'downloading' && status?.state === 'completed') {
+    const prev = prevStatusRef.current
+    prevStatusRef.current = status
+    if (prev !== undefined && prev !== status && status === 'completed') {
       if (Platform.OS === 'android') {
-        ToastAndroid.show(`"${title}" salvo offline`, ToastAndroid.SHORT)
+        ToastAndroid.show(`${title} salvo offline`, ToastAndroid.SHORT)
       }
     }
-    prevStatusRef.current = status?.state
-  }, [status?.state, title])
+  }, [status, title])
 
-  const state = status?.state ?? 'idle'
-  const progress = status?.progress ?? 0
+  const handleDownload = () => startDownload.mutate({
+    lessonId: audioId,
+    courseId,
+    courseTitle,
+    lessonTitle: title,
+    contentType: 'audio',
+    remoteUrl: audioUrl,
+  })
 
-  if (state === 'completed') {
+  if (status === 'completed') {
     return (
       <TouchableOpacity
-        onPress={() => {
-          Alert.alert(
-            'Remover download',
-            `Deseja remover "${title}" dos downloads?`,
-            [
-              { text: 'Cancelar', style: 'cancel' },
-              {
-                text: 'Remover',
-                style: 'destructive',
-                onPress: () => cancelDownload(audioId),
-              },
-            ],
-          )
-        }}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: '#34d39920',
-          borderRadius: 20,
-          paddingHorizontal: 10,
-          paddingVertical: 4,
-          marginLeft: 8,
-        }}
+        onPress={() => Alert.alert('Remover download', `Remover "${title}" dos downloads?`, [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Remover', style: 'destructive', onPress: () => cancelDownload.mutate(downloadId) },
+        ])}
+        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#34d39920', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 8 }}
         activeOpacity={0.7}
       >
-        <Text style={{ fontSize: 11, color: '#34d399', fontWeight: '600' }}>Salvo</Text>
+        <Ionicons name="checkmark-circle" size={12} color="#34d399" />
+        <Text style={{ fontSize: 11, color: '#34d399', fontWeight: '600', marginLeft: 3 }}>Salvo</Text>
       </TouchableOpacity>
     )
   }
 
-  if (state === 'downloading') {
+  if (status === 'downloading') {
     return (
       <TouchableOpacity
-        onPress={() => pauseDownload(audioId)}
+        onPress={() => pauseDownload.mutate(downloadId)}
         style={{ marginLeft: 8, alignItems: 'center', justifyContent: 'center', minWidth: 36 }}
         activeOpacity={0.7}
       >
-        <Text style={{ fontSize: 11, color: '#93c5fd', fontWeight: '700' }}>
-          {Math.round(progress)}%
-        </Text>
+        <Text style={{ fontSize: 11, color: '#93c5fd', fontWeight: '700' }}>{progress}%</Text>
       </TouchableOpacity>
     )
   }
 
-  if (state === 'paused') {
+  if (status === 'paused') {
     return (
-      <TouchableOpacity
-        onPress={() => resumeDownload(audioId)}
-        style={{ marginLeft: 8 }}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity onPress={() => resumeDownload.mutate(downloadId)} style={{ marginLeft: 8 }} activeOpacity={0.7}>
         <Ionicons name="play-circle-outline" size={24} color="#93c5fd" />
       </TouchableOpacity>
     )
   }
 
-  if (state === 'failed') {
+  if (status === 'failed') {
     return (
-      <TouchableOpacity
-        onPress={() => startDownload({ id: audioId, url: audioUrl, contentType: 'audio', title })}
-        style={{ marginLeft: 8 }}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity onPress={handleDownload} style={{ marginLeft: 8 }} activeOpacity={0.7}>
         <Ionicons name="refresh-circle-outline" size={24} color="#f87171" />
       </TouchableOpacity>
     )
   }
 
-  // idle / not downloaded
   return (
-    <TouchableOpacity
-      onPress={() => startDownload({ id: audioId, url: audioUrl, contentType: 'audio', title })}
-      style={{ marginLeft: 8 }}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity onPress={handleDownload} style={{ marginLeft: 8 }} activeOpacity={0.7}>
       <Ionicons name="arrow-down-circle-outline" size={24} color={colors.textSecondary} />
     </TouchableOpacity>
   )
 }
 
 // ---------------------------------------------------------------------------
-// AudioDownloadHeader
+// AudioDownloadHeader — "X/Y salvos", "Baixar tudo", "Remover tudo"
 // ---------------------------------------------------------------------------
 
 interface AudioDownloadHeaderProps {
   audios: AudioItem[]
   leiId: string
+  leiNome: string
 }
 
-function AudioDownloadHeader({ audios, leiId }: AudioDownloadHeaderProps) {
+function AudioDownloadHeader({ audios, leiId, leiNome }: AudioDownloadHeaderProps) {
   const colors = useThemeColors()
-  const allDownloads = useAllDownloads()
+  const { data: allDownloads = [] } = useAllDownloads()
   const startDownload = useStartDownload()
   const clearCourseDownloads = useClearCourseDownloads()
 
-  const audioIds = new Set(audios.map((a) => a.id))
   const total = audios.length
 
   const savedCount = allDownloads.filter(
-    (d) => audioIds.has(d.id) && d.content_type === 'audio' && d.state === 'completed',
+    (d) => audios.some((a) => a.id === d.lesson_id) && d.content_type === 'audio' && d.status === 'completed',
   ).length
 
   const allSaved = savedCount === total && total > 0
 
   function handleDownloadAll() {
-    for (const audio of audios) {
-      const existing = allDownloads.find((d) => d.id === audio.id && d.content_type === 'audio')
-      if (!existing || existing.state === 'failed' || existing.state === 'idle') {
-        startDownload({ id: audio.id, url: audio.audio_url, contentType: 'audio', title: audio.titulo ?? '' })
+    audios.forEach((audio) => {
+      const existing = allDownloads.find((d) => d.lesson_id === audio.id && d.content_type === 'audio')
+      if (!existing || existing.status === 'failed') {
+        startDownload.mutate({
+          lessonId: audio.id,
+          courseId: leiId,
+          courseTitle: leiNome,
+          lessonTitle: audio.titulo ?? '',
+          contentType: 'audio',
+          remoteUrl: audio.audio_url,
+        })
       }
-    }
+    })
   }
 
   function handleRemoveAll() {
-    Alert.alert(
-      'Remover todos os downloads',
-      `Deseja remover todos os ${savedCount} áudios salvos?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: () => clearCourseDownloads(leiId, 'audio'),
-        },
-      ],
-    )
+    Alert.alert('Remover todos', `Remover ${savedCount} áudios salvos offline?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Remover', style: 'destructive', onPress: () => clearCourseDownloads.mutate(leiId) },
+    ])
   }
 
   if (total === 0) return null
 
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 12,
-        gap: 8,
-      }}
-    >
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>
           {t('audio.title')} ({total})
         </Text>
         {savedCount > 0 && (
-          <View
-            style={{
-              backgroundColor: '#34d39920',
-              borderRadius: 12,
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-            }}
-          >
-            <Text style={{ fontSize: 11, color: '#34d399', fontWeight: '600' }}>
-              {savedCount}/{total} salvos
-            </Text>
+          <View style={{ backgroundColor: '#34d39920', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <Text style={{ fontSize: 11, color: '#34d399', fontWeight: '600' }}>{savedCount}/{total} salvos</Text>
           </View>
         )}
       </View>
@@ -223,34 +185,17 @@ function AudioDownloadHeader({ audios, leiId }: AudioDownloadHeaderProps) {
         {!allSaved && (
           <TouchableOpacity
             onPress={handleDownloadAll}
-            style={{
-              backgroundColor: '#93c5fd20',
-              borderRadius: 20,
-              paddingHorizontal: 12,
-              paddingVertical: 5,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 4,
-            }}
+            style={{ backgroundColor: '#93c5fd20', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', gap: 4 }}
             activeOpacity={0.7}
           >
             <Ionicons name="cloud-download-outline" size={14} color="#93c5fd" />
             <Text style={{ fontSize: 12, color: '#93c5fd', fontWeight: '600' }}>Baixar tudo</Text>
           </TouchableOpacity>
         )}
-
         {savedCount > 0 && (
-          <TouchableOpacity
-            onPress={handleRemoveAll}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 4,
-            }}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={handleRemoveAll} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} activeOpacity={0.7}>
             <Ionicons name="trash-outline" size={14} color={colors.textMuted} />
-            <Text style={{ fontSize: 12, color: colors.textMuted, fontWeight: '500' }}>Remover tudo</Text>
+            <Text style={{ fontSize: 12, color: colors.textMuted }}>Remover tudo</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -267,8 +212,8 @@ export default function AudioPlayerScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const { data, isLoading } = useAudioLawDetail(id!)
+  const { data: allDownloads = [] } = useAllDownloads()
   const [activeTab, setActiveTab] = useState<TabKey>('audio')
-  const allDownloads = useAllDownloads()
 
   const audios: AudioItem[] = (data?.audios ?? []).map((a: any) => ({
     id: a.id,
@@ -276,17 +221,16 @@ export default function AudioPlayerScreen() {
     audio_url: a.audio_url,
   }))
 
-  // Build offline URI map for completed audio downloads
-  const offlineUriMap = new Map<string, string>()
-  for (const dl of allDownloads) {
-    if (dl.content_type === 'audio' && dl.state === 'completed' && dl.file_uri) {
-      offlineUriMap.set(dl.id, dl.file_uri)
+  // Substitui audio_url pelo arquivo local quando disponível
+  const offlineMap: Record<string, string> = {}
+  allDownloads.forEach((dl) => {
+    if (dl.content_type === 'audio' && dl.status === 'completed' && dl.file_uri) {
+      offlineMap[dl.lesson_id] = dl.file_uri
     }
-  }
-
+  })
   const resolvedAudios = audios.map((a) => ({
     ...a,
-    audio_url: offlineUriMap.get(a.id) ?? a.audio_url,
+    audio_url: offlineMap[a.id] ?? a.audio_url,
   }))
 
   if (isLoading) return <LoadingSpinner />
@@ -311,7 +255,6 @@ export default function AudioPlayerScreen() {
         </Text>
       </View>
 
-      {/* Tabs */}
       <View className="flex-row border-b border-darkBorder-subtle px-4">
         {tabs.map((tab) => (
           <TouchableOpacity
@@ -319,11 +262,7 @@ export default function AudioPlayerScreen() {
             onPress={() => setActiveTab(tab.key)}
             className={`flex-row items-center pb-3 pt-3 mr-6 ${activeTab === tab.key ? 'border-b-2 border-primary' : ''}`}
           >
-            <Ionicons
-              name={tab.icon as any}
-              size={16}
-              color={activeTab === tab.key ? '#93c5fd' : colors.textSecondary}
-            />
+            <Ionicons name={tab.icon as any} size={16} color={activeTab === tab.key ? '#93c5fd' : colors.textSecondary} />
             <Text className={`text-sm font-semibold ml-1.5 ${activeTab === tab.key ? 'text-primary-light' : 'text-darkText-muted'}`}>
               {tab.label}
             </Text>
@@ -336,7 +275,7 @@ export default function AudioPlayerScreen() {
           <View className="px-4 pt-4">
             {resolvedAudios.length > 0 && (
               <>
-                <AudioDownloadHeader audios={audios} leiId={lei.id ?? ''} />
+                <AudioDownloadHeader audios={audios} leiId={lei.id ?? ''} leiNome={lei.nome ?? ''} />
                 <AudioPlayerList
                   audios={resolvedAudios}
                   accentColor="#93c5fd"
@@ -344,7 +283,9 @@ export default function AudioPlayerScreen() {
                     <AudioDownloadChip
                       audioId={audio.id}
                       audioUrl={audios.find((a) => a.id === audio.id)?.audio_url ?? audio.audio_url}
-                      title={audio.titulo ?? `Audio ${i + 1}`}
+                      title={audio.titulo ?? `Áudio ${i + 1}`}
+                      courseId={lei.id ?? ''}
+                      courseTitle={lei.nome ?? ''}
                     />
                   )}
                 />
@@ -369,9 +310,7 @@ export default function AudioPlayerScreen() {
           </View>
         )}
 
-        {activeTab === 'questions' && (
-          <AudioQuizSection leiId={id!} />
-        )}
+        {activeTab === 'questions' && <AudioQuizSection leiId={id!} />}
       </ScrollView>
     </SafeAreaView>
   )
