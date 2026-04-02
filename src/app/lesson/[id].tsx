@@ -28,17 +28,17 @@ export default function LessonScreen() {
   const { data: texts } = useLessonTexts(id!)
   const { data: audios } = useLessonAudios(id!)
   const { data: questions } = useLessonQuestions(id!)
+  const { data: flashcards } = useLessonFlashcards(id!)
   const { data: progress } = useLessonProgress(id!)
   const markComplete = useMarkLessonComplete()
 
-  // Determine available tabs
-  const availableTabs: Tab[] = []
-  if (lesson?.imagem_capa || lesson?.texto_aula) availableTabs.push('video')
+  // Geral always shows (has video + pdf). Other tabs only if professor added content.
+  const availableTabs: Tab[] = ['video']
   if (texts && texts.length > 0) availableTabs.push('text')
   if (audios && audios.length > 0) availableTabs.push('audio')
   if (lesson?.pdf) availableTabs.push('pdf')
+  if (flashcards && flashcards.length > 0) availableTabs.push('flashcards')
   if (questions && questions.length > 0) availableTabs.push('quiz')
-  availableTabs.push('flashcards')
 
   const [activeTab, setActiveTab] = useState<Tab>('video')
 
