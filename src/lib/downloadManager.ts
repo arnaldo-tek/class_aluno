@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system'
+import * as FileSystem from 'expo-file-system/legacy'
 import {
   insertDownload,
   updateDownloadProgress,
@@ -107,6 +107,8 @@ async function executeDownload(id: string) {
     if (error instanceof Error && error.message?.includes('cancelled')) {
       return
     }
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error(`[downloadManager] Download failed for ${id}:`, msg, '\nURL:', (await getDownload(id))?.remote_url)
     await updateDownloadStatus(id, 'failed')
     onStatusChange?.(id, 'failed')
   }
