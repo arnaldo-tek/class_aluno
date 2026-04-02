@@ -159,7 +159,7 @@ export default function MyAudioScreen() {
                   activeOpacity={0.7}
                 >
                   <View className="w-10 h-10 rounded-full bg-dark-surfaceLight items-center justify-center">
-                    <Ionicons name="musical-notes" size={18} color="#c084fc" />
+                    <Ionicons name="musical-notes" size={18} color="#93c5fd" />
                   </View>
                   <Text className="flex-1 text-base font-medium text-darkText ml-3" numberOfLines={2}>
                     {item.nome}
@@ -199,7 +199,7 @@ export default function MyAudioScreen() {
                   activeOpacity={0.7}
                 >
                   <View className="w-10 h-10 rounded-full bg-dark-surfaceLight items-center justify-center">
-                    <Ionicons name="library" size={18} color="#60a5fa" />
+                    <Ionicons name="library" size={18} color="#93c5fd" />
                   </View>
                   <Text className="flex-1 text-base font-medium text-darkText ml-3" numberOfLines={2}>
                     {item.nome}

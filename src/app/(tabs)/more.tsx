@@ -33,7 +33,7 @@ export default function MoreScreen() {
           />
           <MenuItem
             icon="musical-notes-outline"
-            iconColor="#c084fc"
+            iconColor="#93c5fd"
             label={t('audio.title')}
             onPress={() => router.push('/audio')}
           />

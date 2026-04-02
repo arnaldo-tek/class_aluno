@@ -57,14 +57,14 @@ export default function AudioPlayerScreen() {
           <TouchableOpacity
             key={tab.key}
             onPress={() => setActiveTab(tab.key)}
-            className={`flex-row items-center pb-3 pt-3 mr-6 ${activeTab === tab.key ? 'border-b-2 border-accent' : ''}`}
+            className={`flex-row items-center pb-3 pt-3 mr-6 ${activeTab === tab.key ? 'border-b-2 border-primary' : ''}`}
           >
             <Ionicons
               name={tab.icon as any}
               size={16}
-              color={activeTab === tab.key ? '#f59e0b' : colors.textSecondary}
+              color={activeTab === tab.key ? '#93c5fd' : colors.textSecondary}
             />
-            <Text className={`text-sm font-semibold ml-1.5 ${activeTab === tab.key ? 'text-accent' : 'text-darkText-muted'}`}>
+            <Text className={`text-sm font-semibold ml-1.5 ${activeTab === tab.key ? 'text-primary-light' : 'text-darkText-muted'}`}>
               {tab.label}
             </Text>
           </TouchableOpacity>
@@ -81,7 +81,7 @@ export default function AudioPlayerScreen() {
                 </Text>
                 <AudioPlayerList
                   audios={audios}
-                  accentColor="#f59e0b"
+                  accentColor="#93c5fd"
                   renderItemRight={(audio, i) => (
                     <View style={{ marginLeft: 8 }}>
                       <DownloadButton

@@ -38,7 +38,7 @@ export default function StudentAreaScreen() {
         <View className="flex-row flex-wrap justify-between px-4">
           <AreaCard icon="book" color="#3b82f6" label="Meus Cursos" onPress={() => router.push('/(tabs)/my-courses')} />
           <AreaCard icon="card" color="#f59e0b" label="Minhas Assinaturas" onPress={() => router.push('/packages/my')} />
-          <AreaCard icon="musical-notes" color="#c084fc" label="Meus Áudio Cursos" onPress={() => router.push('/audio/my')} />
+          <AreaCard icon="musical-notes" color="#93c5fd" label="Meus Áudio Cursos" onPress={() => router.push('/audio/my')} />
           <AreaCard icon="layers" color="#34d399" label="Meus Flashcards" onPress={() => router.push('/flashcards')} />
           <AreaCard icon="document-text" color="#60a5fa" label="Meus Editais" onPress={() => router.push('/notices/my')} />
           <AreaCard icon="newspaper" color="#fbbf24" label="Minhas Notícias" onPress={() => router.push('/news/my')} />

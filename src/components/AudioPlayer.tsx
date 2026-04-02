@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { View, Text, TouchableOpacity, Platform, Dimensions, PanResponder } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Audio } from 'expo-av'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
@@ -19,16 +20,18 @@ export type AudioItem = {
 
 // --- Hook: useAudioPlayer ---
 
-export function useAudioPlayer() {
+export function useAudioPlayer(callbacks?: { onTrackFinished?: (index: number) => void }) {
   const [currentIndex, setCurrentIndex] = useState<number | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const soundRef = useRef<Audio.Sound | null>(null)
-  const playRef = useRef<(index: number) => Promise<void>>()
+  const onTrackFinishedRef = useRef(callbacks?.onTrackFinished)
+  onTrackFinishedRef.current = callbacks?.onTrackFinished
 
   const play = useCallback(async (index: number, audios: AudioItem[]) => {
     if (soundRef.current) {
       try {
+        soundRef.current.setOnPlaybackStatusUpdate(null)
         await soundRef.current.stopAsync()
         await soundRef.current.unloadAsync()
       } catch {}
@@ -46,13 +49,19 @@ export function useAudioPlayer() {
       soundRef.current = sound
       setCurrentIndex(index)
       setIsPlaying(true)
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (!status.isLoaded) return
+        if (status.didJustFinish) {
+          sound.setOnPlaybackStatusUpdate(null)
+          onTrackFinishedRef.current?.(index)
+        }
+      })
     } catch {
       setIsPlaying(false)
       setCurrentIndex(null)
     }
   }, [speed])
-
-  playRef.current = (index: number) => play(index, []) // placeholder, overridden by caller
 
   const togglePlayPause = useCallback(async (index: number, audios: AudioItem[]) => {
     if (currentIndex === index && isPlaying) {
@@ -76,6 +85,7 @@ export function useAudioPlayer() {
   const stop = useCallback(async () => {
     if (soundRef.current) {
       try {
+        soundRef.current.setOnPlaybackStatusUpdate(null)
         await soundRef.current.stopAsync()
         await soundRef.current.unloadAsync()
       } catch {}
@@ -118,6 +128,7 @@ function AudioSeekBar({ progress, positionMs, durationMs, onSeekStart, onSeek, a
   onSeek: (ratio: number) => void
   accentColor?: string
 }) {
+  const colors = useThemeColors()
   const barWidth = SCREEN_WIDTH - 32 - SEEK_BAR_H_PAD * 2
   const [dragging, setDragging] = useState(false)
   const [dragRatio, setDragRatio] = useState(0)
@@ -166,7 +177,7 @@ function AudioSeekBar({ progress, positionMs, durationMs, onSeekStart, onSeek, a
         {...panResponder.panHandlers}
         style={{ height: THUMB_SIZE + 8, justifyContent: 'center' }}
       >
-        <View style={{ height: TRACK_H, width: '100%', backgroundColor: '#252538', borderRadius: 3 }}>
+        <View style={{ height: TRACK_H, width: '100%', backgroundColor: colors.surfaceLight, borderRadius: 3 }}>
           <View style={{ height: TRACK_H, width: `${displayProgress * 100}%`, backgroundColor: accentColor, borderRadius: 3 }} />
         </View>
         <View
@@ -192,8 +203,8 @@ function AudioSeekBar({ progress, positionMs, durationMs, onSeekStart, onSeek, a
         />
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
-        <Text style={{ fontSize: 10, color: '#6b7280' }}>{formatTime(displayPosition)}</Text>
-        <Text style={{ fontSize: 10, color: '#6b7280' }}>{formatTime(durationMs)}</Text>
+        <Text style={{ fontSize: 10, color: colors.textMuted }}>{formatTime(displayPosition)}</Text>
+        <Text style={{ fontSize: 10, color: colors.textMuted }}>{formatTime(durationMs)}</Text>
       </View>
     </View>
   )
@@ -206,6 +217,7 @@ export function AudioSpeedControl({ speed, onSpeedChange, accentColor = '#3b82f6
   onSpeedChange: (s: number) => void
   accentColor?: string
 }) {
+  const colors = useThemeColors()
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, gap: 4 }}>
       {SPEED_OPTIONS.map((s) => (
@@ -216,10 +228,10 @@ export function AudioSpeedControl({ speed, onSpeedChange, accentColor = '#3b82f6
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderRadius: 999,
-            backgroundColor: speed === s ? accentColor : '#252538',
+            backgroundColor: speed === s ? accentColor : colors.surfaceLight,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: '600', color: speed === s ? '#fff' : '#6b7280' }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: speed === s ? '#fff' : colors.textSecondary }}>
             {s}x
           </Text>
         </TouchableOpacity>
@@ -237,7 +249,6 @@ export function AudioItemCard({
   isPlaying,
   soundRef,
   onToggle,
-  onFinished,
   accentColor = '#3b82f6',
   renderRight,
 }: {
@@ -247,15 +258,12 @@ export function AudioItemCard({
   isPlaying: boolean
   soundRef: React.MutableRefObject<Audio.Sound | null>
   onToggle: () => void
-  onFinished: (nextIndex: number) => void
   accentColor?: string
   renderRight?: () => React.ReactNode
 }) {
   const [positionMs, setPositionMs] = useState(0)
   const [durationMs, setDurationMs] = useState(0)
   const isSeeking = useRef(false)
-  const onFinishedRef = useRef(onFinished)
-  onFinishedRef.current = onFinished
 
   useEffect(() => {
     if (!isActive || !isPlaying) return
@@ -269,10 +277,6 @@ export function AudioItemCard({
         if (!status.isLoaded) return
         setPositionMs(status.positionMillis ?? 0)
         if (status.durationMillis) setDurationMs(status.durationMillis)
-        if (status.didJustFinish) {
-          clearInterval(timer)
-          onFinishedRef.current(index + 1)
-        }
       } catch {}
     }, 300)
 
@@ -288,6 +292,7 @@ export function AudioItemCard({
     isSeeking.current = false
   }, [durationMs, soundRef])
 
+  const colors = useThemeColors()
   const progress = durationMs > 0 ? positionMs / durationMs : 0
 
   return (
@@ -297,8 +302,8 @@ export function AudioItemCard({
         borderRadius: 16,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: isActive ? accentColor + '4D' : '#2a2a3a',
-        backgroundColor: isActive ? accentColor + '14' : '#1e1e2e',
+        borderColor: isActive ? accentColor + '4D' : colors.borderSubtle,
+        backgroundColor: isActive ? accentColor + '14' : colors.surface,
       }}
     >
       <TouchableOpacity
@@ -307,7 +312,7 @@ export function AudioItemCard({
       >
         <View style={{
           width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: isPlaying ? accentColor : '#252538',
+          backgroundColor: isPlaying ? accentColor : colors.surfaceLight,
         }}>
           <Ionicons
             name={isPlaying ? 'pause' : 'play'}
@@ -315,7 +320,7 @@ export function AudioItemCard({
             color={isPlaying ? '#fff' : accentColor}
           />
         </View>
-        <Text style={{ flex: 1, marginLeft: 12, fontSize: 14, fontWeight: '500', color: '#f0f0f0' }} numberOfLines={2}>
+        <Text style={{ flex: 1, marginLeft: 12, fontSize: 14, fontWeight: '500', color: colors.text }} numberOfLines={2}>
           {audio.titulo ?? `Áudio ${index + 1}`}
         </Text>
         {isActive && (
@@ -349,7 +354,19 @@ export function AudioPlayerList({
   accentColor?: string
   renderItemRight?: (audio: AudioItem, index: number) => React.ReactNode
 }) {
-  const { currentIndex, isPlaying, speed, soundRef, play, togglePlayPause, changeSpeed, stop } = useAudioPlayer()
+  const audiosRef = useRef(audios)
+  audiosRef.current = audios
+
+  const { currentIndex, isPlaying, speed, soundRef, play, togglePlayPause, changeSpeed, stop } = useAudioPlayer({
+    onTrackFinished: (index) => {
+      const nextIdx = index + 1
+      if (nextIdx < audiosRef.current.length) {
+        play(nextIdx, audiosRef.current)
+      } else {
+        stop()
+      }
+    },
+  })
 
   return (
     <View>
@@ -365,13 +382,6 @@ export function AudioPlayerList({
             soundRef={soundRef}
             accentColor={accentColor}
             onToggle={() => togglePlayPause(i, audios)}
-            onFinished={(nextIdx) => {
-              if (nextIdx < audios.length) {
-                play(nextIdx, audios)
-              } else {
-                stop()
-              }
-            }}
             renderRight={renderItemRight ? () => renderItemRight(audio, i) : undefined}
           />
         ))}

@@ -18,7 +18,7 @@ type TabType = 1 | 2 | 3 | 4
 type DrillLevel = 'packages' | 'folders' | 'laws' | 'player'
 
 const TAB_CONFIG: Array<{ tipo: TabType; key: string; icon: string; color: string }> = [
-  { tipo: 1, key: 'audio.packages', icon: 'library-outline', color: '#60a5fa' },
+  { tipo: 1, key: 'audio.packages', icon: 'library-outline', color: '#93c5fd' },
   { tipo: 2, key: 'audio.federalLaws', icon: 'globe-outline', color: '#34d399' },
   { tipo: 3, key: 'audio.stateLaws', icon: 'flag-outline', color: '#fbbf24' },
   { tipo: 4, key: 'audio.municipalLaws', icon: 'business-outline', color: '#c084fc' },
@@ -361,12 +361,12 @@ export default function AudioScreen() {
                 <View className="px-4 pt-4">
                   {lawDetail.audios.length > 0 ? (
                     <>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#f0f0f0', marginBottom: 8 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 8 }}>
                         Áudios ({lawDetail.audios.length})
                       </Text>
                       <AudioPlayerList
                         audios={(lawDetail.audios as AudioItem[])}
-                        accentColor={activeColor}
+                        accentColor="#93c5fd"
                       />
                     </>
                   ) : (
