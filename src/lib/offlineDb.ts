@@ -124,6 +124,12 @@ export async function deleteDownloadsByCourse(courseId: string): Promise<string[
   return records.filter((r: any) => r.file_uri).map((r: any) => r.file_uri!)
 }
 
+export async function clearFailedDownloads(): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  await database.runAsync(`DELETE FROM downloads WHERE status = 'failed'`)
+}
+
 export async function updateFileSize(id: string, fileSize: number): Promise<void> {
   const database = await getDb()
   await database.runAsync(`UPDATE downloads SET file_size = ? WHERE id = ?`, fileSize, id)

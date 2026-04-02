@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { initSentry } from '@/lib/sentry'
+import { clearFailedDownloads } from '@/lib/offlineDb'
 import '../../global.css'
 
 SplashScreen.preventAutoHideAsync()
@@ -26,6 +27,7 @@ function AppContent() {
 
   useEffect(() => {
     SplashScreen.hideAsync()
+    clearFailedDownloads().catch(() => {})
   }, [])
 
   return (
