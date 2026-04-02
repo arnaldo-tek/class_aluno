@@ -201,15 +201,28 @@ function VideoTab({ lesson, lessonId, audios }: { lesson: any; lessonId: string;
     <View>
       {hasVideo ? (
         <View>
-          <Video
-            ref={videoRef}
-            source={{ uri: videoUrl }}
-            style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 9 / 16, backgroundColor: '#000' }}
-            resizeMode={ResizeMode.CONTAIN}
-            useNativeControls
-            shouldPlay={false}
-            rate={speed}
-          />
+          <View style={{ position: 'relative' }}>
+            <Video
+              ref={videoRef}
+              source={{ uri: videoUrl }}
+              style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 9 / 16, backgroundColor: '#000' }}
+              resizeMode={ResizeMode.CONTAIN}
+              useNativeControls
+              shouldPlay={false}
+              rate={speed}
+            />
+            {offlineVideoUri ? (
+              <View style={{ position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99 }}>
+                <Ionicons name="save" size={11} color="#34d399" />
+                <Text style={{ fontSize: 11, color: '#34d399', fontWeight: '700', marginLeft: 4 }}>Offline</Text>
+              </View>
+            ) : (
+              <View style={{ position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99 }}>
+                <Ionicons name="wifi" size={11} color="#9ca3af" />
+                <Text style={{ fontSize: 11, color: '#9ca3af', fontWeight: '600', marginLeft: 4 }}>Online</Text>
+              </View>
+            )}
+          </View>
           <AudioSpeedControl speed={speed} onSpeedChange={(s) => { setSpeed(s); videoRef.current?.setRateAsync?.(s, true) }} />
         </View>
       ) : (
