@@ -88,6 +88,7 @@ export default function LessonScreen() {
                 lessonTitle={lesson.titulo ?? ''}
                 contentType="video"
                 remoteUrl={lesson.video_url || lesson.imagem_capa}
+                label="Vídeo"
               />
             )}
             {audios && audios.length > 0 && audios[0]?.audio_url && (
@@ -98,6 +99,7 @@ export default function LessonScreen() {
                 lessonTitle={lesson.titulo ?? ''}
                 contentType="audio"
                 remoteUrl={audios[0].audio_url}
+                label="Áudio"
               />
             )}
             {lesson.pdf && (
@@ -108,6 +110,7 @@ export default function LessonScreen() {
                 lessonTitle={lesson.titulo ?? ''}
                 contentType="pdf"
                 remoteUrl={lesson.pdf}
+                label="PDF"
               />
             )}
           </View>

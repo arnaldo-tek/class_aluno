@@ -14,6 +14,7 @@ interface DownloadButtonProps {
   remoteUrl: string
   fileSize?: number
   size?: number
+  label?: string
 }
 
 function CircularProgress({ progress, size }: { progress: number; size: number }) {
@@ -49,7 +50,7 @@ function CircularProgress({ progress, size }: { progress: number; size: number }
 }
 
 export function DownloadButton({
-  lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize, size = 32,
+  lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize, size = 32, label,
 }: DownloadButtonProps) {
   const { data: download } = useDownloadStatus(lessonId, contentType)
   const startDownload = useStartDownload()
@@ -122,10 +123,17 @@ export function DownloadButton({
       onLongPress={handleLongPress}
       hitSlop={8}
       className="items-center justify-center"
-      style={{ width: size, height: size }}
+      style={label ? { alignItems: 'center' } : { width: size, height: size }}
     >
-      {status === 'downloading' && <CircularProgress progress={progress} size={size} />}
-      <Ionicons name={getIcon()} size={iconSize} color={getColor()} />
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+        {status === 'downloading' && <CircularProgress progress={progress} size={size} />}
+        <Ionicons name={getIcon()} size={iconSize} color={getColor()} />
+      </View>
+      {label && (
+        <Text style={{ fontSize: 9, color: getColor(), marginTop: 1, fontWeight: '600', letterSpacing: 0.3 }}>
+          {label}
+        </Text>
+      )}
     </Pressable>
   )
 }
