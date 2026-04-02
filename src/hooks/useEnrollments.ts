@@ -38,6 +38,7 @@ export function useMyEnrollments() {
           curso:cursos(id, nome, imagem, preco, professor:professor_profiles(nome_professor))
         `)
         .eq('user_id', user.id)
+        .is('pacote_id', null)
         .or('is_suspended.is.null,is_suspended.eq.false')
         .order('enrolled_at', { ascending: false })
 
