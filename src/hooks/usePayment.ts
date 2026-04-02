@@ -47,15 +47,18 @@ async function invokeEdgeFunction<T>(name: string, body: unknown): Promise<T> {
     body,
   })
 
-  // On non-2xx, supabase-js puts the parsed body in `data` and sets `error`
+  // On non-2xx, supabase-js v2 sets data=null and error=FunctionsHttpError.
+  // The actual JSON body is in error.context (a Response object).
   if (error) {
-    // `data` may contain the JSON error body from our edge function
-    if (data && typeof data === 'object' && 'error' in data) {
-      const details = (data as any).details
-        ? JSON.stringify((data as any).details)
-        : (data as any).error
-      console.error(`[${name}] API error:`, JSON.stringify(data))
-      throw new Error(details)
+    try {
+      const body = await (error as any).context?.json?.()
+      if (body && typeof body === 'object' && 'error' in body) {
+        const details = body.details ? JSON.stringify(body.details) : body.error
+        console.error(`[${name}] API error:`, JSON.stringify(body))
+        throw new Error(details)
+      }
+    } catch (extracted) {
+      if (extracted instanceof Error) throw extracted
     }
     console.error(`[${name}] Edge function error:`, error)
     throw new Error(error.message ?? `Edge function ${name} failed`)
