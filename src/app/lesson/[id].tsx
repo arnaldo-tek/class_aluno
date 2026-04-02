@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { View, Text, ScrollView, FlatList, TouchableOpacity, Dimensions, Platform, TextInput, Alert } from 'react-native'
+import { View, Text, ScrollView, FlatList, TouchableOpacity, Dimensions, TextInput, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -9,7 +9,7 @@ import { WebView } from 'react-native-webview'
 import { useLessonDetail, useLessonTexts, useLessonAudios, useLessonQuestions, useLessonProgress, useMarkLessonComplete } from '@/hooks/useLesson'
 import { useLessonFlashcards } from '@/hooks/useFlashcards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { DownloadButton } from '@/components/DownloadButton'
+import { DownloadSection } from '@/components/DownloadButton'
 import { AudioPlayerList, AudioSpeedControl } from '@/components/AudioPlayer'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { useOfflineUri } from '@/hooks/useDownloads'
@@ -78,43 +78,6 @@ export default function LessonScreen() {
             {(lesson.modulo as any)?.nome} • {(lesson.curso as any)?.nome}
           </Text>
         </View>
-        {Platform.OS !== 'web' && (
-          <View className="flex-row items-center gap-1">
-            {(lesson.video_url || (lesson.imagem_capa && (lesson.imagem_capa.includes('.mp4') || lesson.imagem_capa.includes('video')))) && (
-              <DownloadButton
-                lessonId={id!}
-                courseId={(lesson.curso as any)?.id ?? lesson.curso_id ?? ''}
-                courseTitle={(lesson.curso as any)?.nome ?? ''}
-                lessonTitle={lesson.titulo ?? ''}
-                contentType="video"
-                remoteUrl={lesson.video_url || lesson.imagem_capa}
-                label="Vídeo"
-              />
-            )}
-            {audios && audios.length > 0 && audios[0]?.audio_url && (
-              <DownloadButton
-                lessonId={id!}
-                courseId={(lesson.curso as any)?.id ?? lesson.curso_id ?? ''}
-                courseTitle={(lesson.curso as any)?.nome ?? ''}
-                lessonTitle={lesson.titulo ?? ''}
-                contentType="audio"
-                remoteUrl={audios[0].audio_url}
-                label="Áudio"
-              />
-            )}
-            {lesson.pdf && (
-              <DownloadButton
-                lessonId={id!}
-                courseId={(lesson.curso as any)?.id ?? lesson.curso_id ?? ''}
-                courseTitle={(lesson.curso as any)?.nome ?? ''}
-                lessonTitle={lesson.titulo ?? ''}
-                contentType="pdf"
-                remoteUrl={lesson.pdf}
-                label="PDF"
-              />
-            )}
-          </View>
-        )}
       </View>
 
       {/* Tabs */}
@@ -175,7 +138,7 @@ export default function LessonScreen() {
         </View>
       ) : (
         <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-          {activeTab === 'video' && <VideoTab lesson={lesson} lessonId={id!} />}
+          {activeTab === 'video' && <VideoTab lesson={lesson} lessonId={id!} audios={audios} />}
           {activeTab === 'text' && <TextTab texts={texts ?? []} mainText={lesson.texto_aula} />}
           {activeTab === 'audio' && <AudioTab audios={audios ?? []} />}
           {activeTab === 'pdf' && lesson.pdf && <PdfTab url={lesson.pdf} />}
@@ -220,7 +183,7 @@ export default function LessonScreen() {
 
 // --- Video Tab ---
 
-function VideoTab({ lesson, lessonId }: { lesson: any; lessonId: string }) {
+function VideoTab({ lesson, lessonId, audios }: { lesson: any; lessonId: string; audios?: Array<{ audio_url: string }> | null }) {
   const colors = useThemeColors()
   const videoRef = useRef<Video>(null)
   const { data: offlineVideoUri } = useOfflineUri(lessonId, 'video')
@@ -228,6 +191,11 @@ function VideoTab({ lesson, lessonId }: { lesson: any; lessonId: string }) {
 
   const videoUrl = offlineVideoUri ?? lesson.video_url ?? lesson.imagem_capa
   const hasVideo = videoUrl && (videoUrl.includes('.mp4') || videoUrl.includes('video') || videoUrl.includes('youtube') || videoUrl.includes('vimeo') || videoUrl.startsWith('file://'))
+
+  const courseId = (lesson.curso as any)?.id ?? lesson.curso_id ?? ''
+  const courseTitle = (lesson.curso as any)?.nome ?? ''
+  const audioUrl = audios && audios.length > 0 ? audios[0].audio_url : null
+  const hasDownloadable = !!(lesson.video_url || audioUrl || lesson.pdf)
 
   return (
     <View>
@@ -263,6 +231,19 @@ function VideoTab({ lesson, lessonId }: { lesson: any; lessonId: string }) {
         <View className="px-5 pt-5">
           <Text className="text-base text-darkText-secondary leading-7">{lesson.texto_aula}</Text>
         </View>
+      )}
+
+      {/* Download section */}
+      {hasDownloadable && (
+        <DownloadSection
+          lessonId={lessonId}
+          courseId={courseId}
+          courseTitle={courseTitle}
+          lessonTitle={lesson.titulo ?? ''}
+          videoUrl={lesson.video_url}
+          audioUrl={audioUrl}
+          pdfUrl={lesson.pdf}
+        />
       )}
     </View>
   )
