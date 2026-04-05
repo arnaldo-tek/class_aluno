@@ -1674,23 +1674,32 @@ export type Database = {
       package_access: {
         Row: {
           access_expire_date: string | null
+          cancelled_at: string | null
           created_at: string | null
           id: string
+          next_billing_date: string | null
           pacote_id: string
+          pagarme_subscription_id: string | null
           user_id: string
         }
         Insert: {
           access_expire_date?: string | null
+          cancelled_at?: string | null
           created_at?: string | null
           id?: string
+          next_billing_date?: string | null
           pacote_id: string
+          pagarme_subscription_id?: string | null
           user_id: string
         }
         Update: {
           access_expire_date?: string | null
+          cancelled_at?: string | null
           created_at?: string | null
           id?: string
+          next_billing_date?: string | null
           pacote_id?: string
+          pagarme_subscription_id?: string | null
           user_id?: string
         }
         Relationships: [

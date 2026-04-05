@@ -169,8 +169,8 @@ function AudioDownloadHeader({ audios, leiId, leiNome }: AudioDownloadHeaderProp
   if (total === 0) return null
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
         <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>
           {t('audio.title')} ({total})
         </Text>
@@ -181,7 +181,7 @@ function AudioDownloadHeader({ audios, leiId, leiNome }: AudioDownloadHeaderProp
         )}
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
         {!allSaved && (
           <TouchableOpacity
             onPress={handleDownloadAll}

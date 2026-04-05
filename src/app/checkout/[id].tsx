@@ -92,7 +92,7 @@ export default function CheckoutScreen() {
     }
 
     if (method === 'card') {
-      router.push({ pathname: '/checkout/card', params })
+      router.push({ pathname: '/checkout/card', params: { ...params, is_subscription: isPacote ? '1' : '0' } })
     } else {
       router.push({ pathname: '/checkout/pix', params })
     }

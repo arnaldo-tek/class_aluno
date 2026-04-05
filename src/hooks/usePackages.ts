@@ -59,16 +59,14 @@ export function useHasPackageAccess(pacoteId: string) {
     queryKey: ['package-access', user?.id, pacoteId],
     queryFn: async () => {
       if (!user) return false
-      // Check for access: either no expiry (null) or expiry in the future
       const { data } = await supabase
         .from('package_access')
-        .select('id, access_expire_date')
+        .select('id, access_expire_date, cancelled_at')
         .eq('user_id', user.id)
         .eq('pacote_id', pacoteId)
         .maybeSingle()
 
       if (!data) return false
-      // null = no expiry = permanent access
       if (!data.access_expire_date) return true
       return new Date(data.access_expire_date) >= new Date()
     },
@@ -85,7 +83,7 @@ export function useMyPackages() {
       if (!user) return []
       const { data, error } = await supabase
         .from('package_access')
-        .select('id, access_expire_date, pacote_id, pacotes(id, nome, imagem, preco)')
+        .select('id, access_expire_date, next_billing_date, cancelled_at, pagarme_subscription_id, pacote_id, pacotes(id, nome, imagem, preco)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
@@ -105,7 +103,39 @@ export function useCancelSubscription() {
         body: { action: 'cancel', pacote_id: pacoteId },
       })
       if (error) throw new Error(error.message ?? 'Failed to cancel subscription')
-      return data
+      if (data?.error) throw new Error(data.error)
+      return data as { cancelled: boolean; access_until: string | null }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-packages'] })
+      qc.invalidateQueries({ queryKey: ['package-access'] })
+    },
+  })
+}
+
+export function useCreateSubscription() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (params: {
+      customer_id: string
+      pacote_id: string
+      card: {
+        number: string
+        holder_name: string
+        exp_month: number
+        exp_year: number
+        cvv: string
+      }
+      amount: number
+      interval?: 'month' | 'year'
+    }) => {
+      const { data, error } = await supabase.functions.invoke('payment-subscription', {
+        body: { action: 'create', ...params, interval: params.interval ?? 'month' },
+      })
+      if (error) throw new Error(error.message ?? 'Failed to create subscription')
+      if (data?.error) throw new Error(data.error)
+      return data as { subscription_id: string; status: string; next_billing_at: string }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-packages'] })

@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useCheckoutCard, useUpdateCustomerDocument } from '@/hooks/usePayment'
+import { useCreateSubscription } from '@/hooks/usePackages'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function CardCheckoutScreen() {
@@ -15,10 +16,13 @@ export default function CardCheckoutScreen() {
     cupom_codigo?: string
     course_name?: string
     cpf?: string
+    is_subscription?: string
   }>()
+  const isSubscription = params.is_subscription === '1'
   const router = useRouter()
   const colors = useThemeColors()
   const checkout = useCheckoutCard()
+  const createSubscription = useCreateSubscription()
   const updateDoc = useUpdateCustomerDocument()
 
   const [cardNumber, setCardNumber] = useState('')
@@ -74,16 +78,30 @@ export default function CardCheckoutScreen() {
         }
       }
 
+      const card = {
+        number: cardNumber.replace(/\s/g, ''),
+        holder_name: holderName.trim().toUpperCase(),
+        exp_month: exp.month,
+        exp_year: exp.year,
+        cvv,
+      }
+
+      if (isSubscription && params.pacote_id) {
+        await createSubscription.mutateAsync({
+          customer_id: params.customer_id!,
+          pacote_id: params.pacote_id,
+          card,
+          amount: amountCents,
+          interval: 'month',
+        })
+        router.replace({ pathname: '/checkout/success', params: { course_name: params.course_name } })
+        return
+      }
+
       const result = await checkout.mutateAsync({
         customer_id: params.customer_id!,
         amount: amountCents,
-        card: {
-          number: cardNumber.replace(/\s/g, ''),
-          holder_name: holderName.trim().toUpperCase(),
-          exp_month: exp.month,
-          exp_year: exp.year,
-          cvv,
-        },
+        card,
         installments,
         curso_id: params.curso_id || undefined,
         pacote_id: params.pacote_id || undefined,
@@ -223,16 +241,16 @@ export default function CardCheckoutScreen() {
           {/* Submit */}
           <TouchableOpacity
             onPress={handleSubmit}
-            disabled={!isValid || checkout.isPending}
+            disabled={!isValid || checkout.isPending || createSubscription.isPending}
             className={`rounded-2xl py-4 items-center mb-8 ${
-              isValid && !checkout.isPending ? 'bg-primary' : 'bg-dark-surfaceLight'
+              isValid && !checkout.isPending && !createSubscription.isPending ? 'bg-primary' : 'bg-dark-surfaceLight'
             }`}
           >
-            {checkout.isPending ? (
+            {(checkout.isPending || createSubscription.isPending) ? (
               <ActivityIndicator color={colors.text} />
             ) : (
               <Text className={`font-bold text-base ${isValid ? 'text-darkText-inverse' : 'text-darkText-muted'}`}>
-                Pagar R$ {amountBRL.toFixed(2)}
+                {isSubscription ? `Assinar R$ ${amountBRL.toFixed(2)}/mês` : `Pagar R$ ${amountBRL.toFixed(2)}`}
               </Text>
             )}
           </TouchableOpacity>

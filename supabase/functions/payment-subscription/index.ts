@@ -1,11 +1,12 @@
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
-import { createSupabaseFromRequest } from '../_shared/supabase.ts'
+import { createSupabaseFromRequest, createSupabaseAdmin } from '../_shared/supabase.ts'
 import { pagarmeRequest, buildSplitRules, PagarmeError } from '../_shared/pagarme.ts'
+import { resolveReceiverIds } from '../_shared/checkout.ts'
 
 interface CreateSubscriptionBody {
   action: 'create'
   customer_id: string
-  plan_id?: string
+  pacote_id: string
   card: {
     number: string
     holder_name: string
@@ -17,12 +18,11 @@ interface CreateSubscriptionBody {
   interval: 'month' | 'year'
   interval_count?: number
   description?: string
-  receiver_ids?: string[]
 }
 
 interface CancelSubscriptionBody {
   action: 'cancel'
-  subscription_id: string
+  pacote_id: string
 }
 
 type SubscriptionBody = CreateSubscriptionBody | CancelSubscriptionBody
@@ -34,20 +34,26 @@ Deno.serve(async (req) => {
   try {
     const supabase = createSupabaseFromRequest(req)
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) return errorResponse('Unauthorized', 401)
+    if (authError || !user) return jsonResponse({ error: 'Unauthorized' })
 
     const body: SubscriptionBody = await req.json()
+    console.log('payment-subscription action:', body?.action, 'pacote_id:', (body as any)?.pacote_id)
 
     if (body.action === 'create') {
-      if (!body.customer_id || !body.card || !body.amount) {
-        return errorResponse('customer_id, card, and amount are required')
+      if (!body.customer_id || !body.card || !body.amount || !body.pacote_id) {
+        return errorResponse('customer_id, pacote_id, card, and amount are required')
       }
 
-      const splitRules = body.receiver_ids?.length
-        ? buildSplitRules(body.receiver_ids, body.amount)
-        : []
+      const admin = createSupabaseAdmin()
+      const receiverIds = await resolveReceiverIds(admin, undefined, body.pacote_id)
+      const splitRules = receiverIds.length ? buildSplitRules(receiverIds, body.amount) : []
 
-      const subscription = await pagarmeRequest<{ id: string; status: string }>(
+      const subscription = await pagarmeRequest<{
+        id: string
+        status: string
+        current_period?: { end_at?: string }
+        next_billing_at?: string
+      }>(
         '/subscriptions',
         'POST',
         {
@@ -80,31 +86,91 @@ Deno.serve(async (req) => {
         },
       )
 
+      // Calculate next billing date (1 month from now as default)
+      const nextBilling = subscription.next_billing_at
+        ?? subscription.current_period?.end_at
+        ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+      await admin.from('package_access').upsert(
+        {
+          user_id: user.id,
+          pacote_id: body.pacote_id,
+          pagarme_subscription_id: subscription.id,
+          access_expire_date: nextBilling,
+          next_billing_date: nextBilling,
+          cancelled_at: null,
+        },
+        { onConflict: 'pacote_id,user_id' },
+      )
+
+      // Enroll in all package courses
+      const { data: cursos } = await admin
+        .from('pacote_cursos')
+        .select('curso_id')
+        .eq('pacote_id', body.pacote_id)
+
+      if (cursos) {
+        for (const c of cursos) {
+          await admin.from('enrollments').upsert(
+            { user_id: user.id, curso_id: c.curso_id },
+            { onConflict: 'user_id,curso_id' },
+          )
+        }
+      }
+
       return jsonResponse({
         subscription_id: subscription.id,
         status: subscription.status,
+        next_billing_at: nextBilling,
       })
     }
 
     if (body.action === 'cancel') {
-      if (!body.subscription_id) {
-        return errorResponse('subscription_id is required')
+      if (!body.pacote_id) {
+        return jsonResponse({ error: 'pacote_id is required' })
       }
 
-      await pagarmeRequest(
-        `/subscriptions/${body.subscription_id}`,
-        'DELETE',
-      )
+      const admin = createSupabaseAdmin()
 
-      return jsonResponse({ cancelled: true })
+      // Lookup subscription from package_access
+      const { data: access, error: dbError } = await admin
+        .from('package_access')
+        .select('id, pagarme_subscription_id, access_expire_date')
+        .eq('user_id', user.id)
+        .eq('pacote_id', body.pacote_id)
+        .maybeSingle()
+
+      console.log('cancel lookup:', { access, dbError, user_id: user.id, pacote_id: body.pacote_id })
+
+      if (!access) {
+        return jsonResponse({ error: 'Assinatura não encontrada' })
+      }
+
+      if (access.pagarme_subscription_id) {
+        try {
+          await pagarmeRequest(`/subscriptions/${access.pagarme_subscription_id}`, 'DELETE')
+        } catch (pagarmeErr: any) {
+          console.warn('Pagar.me cancel failed (proceeding with DB update):', pagarmeErr?.message)
+        }
+      }
+
+      await admin
+        .from('package_access')
+        .update({ cancelled_at: new Date().toISOString() })
+        .eq('id', access.id)
+
+      return jsonResponse({
+        cancelled: true,
+        access_until: access.access_expire_date,
+      })
     }
 
-    return errorResponse('Invalid action. Use: create, cancel')
+    return jsonResponse({ error: `Invalid action: ${(body as any)?.action}` })
   } catch (err) {
     console.error('payment-subscription error:', err)
     if (err instanceof PagarmeError) {
-      return jsonResponse({ error: 'Pagar.me error', details: err.data }, err.status)
+      return jsonResponse({ error: 'Pagar.me error', details: err.data })
     }
-    return errorResponse(err.message ?? 'Internal error', 500)
+    return jsonResponse({ error: err.message ?? 'Internal error' })
   }
 })
