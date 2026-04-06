@@ -27,14 +27,17 @@ export function useProfessorCourses(professorId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('cursos')
-        .select('id, nome, imagem, preco, average_rating')
+        .select('id, nome, imagem, preco, taxa_superclasse, average_rating')
         .eq('professor_id', professorId)
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return data ?? []
+      return (data ?? []).map((c) => ({
+        ...c,
+        preco: (c.preco ?? 0) * (1 + (c.taxa_superclasse ?? 30) / 100),
+      }))
     },
     enabled: !!professorId,
   })

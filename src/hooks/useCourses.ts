@@ -8,7 +8,7 @@ export function useFeaturedCourses() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('cursos')
-        .select('id, nome, imagem, preco, average_rating, professor:professor_profiles!inner(nome_professor, approval_status, is_blocked)')
+        .select('id, nome, imagem, preco, taxa_superclasse, average_rating, professor:professor_profiles!inner(nome_professor, approval_status, is_blocked)')
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
         .eq('professor.approval_status', 'aprovado')
@@ -19,6 +19,7 @@ export function useFeaturedCourses() {
       if (error) throw error
       return (data ?? []).map((c) => ({
         ...c,
+        preco: (c.preco ?? 0) * (1 + (c.taxa_superclasse ?? 30) / 100),
         professor_nome: (c.professor as any)?.nome_professor ?? null,
       }))
     },
@@ -47,7 +48,7 @@ export function useCourses(filters: CoursesFilter = {}) {
     queryFn: async () => {
       let query = supabase
         .from('cursos')
-        .select('id, nome, imagem, preco, average_rating, descricao, professor:professor_profiles!inner(nome_professor, approval_status, is_blocked)', { count: 'exact' })
+        .select('id, nome, imagem, preco, taxa_superclasse, average_rating, descricao, professor:professor_profiles!inner(nome_professor, approval_status, is_blocked)', { count: 'exact' })
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
         .eq('professor.approval_status', 'aprovado')
@@ -71,6 +72,7 @@ export function useCourses(filters: CoursesFilter = {}) {
       return {
         courses: (data ?? []).map((c) => ({
           ...c,
+          preco: (c.preco ?? 0) * (1 + (c.taxa_superclasse ?? 30) / 100),
           professor_nome: (c.professor as any)?.nome_professor ?? null,
         })),
         total: count ?? 0,

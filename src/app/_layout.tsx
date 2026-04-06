@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { initSentry } from '@/lib/sentry'
 import { clearFailedDownloads } from '@/lib/offlineDb'
+import { restoreQueryCache, scheduleQueryCacheSave } from '@/lib/queryPersist'
 import '../../global.css'
 
 SplashScreen.preventAutoHideAsync()
@@ -17,9 +18,17 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 60 * 24, // 24h — keeps data while offline
       retry: 1,
+      networkMode: 'offlineFirst',
     },
   },
+})
+
+// Persist cache to disk so data survives app restarts when offline
+restoreQueryCache(queryClient).catch(() => {})
+queryClient.getQueryCache().subscribe(() => {
+  scheduleQueryCacheSave(queryClient)
 })
 
 function AppContent() {

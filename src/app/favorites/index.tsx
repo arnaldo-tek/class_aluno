@@ -72,10 +72,13 @@ function useFavoriteCourseDetails(ids: string[]) {
       if (!ids.length) return []
       const { data, error } = await supabase
         .from('cursos')
-        .select('id, nome, imagem, preco, average_rating')
+        .select('id, nome, imagem, preco, taxa_superclasse, average_rating')
         .in('id', ids)
       if (error) throw error
-      return data ?? []
+      return (data ?? []).map((c) => ({
+        ...c,
+        preco: (c.preco ?? 0) * (1 + (c.taxa_superclasse ?? 30) / 100),
+      }))
     },
     enabled: ids.length > 0,
   })

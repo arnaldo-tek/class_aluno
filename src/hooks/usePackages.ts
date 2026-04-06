@@ -41,7 +41,7 @@ export function usePackageDetail(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pacotes')
-        .select('*, pacote_cursos(curso_id, cursos(id, nome, imagem, preco, professor:professor_profiles(nome_professor)))')
+        .select('*, pacote_cursos(curso_id, cursos(id, nome, imagem, preco, taxa_superclasse, professor:professor_profiles(nome_professor)))')
         .eq('id', id)
         .single()
 

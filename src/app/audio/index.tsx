@@ -33,7 +33,7 @@ export default function AudioScreen() {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const [selectedLawId, setSelectedLawId] = useState<string | null>(null)
   const [breadcrumb, setBreadcrumb] = useState<Array<{ label: string; level: DrillLevel; id?: string }>>([])
-  const [playerTab, setPlayerTab] = useState<'audio' | 'text' | 'questions'>('audio')
+  const [playerTab, setPlayerTab] = useState<'audio' | 'text' | 'questions'>('text')
 
   const { data: packages, isLoading: loadingPkg } = useAudioPackages(activeTab)
   const { data: banners } = useAudioBanners()
@@ -44,6 +44,26 @@ export default function AudioScreen() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+
+  // Ajusta playerTab para primeira aba disponível quando os dados da lei carregam
+  useEffect(() => {
+    if (!lawDetail?.lei) return
+    const hasText = !!lawDetail.lei.texto
+    const hasAudio = lawDetail.audios.length > 0
+    const hasQuestions = (lawQuestions?.length ?? 0) > 0
+    const firstTab = hasText ? 'text' : hasAudio ? 'audio' : hasQuestions ? 'questions' : null
+    if (firstTab && playerTab !== 'text' && playerTab !== 'audio' && playerTab !== 'questions') {
+      setPlayerTab(firstTab)
+    }
+    // Se a tab atual não tem conteúdo, vai para a primeira disponível
+    if (
+      (playerTab === 'text' && !hasText) ||
+      (playerTab === 'audio' && !hasAudio) ||
+      (playerTab === 'questions' && !hasQuestions)
+    ) {
+      if (firstTab) setPlayerTab(firstTab)
+    }
+  }, [lawDetail?.lei?.id, lawDetail?.audios?.length, lawQuestions?.length])
 
   const bannerRef = useRef<FlatList>(null)
   const [bannerIndex, setBannerIndex] = useState(0)
@@ -90,7 +110,7 @@ export default function AudioScreen() {
   function selectLaw(law: any) {
     setSelectedLawId(law.id)
     setLevel('player')
-    setPlayerTab('audio')
+    setPlayerTab('text')
     setBreadcrumb(prev => [...prev.slice(0, 2), { label: law.nome, level: 'laws', id: selectedFolderId! }])
     resetSearch()
   }
@@ -335,13 +355,13 @@ export default function AudioScreen() {
       {level === 'player' && (
         loadingDetail ? <LoadingSpinner /> : !lawDetail?.lei ? null : (
           <>
-            {/* Player tabs: Áudio, Texto, Questões */}
+            {/* Player tabs: Texto, Áudio, Questões — só exibe se tiver conteúdo */}
             <View className="flex-row border-b border-darkBorder-subtle px-4">
               {([
-                { key: 'audio' as const, label: 'Áudio', icon: 'musical-notes' },
-                { key: 'text' as const, label: 'Texto', icon: 'document-text' },
-                { key: 'questions' as const, label: 'Questões', icon: 'help-circle' },
-              ]).map((tab) => (
+                lawDetail.lei.texto ? { key: 'text' as const, label: 'Texto', icon: 'document-text' } : null,
+                lawDetail.audios.length > 0 ? { key: 'audio' as const, label: 'Áudio', icon: 'musical-notes' } : null,
+                (lawQuestions?.length ?? 0) > 0 ? { key: 'questions' as const, label: 'Questões', icon: 'help-circle' } : null,
+              ].filter(Boolean) as { key: 'audio' | 'text' | 'questions'; label: string; icon: string }[]).map((tab) => (
                 <TouchableOpacity
                   key={tab.key}
                   onPress={() => setPlayerTab(tab.key)}

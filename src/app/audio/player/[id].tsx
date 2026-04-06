@@ -213,13 +213,32 @@ export default function AudioPlayerScreen() {
   const colors = useThemeColors()
   const { data, isLoading } = useAudioLawDetail(id!)
   const { data: allDownloads = [] } = useAllDownloads()
-  const [activeTab, setActiveTab] = useState<TabKey>('audio')
+  const { data: questions } = useAudioLawQuestions(id!)
+  const [activeTab, setActiveTab] = useState<TabKey>('text')
 
+  const lei = data?.lei
   const audios: AudioItem[] = (data?.audios ?? []).map((a: any) => ({
     id: a.id,
     titulo: a.titulo,
     audio_url: a.audio_url,
   }))
+
+  const hasText = !!lei?.texto
+  const hasAudio = audios.length > 0
+  const hasQuestions = (questions?.length ?? 0) > 0
+
+  const visibleTabs = ([
+    hasText    ? { key: 'text'      as TabKey, label: 'Texto',    icon: 'document-text' } : null,
+    hasAudio   ? { key: 'audio'     as TabKey, label: 'Áudio',    icon: 'musical-notes' } : null,
+    hasQuestions ? { key: 'questions' as TabKey, label: 'Questões', icon: 'help-circle'  } : null,
+  ].filter(Boolean)) as { key: TabKey; label: string; icon: string }[]
+
+  // Quando os dados carregam, ajusta activeTab para a primeira aba visível
+  useEffect(() => {
+    if (!isLoading && visibleTabs.length > 0 && !visibleTabs.find((t) => t.key === activeTab)) {
+      setActiveTab(visibleTabs[0].key)
+    }
+  }, [isLoading, hasText, hasAudio, hasQuestions])
 
   // Substitui audio_url pelo arquivo local quando disponível
   const offlineMap: Record<string, string> = {}
@@ -234,15 +253,9 @@ export default function AudioPlayerScreen() {
   }))
 
   if (isLoading) return <LoadingSpinner />
-  if (!data?.lei) return null
+  if (!lei) return null
 
-  const { lei } = data
-
-  const tabs: { key: TabKey; label: string; icon: string }[] = [
-    { key: 'audio', label: 'Áudio', icon: 'musical-notes' },
-    { key: 'text', label: 'Texto', icon: 'document-text' },
-    { key: 'questions', label: 'Questões', icon: 'help-circle' },
-  ]
+  const tabs = visibleTabs
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">

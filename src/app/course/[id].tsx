@@ -101,7 +101,7 @@ export default function CourseDetailScreen() {
           {!fromPackage && (
             <View className="flex-row items-center justify-between mt-5 pb-5 border-b border-darkBorder-subtle">
               <Text className="text-2xl font-bold" style={{ color: '#e6d900' }}>
-                {(course.preco ?? 0) > 0 ? `R$ ${(course.preco ?? 0).toFixed(2)}` : t('courses.free')}
+                {(course.preco ?? 0) > 0 ? `R$ ${((course.preco ?? 0) * (1 + (course.taxa_superclasse ?? 30) / 100)).toFixed(2)}` : t('courses.free')}
               </Text>
               {isEnrolled ? (
                 <Badge variant="success">{t('courses.enrolled')}</Badge>

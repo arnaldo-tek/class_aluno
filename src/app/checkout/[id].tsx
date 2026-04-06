@@ -55,7 +55,9 @@ export default function CheckoutScreen() {
     )
   }
 
-  const originalPrice = item.preco ?? 0
+  const precoBase = (item as any).preco ?? 0
+  const taxa = (item as any).taxa_superclasse ?? 0
+  const originalPrice = taxa > 0 ? precoBase * (1 + taxa / 100) : precoBase
   const discount = appliedCoupon?.valor ?? 0
   const finalPrice = Math.max(originalPrice - discount, 0)
 
