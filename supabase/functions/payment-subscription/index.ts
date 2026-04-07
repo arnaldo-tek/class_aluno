@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
     if (body.action === 'create') {
       if (!body.customer_id || !body.card || !body.amount || !body.pacote_id) {
-        return errorResponse('customer_id, pacote_id, card, and amount are required')
+        return jsonResponse({ error: 'customer_id, pacote_id, card, and amount are required' })
       }
 
       const admin = createSupabaseAdmin()
@@ -66,6 +66,13 @@ Deno.serve(async (req) => {
               exp_month: body.card.exp_month,
               exp_year: body.card.exp_year,
               cvv: body.card.cvv,
+              billing_address: {
+                line_1: '1, Rua Teste, Centro',
+                zip_code: '01001000',
+                city: 'São Paulo',
+                state: 'SP',
+                country: 'BR',
+              },
             },
             statement_descriptor: 'SuperClasse',
           },
