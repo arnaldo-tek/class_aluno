@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, Dimensions, Alert, Platform, ToastAndroid } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, Alert, Platform, ToastAndroid, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -313,6 +313,22 @@ export default function AudioPlayerScreen() {
               <>
                 <Text className="text-sm font-semibold text-darkText mb-3">{lei.nome}</Text>
                 <Text className="text-sm text-darkText-secondary leading-6" style={{ textAlign: 'justify' }}>{lei.texto}</Text>
+                {lei.pdf && (
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(lei.pdf!)}
+                    className="flex-row items-center mt-4 px-4 py-3 rounded-2xl border border-darkBorder-subtle bg-dark-surface"
+                    activeOpacity={0.7}
+                  >
+                    <View className="w-10 h-10 rounded-xl bg-red-500/10 items-center justify-center">
+                      <Ionicons name="document-text" size={20} color="#ef4444" />
+                    </View>
+                    <View className="flex-1 ml-3">
+                      <Text className="text-sm font-medium text-darkText">PDF para download</Text>
+                      <Text className="text-xs text-darkText-muted mt-0.5">Toque para abrir o PDF</Text>
+                    </View>
+                    <Ionicons name="download-outline" size={20} color="#93c5fd" />
+                  </TouchableOpacity>
+                )}
               </>
             ) : (
               <View className="items-center py-12">

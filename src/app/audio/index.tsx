@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, Dimensions, ScrollView, TextInput } from 'react-native'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { View, Text, FlatList, TouchableOpacity, Image, Dimensions, ScrollView, TextInput, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -405,6 +405,22 @@ export default function AudioScreen() {
                     <>
                       <Text className="text-sm font-semibold text-darkText mb-3">{lawDetail.lei.nome}</Text>
                       <Text className="text-sm text-darkText-secondary leading-6" style={{ textAlign: 'justify' }}>{lawDetail.lei.texto}</Text>
+                      {lawDetail.lei.pdf && (
+                        <TouchableOpacity
+                          onPress={() => Linking.openURL(lawDetail.lei.pdf!)}
+                          className="flex-row items-center mt-4 px-4 py-3 rounded-2xl border border-darkBorder-subtle bg-dark-surface"
+                          activeOpacity={0.7}
+                        >
+                          <View className="w-10 h-10 rounded-xl bg-red-500/10 items-center justify-center">
+                            <Ionicons name="document-text" size={20} color="#ef4444" />
+                          </View>
+                          <View className="flex-1 ml-3">
+                            <Text className="text-sm font-medium text-darkText">PDF para download</Text>
+                            <Text className="text-xs text-darkText-muted mt-0.5">Toque para abrir o PDF</Text>
+                          </View>
+                          <Ionicons name="download-outline" size={20} color="#93c5fd" />
+                        </TouchableOpacity>
+                      )}
                     </>
                   ) : (
                     <View className="items-center py-12">
