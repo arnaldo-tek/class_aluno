@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, ScrollView } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -128,7 +129,7 @@ function CardFeedItem({ item }: { item: CardItem }) {
             activeOpacity={0.8}
           >
             {previewImage && (
-              <Image source={{ uri: previewImage }} className="absolute w-full h-full" resizeMode="cover" />
+              <Image source={{ uri: previewImage }} className="absolute w-full h-full" contentFit="cover" />
             )}
             <View className="w-16 h-16 rounded-full bg-black/50 items-center justify-center">
               <Ionicons name="play" size={32} color="white" />
@@ -136,7 +137,7 @@ function CardFeedItem({ item }: { item: CardItem }) {
           </TouchableOpacity>
         )
       ) : item.imagem ? (
-        <Image source={{ uri: item.imagem }} className="w-full h-64" resizeMode="cover" />
+        <Image source={{ uri: item.imagem }} className="w-full h-64" contentFit="cover" />
       ) : null}
 
       {/* Text */}

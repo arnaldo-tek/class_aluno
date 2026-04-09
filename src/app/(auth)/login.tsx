@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView,
-  Platform, ActivityIndicator, Image, Alert,
+  Platform, ActivityIndicator, Alert,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { Link, useRouter } from 'expo-router'
 import { signIn, signOut } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
@@ -53,7 +54,7 @@ export default function LoginScreen() {
         <Image
           source={require('../../../assets/logo.png')}
           style={{ width: 192, height: 56, alignSelf: 'center', marginBottom: 24 }}
-          resizeMode="contain"
+          contentFit="contain"
         />
         <Text className="text-base text-center text-darkText-secondary mb-8">
           {t('auth.login')}

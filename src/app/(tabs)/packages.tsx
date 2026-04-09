@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -76,7 +77,7 @@ export default function PackagesTab() {
               activeOpacity={0.7}
             >
               {item.imagem ? (
-                <Image source={{ uri: item.imagem }} className="w-full h-40" resizeMode="cover" />
+                <Image source={{ uri: item.imagem }} className="w-full h-40" contentFit="cover" />
               ) : (
                 <View className="w-full h-40 bg-primary-50 items-center justify-center">
                   <Ionicons name="cube-outline" size={40} color="#60a5fa" />

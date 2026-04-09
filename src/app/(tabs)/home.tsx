@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, FlatList, Image, TouchableOpacity, RefreshControl } from 'react-native'
+import { View, Text, ScrollView, FlatList, TouchableOpacity, RefreshControl } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useState, useCallback } from 'react'
@@ -172,7 +173,7 @@ function PackagesSection() {
             activeOpacity={0.7}
           >
             {item.imagem ? (
-              <Image source={{ uri: item.imagem }} className="w-full h-24" resizeMode="cover" />
+              <Image source={{ uri: item.imagem }} className="w-full h-24" contentFit="cover" />
             ) : (
               <View className="w-full h-24 bg-primary-50 items-center justify-center">
                 <Ionicons name="cube-outline" size={28} color="#60a5fa" />
@@ -208,7 +209,7 @@ function NewsSection() {
           className="flex-row bg-dark-surface rounded-2xl mx-4 mb-2.5 overflow-hidden"
         >
           {item.imagem ? (
-            <Image source={{ uri: item.imagem }} className="w-20 h-20" resizeMode="cover" />
+            <Image source={{ uri: item.imagem }} className="w-20 h-20" contentFit="cover" />
           ) : (
             <View className="w-20 h-20 bg-dark-surfaceLight items-center justify-center">
               <Ionicons name="newspaper-outline" size={20} color={colors.textMuted} />

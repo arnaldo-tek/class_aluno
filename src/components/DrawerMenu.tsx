@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Image, ScrollView, Modal, Pressable, Platform } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Modal, Pressable, Platform } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'

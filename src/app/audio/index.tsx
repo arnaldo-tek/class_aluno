@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, Dimensions, ScrollView, TextInput, Linking } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Dimensions, ScrollView, TextInput, Linking } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -199,7 +200,7 @@ export default function AudioScreen() {
             renderItem={({ item }) => (
               <View style={{ width: BANNER_WIDTH }} className="h-32 rounded-2xl overflow-hidden">
                 {item.imagem ? (
-                  <Image source={{ uri: item.imagem }} className="w-full h-full" resizeMode="cover" />
+                  <Image source={{ uri: item.imagem }} className="w-full h-full" contentFit="cover" />
                 ) : (
                   <View className="w-full h-full bg-primary-50 items-center justify-center">
                     <Ionicons name="musical-notes-outline" size={32} color="#60a5fa" />
@@ -311,7 +312,7 @@ export default function AudioScreen() {
                 activeOpacity={0.7}
               >
                 {item.imagem ? (
-                  <Image source={{ uri: item.imagem }} className="w-10 h-10 rounded-xl" />
+                  <Image source={{ uri: item.imagem }} className="w-10 h-10 rounded-xl" contentFit="cover" />
                 ) : (
                   <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: `${activeColor}15` }}>
                     <Ionicons name="folder-open" size={20} color={activeColor} />

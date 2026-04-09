@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { View, Text, ScrollView, Image, TouchableOpacity, Linking, FlatList, Dimensions } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Linking, FlatList, Dimensions } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -54,7 +55,7 @@ function ProfileCardItem({ card }: { card: any }) {
             activeOpacity={0.8}
           >
             {previewImage && (
-              <Image source={{ uri: previewImage }} className="w-full h-48 absolute" resizeMode="cover" />
+              <Image source={{ uri: previewImage }} className="w-full h-48 absolute" contentFit="cover" />
             )}
             <View className="items-center justify-center w-14 h-14 rounded-full bg-black/50">
               <Ionicons name="play" size={28} color="#fff" />
@@ -62,7 +63,7 @@ function ProfileCardItem({ card }: { card: any }) {
           </TouchableOpacity>
         )
       ) : card.imagem ? (
-        <Image source={{ uri: card.imagem }} className="w-full h-48" resizeMode="cover" />
+        <Image source={{ uri: card.imagem }} className="w-full h-48" contentFit="cover" />
       ) : null}
       <View className="p-4">
         {card.titulo && (
@@ -119,7 +120,7 @@ export default function ProfessorDetailScreen() {
         {/* Cover */}
         <View className="relative">
           {professor.foto_capa ? (
-            <Image source={{ uri: professor.foto_capa }} style={{ width: '100%', height: 160 }} resizeMode="cover" />
+            <Image source={{ uri: professor.foto_capa }} style={{ width: '100%', height: 160 }} contentFit="cover" />
           ) : (
             <View style={{ width: '100%', height: 160 }} className="bg-dark-surfaceLight" />
           )}
@@ -351,7 +352,7 @@ function DestaqueCarousel({ destaques }: { destaques: string[] }) {
           <Image
             source={{ uri: item }}
             style={{ width: SCREEN_WIDTH, height: DESTAQUE_HEIGHT }}
-            resizeMode="cover"
+            contentFit="cover"
           />
         )}
       />

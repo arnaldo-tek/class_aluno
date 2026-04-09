@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Image, ScrollView, Platform } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { useProfile } from '@/hooks/useProfile'

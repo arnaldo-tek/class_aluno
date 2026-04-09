@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { View, Text, FlatList, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native'
+import { View, Text, FlatList, ScrollView, TouchableOpacity, TextInput } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -135,7 +136,7 @@ export default function NewsScreen() {
               activeOpacity={0.7}
             >
               {item.imagem ? (
-                <Image source={{ uri: item.imagem }} className="w-full h-40" resizeMode="cover" />
+                <Image source={{ uri: item.imagem }} className="w-full h-40" contentFit="cover" />
               ) : (
                 <View className="w-full h-24 bg-dark-surfaceLight items-center justify-center">
                   <Ionicons name="newspaper-outline" size={32} color={colors.textMuted} />

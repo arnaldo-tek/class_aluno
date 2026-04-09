@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, Modal, TextInput, Alert } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, Alert } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -90,7 +91,7 @@ function CommunityItem({ item }: { item: any }) {
         className="flex-row p-4"
       >
         {item.imagem ? (
-          <Image source={{ uri: item.imagem }} className="w-14 h-14 rounded-xl" resizeMode="cover" />
+          <Image source={{ uri: item.imagem }} className="w-14 h-14 rounded-xl" contentFit="cover" />
         ) : (
           <View className="w-14 h-14 bg-primary-50 rounded-xl items-center justify-center">
             <Ionicons name="people-outline" size={24} color="#60a5fa" />

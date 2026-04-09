@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView,
-  Platform, ActivityIndicator, Image,
+  Platform, ActivityIndicator,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { Link } from 'expo-router'
 import { resetPassword } from '@/lib/auth'
 import { t } from '@/i18n'
@@ -55,7 +56,7 @@ export default function ForgotPasswordScreen() {
         <Image
           source={require('../../../assets/logo.png')}
           style={{ width: 192, height: 56, alignSelf: 'center', marginBottom: 24 }}
-          resizeMode="contain"
+          contentFit="contain"
         />
         <Text className="text-2xl font-bold text-center text-darkText mb-2">
           {t('auth.resetPassword')}

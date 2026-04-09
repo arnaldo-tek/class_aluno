@@ -1,4 +1,5 @@
-import { View, Text, FlatList, RefreshControl, Image } from 'react-native'
+import { View, Text, FlatList, RefreshControl } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { TouchableOpacity } from 'react-native'
@@ -67,7 +68,7 @@ export default function PurchaseHistoryScreen() {
                     <Image
                       source={{ uri: item.display_image }}
                       className="w-20 h-20"
-                      resizeMode="cover"
+                      contentFit="cover"
                     />
                   ) : (
                     <View className="w-20 h-20 bg-dark-surfaceLight items-center justify-center">

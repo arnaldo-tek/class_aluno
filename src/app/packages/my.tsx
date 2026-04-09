@@ -1,4 +1,5 @@
-import { View, Text, FlatList, TouchableOpacity, Image, Modal, Pressable, Alert } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Modal, Pressable, Alert } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
@@ -94,7 +95,7 @@ export default function MyPackagesScreen() {
                 className="flex-row p-4"
               >
                 {pacote?.imagem ? (
-                  <Image source={{ uri: pacote.imagem }} className="w-16 h-16 rounded-lg" resizeMode="cover" />
+                  <Image source={{ uri: pacote.imagem }} className="w-16 h-16 rounded-lg" contentFit="cover" />
                 ) : (
                   <View className="w-16 h-16 bg-primary-50 rounded-lg items-center justify-center">
                     <Ionicons name="cube-outline" size={24} color="#60a5fa" />

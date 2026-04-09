@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Alert, Platform, FlatList, KeyboardAvoidingView } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Platform, FlatList, KeyboardAvoidingView } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -42,7 +43,7 @@ export default function CourseDetailScreen() {
         {/* Header image */}
         <View className="relative">
           {course.imagem ? (
-            <Image source={{ uri: course.imagem }} className="w-full h-56" resizeMode="cover" />
+            <Image source={{ uri: course.imagem }} className="w-full h-56" contentFit="cover" />
           ) : (
             <View className="w-full h-56 bg-dark-surfaceLight items-center justify-center">
               <Ionicons name="book-outline" size={48} color={colors.textMuted} />
@@ -67,7 +68,7 @@ export default function CourseDetailScreen() {
               className="flex-row items-center mt-3"
             >
               {professor.foto_perfil ? (
-                <Image source={{ uri: professor.foto_perfil }} className="w-8 h-8 rounded-full" />
+                <Image source={{ uri: professor.foto_perfil }} className="w-8 h-8 rounded-full" contentFit="cover" />
               ) : (
                 <View className="w-8 h-8 rounded-full bg-primary-50 items-center justify-center">
                   <Ionicons name="person" size={14} color="#60a5fa" />

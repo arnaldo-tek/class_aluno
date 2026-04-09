@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView,
-  Platform, ActivityIndicator, ScrollView, Image, Alert,
+  Platform, ActivityIndicator, ScrollView, Alert,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { Link, useRouter } from 'expo-router'
 import { signUp } from '@/lib/auth'
 import { t } from '@/i18n'
@@ -56,7 +57,7 @@ export default function RegisterScreen() {
         <Image
           source={require('../../../assets/logo.png')}
           style={{ width: 192, height: 56, alignSelf: 'center', marginBottom: 24 }}
-          resizeMode="contain"
+          contentFit="contain"
         />
         <Text className="text-base text-center text-darkText-secondary mb-8">
           {t('auth.register')}

@@ -1,4 +1,5 @@
-import { View, FlatList, Image, TouchableOpacity, Dimensions, Linking } from 'react-native'
+import { View, FlatList, TouchableOpacity, Dimensions, Linking } from 'react-native'
+import { Image } from 'expo-image'
 import { useRef, useEffect, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useBanners } from '@/hooks/useHome'
@@ -53,7 +54,7 @@ export function BannerCarousel() {
             className="h-44 rounded-2xl overflow-hidden"
           >
             {item.imagem ? (
-              <Image source={{ uri: item.imagem }} className="w-full h-full" resizeMode="cover" />
+              <Image source={{ uri: item.imagem }} className="w-full h-full" contentFit="cover" />
             ) : (
               <View className="w-full h-full bg-primary-50 items-center justify-center">
                 <Ionicons name="megaphone-outline" size={32} color="#3b82f6" />

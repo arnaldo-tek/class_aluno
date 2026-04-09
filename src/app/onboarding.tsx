@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Dimensions, Image } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Dimensions } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -87,7 +88,7 @@ export default function OnboardingScreen() {
                 <Image
                   source={{ uri: item.imagem }}
                   style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               ) : (
                 <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }} className="bg-dark-surfaceLight items-center justify-center">

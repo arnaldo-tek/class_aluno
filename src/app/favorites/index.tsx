@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { View, Text, FlatList, Image, TouchableOpacity } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
@@ -199,7 +200,7 @@ export default function FavoritesScreen() {
                 activeOpacity={0.7}
               >
                 {item.imagem && (
-                  <Image source={{ uri: item.imagem }} className="w-full h-32" resizeMode="cover" />
+                  <Image source={{ uri: item.imagem }} className="w-full h-32" contentFit="cover" />
                 )}
                 <View className="px-4 py-3">
                   <Text className="text-base font-medium text-darkText">{item.nome}</Text>
@@ -240,7 +241,7 @@ export default function FavoritesScreen() {
                 activeOpacity={0.7}
               >
                 {item.imagem && (
-                  <Image source={{ uri: item.imagem }} className="w-full h-32" resizeMode="cover" />
+                  <Image source={{ uri: item.imagem }} className="w-full h-32" contentFit="cover" />
                 )}
                 <View className="px-4 py-3">
                   <Text className="text-base font-medium text-darkText">{item.titulo}</Text>
@@ -270,7 +271,7 @@ export default function FavoritesScreen() {
                 activeOpacity={0.7}
               >
                 {item.imagem && (
-                  <Image source={{ uri: item.imagem }} className="w-full h-32" resizeMode="cover" />
+                  <Image source={{ uri: item.imagem }} className="w-full h-32" contentFit="cover" />
                 )}
                 <View className="px-4 py-3">
                   <Text className="text-base font-medium text-darkText">{item.titulo}</Text>

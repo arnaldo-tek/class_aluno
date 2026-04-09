@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Alert } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
@@ -114,7 +115,7 @@ export default function CheckoutScreen() {
         {/* Item summary */}
         <View className="flex-row px-4 py-4 border-b border-darkBorder-subtle">
           {item.imagem ? (
-            <Image source={{ uri: item.imagem }} className="w-20 h-14 rounded-lg" resizeMode="cover" />
+            <Image source={{ uri: item.imagem }} className="w-20 h-14 rounded-lg" contentFit="cover" />
           ) : (
             <View className="w-20 h-14 rounded-lg bg-dark-surfaceLight items-center justify-center">
               <Ionicons name={isPacote ? 'layers-outline' : 'book-outline'} size={20} color={colors.textMuted} />

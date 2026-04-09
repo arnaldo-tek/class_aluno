@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -36,7 +37,7 @@ export default function PackageDetailScreen() {
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Hero image */}
         {pkg.imagem ? (
-          <Image source={{ uri: pkg.imagem }} className="w-full h-48" resizeMode="cover" />
+          <Image source={{ uri: pkg.imagem }} className="w-full h-48" contentFit="cover" />
         ) : (
           <View className="w-full h-48 bg-primary-50 items-center justify-center">
             <Ionicons name="cube-outline" size={48} color="#60a5fa" />

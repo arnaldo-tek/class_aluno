@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity } from 'react-native'
+import { View, Text, TouchableOpacity } from 'react-native'
+import { Image } from 'expo-image'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { t } from '@/i18n'
@@ -34,7 +35,7 @@ export function CourseCard({
         <View className="bg-dark-surface rounded-2xl overflow-hidden" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 }}>
           <View className="relative">
             {imagem ? (
-              <Image source={{ uri: imagem }} className="w-full h-32" resizeMode="cover" />
+              <Image source={{ uri: imagem }} className="w-full h-32" contentFit="cover" />
             ) : (
               <View className="w-full h-32 bg-dark-surfaceLight items-center justify-center">
                 <Ionicons name="book-outline" size={28} color={colors.textMuted} />
@@ -78,7 +79,7 @@ export function CourseCard({
       >
         <View className="relative">
           {imagem ? (
-            <Image source={{ uri: imagem }} className="w-28 h-28" resizeMode="cover" />
+            <Image source={{ uri: imagem }} className="w-28 h-28" contentFit="cover" />
           ) : (
             <View className="w-28 h-28 bg-dark-surfaceLight items-center justify-center">
               <Ionicons name="book-outline" size={28} color={colors.textMuted} />

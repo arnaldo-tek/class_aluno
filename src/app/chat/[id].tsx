@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, FlatList, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -129,7 +130,7 @@ export default function ChatScreen() {
                     <Image
                       source={{ uri: msg.image }}
                       className="w-48 h-48 rounded-xl mb-1"
-                      resizeMode="cover"
+                      contentFit="cover"
                     />
                   )}
                   {msg.text && (

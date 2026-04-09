@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Share } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Share } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -54,7 +55,7 @@ export default function NewsDetailScreen() {
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {news.imagem && (
-          <Image source={{ uri: news.imagem }} className="w-full h-52" resizeMode="cover" />
+          <Image source={{ uri: news.imagem }} className="w-full h-52" contentFit="cover" />
         )}
 
         <View className="px-4 pt-5">
