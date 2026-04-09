@@ -1,7 +1,37 @@
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
 import { createSupabaseFromRequest, createSupabaseAdmin } from '../_shared/supabase.ts'
-import { pagarmeRequest, buildSplitRules, PagarmeError } from '../_shared/pagarme.ts'
+import { pagarmeRequest, PagarmeError } from '../_shared/pagarme.ts'
 import { resolveReceiverIds } from '../_shared/checkout.ts'
+
+const PLATFORM_RECEIVER_ID = 're_cm7m9wnhe0jnv0l9tbhvr7rky'
+
+/** Subscriptions API only allows type 'percentage'. Platform = 25%, teachers split 75% equally. */
+function buildSubscriptionSplitRules(receiverIds: string[]) {
+  const unique = [...new Set(receiverIds)]
+  if (unique.length === 0) return []
+
+  const platformPct = 25
+  const teachersPct = 75
+  const perTeacher = Math.floor(teachersPct / unique.length)
+  const remainder = teachersPct - perTeacher * unique.length
+
+  const rules = [
+    {
+      amount: platformPct,
+      recipient_id: PLATFORM_RECEIVER_ID,
+      type: 'percentage',
+      options: { charge_processing_fee: true, charge_remainder_fee: true, liable: true },
+    },
+    ...unique.map((rid, i) => ({
+      amount: perTeacher + (i === unique.length - 1 ? remainder : 0),
+      recipient_id: rid,
+      type: 'percentage',
+      options: { charge_processing_fee: false, charge_remainder_fee: false, liable: false },
+    })),
+  ]
+
+  return rules
+}
 
 interface CreateSubscriptionBody {
   action: 'create'
@@ -46,7 +76,8 @@ Deno.serve(async (req) => {
 
       const admin = createSupabaseAdmin()
       const receiverIds = await resolveReceiverIds(admin, undefined, body.pacote_id)
-      const splitRules = receiverIds.length ? buildSplitRules(receiverIds, body.amount) : []
+      // Subscriptions API only allows type 'percentage' (not flat amounts like orders)
+      const splitRules = buildSubscriptionSplitRules(receiverIds)
 
       const subscription = await pagarmeRequest<{
         id: string
@@ -59,23 +90,22 @@ Deno.serve(async (req) => {
         {
           customer_id: body.customer_id,
           payment_method: 'credit_card',
-          credit_card: {
-            card: {
-              number: body.card.number,
-              holder_name: body.card.holder_name,
-              exp_month: body.card.exp_month,
-              exp_year: body.card.exp_year,
-              cvv: body.card.cvv,
-              billing_address: {
-                line_1: '1, Rua Teste, Centro',
-                zip_code: '01001000',
-                city: 'São Paulo',
-                state: 'SP',
-                country: 'BR',
-              },
+          // Subscriptions API: card goes at root level, not inside credit_card
+          card: {
+            number: body.card.number,
+            holder_name: body.card.holder_name,
+            exp_month: body.card.exp_month,
+            exp_year: body.card.exp_year,
+            cvv: body.card.cvv,
+            billing_address: {
+              line_1: '1, Rua Teste, Centro',
+              zip_code: '01001000',
+              city: 'São Paulo',
+              state: 'SP',
+              country: 'BR',
             },
-            statement_descriptor: 'SuperClasse',
           },
+          statement_descriptor: 'SuperClasse',
           interval: body.interval || 'month',
           interval_count: body.interval_count || 1,
           minimum_price: body.amount,

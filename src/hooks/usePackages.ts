@@ -133,8 +133,20 @@ export function useCreateSubscription() {
       const { data, error } = await supabase.functions.invoke('payment-subscription', {
         body: { action: 'create', ...params, interval: params.interval ?? 'month' },
       })
-      if (error) throw new Error(error.message ?? 'Failed to create subscription')
-      if (data?.error) throw new Error(data.error)
+      if (error) {
+        // Try to extract structured error from response body
+        try {
+          const body = await (error as any).context?.json?.()
+          if (body && typeof body === 'object' && 'error' in body) {
+            const details = body.details ? JSON.stringify(body.details) : body.error
+            throw new Error(details)
+          }
+        } catch (extracted) {
+          if (extracted instanceof Error) throw extracted
+        }
+        throw new Error(error.message ?? 'Failed to create subscription')
+      }
+      if (data?.error) throw new Error(data.details ? JSON.stringify(data.details) : data.error)
       return data as { subscription_id: string; status: string; next_billing_at: string }
     },
     onSuccess: () => {
