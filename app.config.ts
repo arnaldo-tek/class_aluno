@@ -47,8 +47,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
     splash: {
       image: './assets/splash.png',
-      resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      resizeMode: 'cover',
+      backgroundColor: '#000000',
     },
 
     scheme: isProd ? 'superclasse' : `superclasse-${env}`,
@@ -116,9 +116,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       enabled: isProd || isPreview,
     },
 
-    runtimeVersion: {
-      policy: 'appVersion',
-    },
+    runtimeVersion: '1.0.0',
 
     extra: {
       // Variaveis acessiveis via Constants.expoConfig.extra em runtime

@@ -1,15 +1,22 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { StyleSheet, View } from 'react-native'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Video, ResizeMode, type AVPlaybackStatus } from 'expo-av'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { initSentry } from '@/lib/sentry'
 import { clearFailedDownloads } from '@/lib/offlineDb'
 import { restoreQueryCache, scheduleQueryCacheSave } from '@/lib/queryPersist'
+import { Image } from 'expo-image'
+import { cssInterop } from 'nativewind'
 import '../../global.css'
+
+// Enable NativeWind className support for expo-image
+cssInterop(Image, { className: 'style' })
 
 SplashScreen.preventAutoHideAsync()
 initSentry()
@@ -25,24 +32,50 @@ const queryClient = new QueryClient({
   },
 })
 
-// Persist cache to disk so data survives app restarts when offline
-restoreQueryCache(queryClient).catch(() => {})
 queryClient.getQueryCache().subscribe(() => {
   scheduleQueryCacheSave(queryClient)
 })
 
 function AppContent() {
   const { isDark } = useTheme()
+  const [cacheReady, setCacheReady] = useState(false)
+  const [videoFinished, setVideoFinished] = useState(false)
+  const videoRef = useRef<Video>(null)
 
   useEffect(() => {
     SplashScreen.hideAsync()
-    clearFailedDownloads().catch(() => {})
+    Promise.all([
+      restoreQueryCache(queryClient).catch(() => {}),
+      clearFailedDownloads().catch(() => {}),
+    ]).finally(() => setCacheReady(true))
   }, [])
+
+  const showApp = cacheReady && videoFinished
 
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }}>
+
+      {/* Splash video — shown while cache loads and video plays */}
+      {!showApp && (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000' }]}>
+          <Video
+            ref={videoRef}
+            source={require('../../assets/splash-video.mp4')}
+            style={StyleSheet.absoluteFill}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay
+            isMuted
+            onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+              if (status.isLoaded && status.didJustFinish) setVideoFinished(true)
+            }}
+            onError={() => setVideoFinished(true)}
+          />
+        </View>
+      )}
+
+      {/* App only mounts after video ends + cache is restored */}
+      {showApp && <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
@@ -101,7 +134,7 @@ function AppContent() {
           <Stack.Screen name="student-area" options={{ presentation: 'card' }} />
           {/* Onboarding */}
           <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-        </Stack>
+        </Stack>}
     </>
   )
 }
