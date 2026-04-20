@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Video, ResizeMode, type AVPlaybackStatus } from 'expo-av'
+import { Asset } from 'expo-asset'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -36,18 +37,40 @@ queryClient.getQueryCache().subscribe(() => {
   scheduleQueryCacheSave(queryClient)
 })
 
+const VIDEO_DURATION_MS = 3500 // video is 3.4s, +100ms buffer
+const splashVideoAsset = Asset.fromModule(require('../../assets/splash-video.mp4'))
+
 function AppContent() {
   const { isDark } = useTheme()
   const [cacheReady, setCacheReady] = useState(false)
+  const [videoUri, setVideoUri] = useState<string | null>(null)
   const [videoFinished, setVideoFinished] = useState(false)
   const videoRef = useRef<Video>(null)
+  const finishedRef = useRef(false)
+
+  const markFinished = () => {
+    if (finishedRef.current) return
+    finishedRef.current = true
+    setVideoFinished(true)
+  }
 
   useEffect(() => {
     SplashScreen.hideAsync()
+
+    // Preload video asset to get a local URI, then start fallback timer
+    splashVideoAsset.downloadAsync().then(() => {
+      setVideoUri(splashVideoAsset.localUri ?? splashVideoAsset.uri)
+    }).catch(() => markFinished())
+
+    // Fallback: advance after video duration even if callbacks don't fire
+    const timer = setTimeout(markFinished, VIDEO_DURATION_MS)
+
     Promise.all([
       restoreQueryCache(queryClient).catch(() => {}),
       clearFailedDownloads().catch(() => {}),
     ]).finally(() => setCacheReady(true))
+
+    return () => clearTimeout(timer)
   }, [])
 
   const showApp = cacheReady && videoFinished
@@ -59,18 +82,20 @@ function AppContent() {
       {/* Splash video — shown while cache loads and video plays */}
       {!showApp && (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000' }]}>
-          <Video
-            ref={videoRef}
-            source={require('../../assets/splash-video.mp4')}
-            style={StyleSheet.absoluteFill}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay
-            isMuted
-            onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
-              if (status.isLoaded && status.didJustFinish) setVideoFinished(true)
-            }}
-            onError={() => setVideoFinished(true)}
-          />
+          {videoUri && (
+            <Video
+              ref={videoRef}
+              source={{ uri: videoUri }}
+              style={StyleSheet.absoluteFill}
+              resizeMode={ResizeMode.COVER}
+              shouldPlay
+              isMuted
+              onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+                if (status.isLoaded && status.didJustFinish) markFinished()
+              }}
+              onError={markFinished}
+            />
+          )}
         </View>
       )}
 
