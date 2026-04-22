@@ -14,6 +14,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
 import { DownloadAllButton } from '@/components/DownloadAllButton'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { useIsOnline } from '@/hooks/useIsOnline'
 
 export default function CourseDetailScreen() {
   const { id, fromPackage } = useLocalSearchParams<{ id: string; fromPackage?: string }>()
@@ -23,8 +24,9 @@ export default function CourseDetailScreen() {
   const [reviewText, setReviewText] = useState('')
 
   const colors = useThemeColors()
+  const isOnline = useIsOnline()
   const { user } = useAuthContext()
-  const { data: course, isLoading } = useCourseDetail(id!)
+  const { data: course, isLoading, isError, refetch } = useCourseDetail(id!)
   const { data: modules } = useCourseModules(id!)
   const { data: reviews } = useCourseReviews(id!)
   const { data: isEnrolled } = useIsEnrolled(id!)
@@ -32,10 +34,84 @@ export default function CourseDetailScreen() {
   const { data: hasReviewed } = useHasReviewedCourse(id!)
 
   if (isLoading) return <LoadingSpinner />
-  if (!course) return null
+  if (!course || isError) {
+    return (
+      <SafeAreaView className="flex-1 bg-dark-bg">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="m-4 w-10 h-10 rounded-full bg-dark-surfaceLight items-center justify-center"
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View className="flex-1 items-center justify-center px-8">
+          <Ionicons name="wifi-off-outline" size={52} color={colors.textMuted} />
+          <Text className="text-darkText text-lg font-bold mt-5 text-center">
+            Sem conexão com a internet
+          </Text>
+          <Text className="text-darkText-secondary text-sm mt-2 text-center leading-6">
+            Não foi possível carregar as informações do curso. Verifique sua conexão e tente novamente.
+          </Text>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            className="mt-7 bg-primary rounded-2xl px-8 py-3.5"
+          >
+            <Text className="text-white font-bold text-sm">Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    )
+  }
 
   const professor = course.professor as any
   const totalAulas = modules?.reduce((acc, m) => acc + ((m.aulas as any[])?.length ?? 0), 0) ?? 0
+
+  const tabs = [
+    { key: 'info' as const, label: t('courses.description') },
+    { key: 'modules' as const, label: t('courses.modules') },
+    ...(isOnline ? [{ key: 'reviews' as const, label: t('courses.reviews') }] : []),
+    ...(isEnrolled ? [{ key: 'chat' as const, label: 'Chat' }] : []),
+  ]
+
+  const TabBar = () => (
+    <View className="flex-row border-b border-darkBorder-subtle px-4">
+      {tabs.map((tab) => (
+        <TouchableOpacity
+          key={tab.key}
+          onPress={() => setActiveTab(tab.key)}
+          className={`pb-3.5 mr-6 ${activeTab === tab.key ? 'border-b-2 border-accent' : ''}`}
+        >
+          <Text className={`text-sm font-semibold ${activeTab === tab.key ? 'text-accent' : 'text-darkText-muted'}`}>
+            {tab.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  )
+
+  // Chat tab gets its own full-screen layout with KeyboardAvoidingView
+  if (activeTab === 'chat' && isEnrolled && professor) {
+    return (
+      <SafeAreaView className="flex-1 bg-dark-bg">
+        <View className="flex-row items-center px-4 py-3 border-b border-darkBorder-subtle gap-3">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-9 h-9 rounded-full bg-dark-surfaceLight items-center justify-center"
+          >
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
+          </TouchableOpacity>
+          <Text className="text-base font-bold text-darkText flex-1" numberOfLines={1}>
+            {course.nome}
+          </Text>
+        </View>
+        <TabBar />
+        <CourseChatSection
+          courseId={id!}
+          professorUserId={professor.user_id}
+          professorName={professor.nome_professor}
+        />
+      </SafeAreaView>
+    )
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">
@@ -140,23 +216,8 @@ export default function CourseDetailScreen() {
         </View>
 
         {/* Tabs */}
-        <View className="flex-row border-b border-darkBorder-subtle px-4 mt-3">
-          {([
-            { key: 'info' as const, label: t('courses.description') },
-            { key: 'modules' as const, label: t('courses.modules') },
-            { key: 'reviews' as const, label: t('courses.reviews') },
-            ...(isEnrolled ? [{ key: 'chat' as const, label: 'Chat' }] : []),
-          ]).map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              onPress={() => setActiveTab(tab.key)}
-              className={`pb-3.5 mr-6 ${activeTab === tab.key ? 'border-b-2 border-accent' : ''}`}
-            >
-              <Text className={`text-sm font-semibold ${activeTab === tab.key ? 'text-accent' : 'text-darkText-muted'}`}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View className="mt-3">
+          <TabBar />
         </View>
 
         {/* Tab content */}
@@ -278,10 +339,6 @@ export default function CourseDetailScreen() {
               )}
             </View>
           )}
-
-          {activeTab === 'chat' && isEnrolled && professor && (
-            <CourseChatSection courseId={id!} professorUserId={professor.user_id} professorName={professor.nome_professor} />
-          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -325,13 +382,17 @@ function ChatMessages({ chatId, professorName }: { chatId: string; professorName
   }, [messages?.length])
 
   return (
-    <View style={{ height: 400 }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       <FlatList
         ref={flatListRef}
         data={messages ?? []}
         keyExtractor={(item) => item.id}
-        className="flex-1"
-        contentContainerStyle={{ padding: 8 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 8, flexGrow: 1, justifyContent: 'flex-end' }}
         renderItem={({ item }) => {
           const isMe = item.user_id === user?.id
           return (
@@ -349,7 +410,7 @@ function ChatMessages({ chatId, professorName }: { chatId: string; professorName
           </View>
         }
       />
-      <View className="flex-row items-center bg-dark-surfaceLight rounded-2xl px-3 py-2 mt-2">
+      <View className="flex-row items-center bg-dark-surfaceLight rounded-2xl px-3 py-2 mx-4 mb-4 mt-2">
         <TextInput
           className="flex-1 text-sm text-darkText"
           placeholder="Digite sua mensagem..."
@@ -371,6 +432,6 @@ function ChatMessages({ chatId, professorName }: { chatId: string; professorName
           <Ionicons name="send" size={20} color={text.trim() ? '#3b82f6' : colors.textSecondary} />
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   )
 }

@@ -43,7 +43,7 @@ export default function MyCoursesScreen() {
               colors={['#2563eb']}
             />
           }
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           renderItem={({ item }) => {
             const curso = item.curso as any
             if (!curso) return null

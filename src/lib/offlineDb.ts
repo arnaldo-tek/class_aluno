@@ -18,6 +18,43 @@ export interface DownloadRecord {
   created_at: string
 }
 
+export interface OfflineCourseRecord {
+  id: string
+  nome: string
+  imagem: string | null
+  descricao: string | null
+  preco: number | null
+  taxa_superclasse: number | null
+  average_rating: number | null
+  professor_id: string | null
+  professor_user_id: string | null
+  professor_nome: string | null
+  professor_foto: string | null
+  snapshot_at: string
+}
+
+export interface OfflineModuleRecord {
+  id: string
+  course_id: string
+  nome: string
+  sort_order: number
+}
+
+export interface OfflineLessonRecord {
+  id: string
+  module_id: string
+  course_id: string
+  titulo: string
+  descricao: string | null
+  sort_order: number
+  is_liberado: number
+  is_degustacao: number
+  imagem_capa: string | null
+  pdf_url: string | null
+  video_url: string | null
+  texto_aula: string | null
+}
+
 let db: any = null
 
 async function getDb(): Promise<any> {
@@ -43,6 +80,48 @@ async function getDb(): Promise<any> {
     CREATE INDEX IF NOT EXISTS idx_downloads_lesson ON downloads(lesson_id, content_type);
     CREATE INDEX IF NOT EXISTS idx_downloads_course ON downloads(course_id);
     CREATE INDEX IF NOT EXISTS idx_downloads_status ON downloads(status);
+
+    CREATE TABLE IF NOT EXISTS offline_courses (
+      id TEXT PRIMARY KEY,
+      nome TEXT NOT NULL,
+      imagem TEXT,
+      descricao TEXT,
+      preco REAL,
+      taxa_superclasse REAL,
+      average_rating REAL,
+      professor_id TEXT,
+      professor_user_id TEXT,
+      professor_nome TEXT,
+      professor_foto TEXT,
+      snapshot_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS offline_modules (
+      id TEXT PRIMARY KEY,
+      course_id TEXT NOT NULL,
+      nome TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY (course_id) REFERENCES offline_courses(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_offline_modules_course ON offline_modules(course_id);
+
+    CREATE TABLE IF NOT EXISTS offline_lessons (
+      id TEXT PRIMARY KEY,
+      module_id TEXT NOT NULL,
+      course_id TEXT NOT NULL,
+      titulo TEXT NOT NULL,
+      descricao TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_liberado INTEGER NOT NULL DEFAULT 0,
+      is_degustacao INTEGER NOT NULL DEFAULT 0,
+      imagem_capa TEXT,
+      pdf_url TEXT,
+      video_url TEXT,
+      texto_aula TEXT,
+      FOREIGN KEY (module_id) REFERENCES offline_modules(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_offline_lessons_module ON offline_lessons(module_id);
+    CREATE INDEX IF NOT EXISTS idx_offline_lessons_course ON offline_lessons(course_id);
   `)
   return db
 }
@@ -121,6 +200,10 @@ export async function deleteDownloadsByCourse(courseId: string): Promise<string[
     `SELECT file_uri FROM downloads WHERE course_id = ?`, courseId,
   )
   await database.runAsync(`DELETE FROM downloads WHERE course_id = ?`, courseId)
+  // Limpa metadata offline (manualmente, pois CASCADE pode não ser ativado)
+  await database.runAsync(`DELETE FROM offline_lessons WHERE course_id = ?`, courseId)
+  await database.runAsync(`DELETE FROM offline_modules WHERE course_id = ?`, courseId)
+  await database.runAsync(`DELETE FROM offline_courses WHERE id = ?`, courseId)
   return records.filter((r: any) => r.file_uri).map((r: any) => r.file_uri!)
 }
 
@@ -138,17 +221,151 @@ export async function updateFileSize(id: string, fileSize: number): Promise<void
 export async function getStorageUsed(): Promise<number> {
   if (Platform.OS === 'web') return 0
   const database = await getDb()
-  const result = await database.getFirstAsync<{ total: number }>(
+  const result = (await database.getFirstAsync(
     `SELECT COALESCE(SUM(file_size), 0) as total FROM downloads WHERE status = 'completed'`,
-  )
+  )) as { total: number } | null
   return result?.total ?? 0
 }
 
 export async function getDownloadCount(): Promise<number> {
   if (Platform.OS === 'web') return 0
   const database = await getDb()
-  const result = await database.getFirstAsync<{ count: number }>(
+  const result = (await database.getFirstAsync(
     `SELECT COUNT(*) as count FROM downloads WHERE status = 'completed'`,
-  )
+  )) as { count: number } | null
   return result?.count ?? 0
+}
+
+// ========================
+// Offline metadata CRUD
+// ========================
+
+export async function upsertOfflineCourse(record: Omit<OfflineCourseRecord, 'snapshot_at'>): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  await database.runAsync(
+    `INSERT INTO offline_courses
+      (id, nome, imagem, descricao, preco, taxa_superclasse, average_rating,
+       professor_id, professor_user_id, professor_nome, professor_foto)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       nome = excluded.nome,
+       imagem = excluded.imagem,
+       descricao = excluded.descricao,
+       preco = excluded.preco,
+       taxa_superclasse = excluded.taxa_superclasse,
+       average_rating = excluded.average_rating,
+       professor_id = excluded.professor_id,
+       professor_user_id = excluded.professor_user_id,
+       professor_nome = excluded.professor_nome,
+       professor_foto = excluded.professor_foto,
+       snapshot_at = datetime('now')`,
+    record.id, record.nome, record.imagem ?? null, record.descricao ?? null,
+    record.preco ?? null, record.taxa_superclasse ?? null, record.average_rating ?? null,
+    record.professor_id ?? null, record.professor_user_id ?? null,
+    record.professor_nome ?? null, record.professor_foto ?? null,
+  )
+}
+
+export async function upsertOfflineModule(record: OfflineModuleRecord): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  await database.runAsync(
+    `INSERT INTO offline_modules (id, course_id, nome, sort_order)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       course_id = excluded.course_id,
+       nome = excluded.nome,
+       sort_order = excluded.sort_order`,
+    record.id, record.course_id, record.nome, record.sort_order,
+  )
+}
+
+export async function upsertOfflineLesson(record: OfflineLessonRecord): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  await database.runAsync(
+    `INSERT INTO offline_lessons
+      (id, module_id, course_id, titulo, descricao, sort_order,
+       is_liberado, is_degustacao, imagem_capa, pdf_url, video_url, texto_aula)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       module_id = excluded.module_id,
+       course_id = excluded.course_id,
+       titulo = excluded.titulo,
+       descricao = excluded.descricao,
+       sort_order = excluded.sort_order,
+       is_liberado = excluded.is_liberado,
+       is_degustacao = excluded.is_degustacao,
+       imagem_capa = excluded.imagem_capa,
+       pdf_url = excluded.pdf_url,
+       video_url = excluded.video_url,
+       texto_aula = excluded.texto_aula`,
+    record.id, record.module_id, record.course_id, record.titulo,
+    record.descricao ?? null, record.sort_order,
+    record.is_liberado, record.is_degustacao,
+    record.imagem_capa ?? null, record.pdf_url ?? null,
+    record.video_url ?? null, record.texto_aula ?? null,
+  )
+}
+
+export async function getOfflineCourse(courseId: string): Promise<OfflineCourseRecord | null> {
+  if (Platform.OS === 'web') return null
+  const database = await getDb()
+  return database.getFirstAsync(
+    `SELECT * FROM offline_courses WHERE id = ?`, courseId,
+  ) as Promise<OfflineCourseRecord | null>
+}
+
+export async function getOfflineCoursesWithDownloads(): Promise<OfflineCourseRecord[]> {
+  if (Platform.OS === 'web') return []
+  const database = await getDb()
+  return database.getAllAsync(
+    `SELECT DISTINCT oc.* FROM offline_courses oc
+     INNER JOIN downloads d ON d.course_id = oc.id
+     WHERE d.status = 'completed'`,
+  ) as Promise<OfflineCourseRecord[]>
+}
+
+export async function getOfflineModulesWithLessons(courseId: string): Promise<
+  Array<OfflineModuleRecord & { aulas: OfflineLessonRecord[] }>
+> {
+  if (Platform.OS === 'web') return []
+  const database = await getDb()
+  const modules = (await database.getAllAsync(
+    `SELECT * FROM offline_modules WHERE course_id = ? ORDER BY sort_order`, courseId,
+  )) as OfflineModuleRecord[]
+  const lessons = (await database.getAllAsync(
+    `SELECT * FROM offline_lessons WHERE course_id = ? ORDER BY sort_order`, courseId,
+  )) as OfflineLessonRecord[]
+  return modules.map((mod: OfflineModuleRecord) => ({
+    ...mod,
+    aulas: lessons.filter((l: OfflineLessonRecord) => l.module_id === mod.id),
+  }))
+}
+
+export async function getOfflineLesson(lessonId: string): Promise<OfflineLessonRecord | null> {
+  if (Platform.OS === 'web') return null
+  const database = await getDb()
+  return database.getFirstAsync(
+    `SELECT * FROM offline_lessons WHERE id = ?`, lessonId,
+  ) as Promise<OfflineLessonRecord | null>
+}
+
+export async function deleteOfflineCourse(courseId: string): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  // Manually delete children first (expo-sqlite may not enforce FK CASCADE)
+  await database.runAsync(`DELETE FROM offline_lessons WHERE course_id = ?`, courseId)
+  await database.runAsync(`DELETE FROM offline_modules WHERE course_id = ?`, courseId)
+  await database.runAsync(`DELETE FROM offline_courses WHERE id = ?`, courseId)
+}
+
+export async function courseHasCompletedDownload(courseId: string): Promise<boolean> {
+  if (Platform.OS === 'web') return false
+  const database = await getDb()
+  const result = (await database.getFirstAsync(
+    `SELECT COUNT(*) as count FROM downloads WHERE course_id = ? AND status = 'completed'`, courseId,
+  )) as { count: number } | null
+  return (result?.count ?? 0) > 0
 }

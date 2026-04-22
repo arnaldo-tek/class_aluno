@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import QRCode from 'react-native-qrcode-svg'
-import { useCheckoutPix, useUpdateCustomerDocument } from '@/hooks/usePayment'
+import { useCheckoutPix, useUpdateCustomerDocument, usePixOrderStatus, useVerifyPixPayment } from '@/hooks/usePayment'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function PixCheckoutScreen() {
@@ -22,11 +22,68 @@ export default function PixCheckoutScreen() {
   const colors = useThemeColors()
   const checkoutPix = useCheckoutPix()
   const updateDoc = useUpdateCustomerDocument()
+  const verifyPayment = useVerifyPixPayment()
 
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [timeLeft, setTimeLeft] = useState(1800) // 30 minutes
+
+  const { data: paymentStatus } = usePixOrderStatus(orderId)
+  const navigatedRef = useRef(false)
+
+  function navigateToSuccess() {
+    if (navigatedRef.current) return
+    navigatedRef.current = true
+    router.replace({
+      pathname: '/checkout/success',
+      params: {
+        curso_id: params.curso_id,
+        pacote_id: params.pacote_id,
+        course_name: params.course_name,
+      },
+    })
+  }
+
+  // Navigate away when DB polling detects paid (webhook path)
+  useEffect(() => {
+    if (paymentStatus === 'paid') {
+      navigateToSuccess()
+    }
+  }, [paymentStatus])
+
+  // Active polling via Pagar.me API directly — doesn't depend on webhook
+  useEffect(() => {
+    if (!orderId || !qrCode || timeLeft <= 0) return
+
+    const interval = setInterval(async () => {
+      if (navigatedRef.current) return
+      try {
+        const result = await verifyPayment.mutateAsync(orderId)
+        if (result.status === 'paid') {
+          navigateToSuccess()
+        }
+      } catch {
+        // ignore errors during background polling
+      }
+    }, 10000) // check every 10s
+
+    return () => clearInterval(interval)
+  }, [orderId, qrCode, timeLeft > 0])
+
+  async function handleVerifyPayment() {
+    if (!orderId) return
+    try {
+      const result = await verifyPayment.mutateAsync(orderId)
+      if (result.status === 'paid') {
+        navigateToSuccess()
+      } else {
+        Alert.alert('Pagamento pendente', 'Ainda não identificamos seu pagamento. Aguarde alguns instantes e tente novamente.')
+      }
+    } catch {
+      Alert.alert('Erro', 'Não foi possível verificar o pagamento. Tente novamente.')
+    }
+  }
 
   const amountCents = parseInt(params.amount ?? '0', 10)
   const amountBRL = amountCents / 100
@@ -138,11 +195,26 @@ export default function PixCheckoutScreen() {
 
             <TouchableOpacity
               onPress={handleCopy}
-              className="w-full bg-primary rounded-2xl py-3.5 flex-row items-center justify-center mb-6"
+              className="w-full bg-primary rounded-2xl py-3.5 flex-row items-center justify-center mb-3"
             >
               <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={20} color={colors.text} />
               <Text className="text-darkText-inverse font-semibold ml-2">
                 {copied ? 'Código copiado!' : 'Copiar código PIX'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleVerifyPayment}
+              disabled={verifyPayment.isPending}
+              className="w-full bg-dark-surfaceLight rounded-2xl py-3.5 flex-row items-center justify-center mb-6 border border-darkBorder"
+            >
+              {verifyPayment.isPending ? (
+                <ActivityIndicator size="small" color={colors.textSecondary} />
+              ) : (
+                <Ionicons name="refresh-circle-outline" size={20} color={colors.textSecondary} />
+              )}
+              <Text className="text-darkText-secondary font-semibold ml-2">
+                {verifyPayment.isPending ? 'Verificando...' : 'Já paguei, verificar acesso'}
               </Text>
             </TouchableOpacity>
 

@@ -22,6 +22,17 @@ serve(async (req) => {
 
     if (event === 'order.paid' || event === 'order.payment_confirmed') {
       await handleOrderPaid(supabase, data)
+    } else if (event === 'charge.paid') {
+      // PIX payments arrive as charge.paid
+      console.log('charge.paid payload keys:', Object.keys(data))
+      console.log('charge.paid data.order:', JSON.stringify(data.order))
+      console.log('charge.paid data.order_id:', data.order_id)
+      const orderId = (data.order as any)?.id ?? data.order_id
+      if (orderId) {
+        await handleOrderPaid(supabase, { id: orderId })
+      } else {
+        console.warn('charge.paid: no order reference found in payload', JSON.stringify(data))
+      }
     } else if (event === 'order.payment_failed') {
       await handleOrderFailed(supabase, data)
     } else if (event === 'order.canceled') {
@@ -52,7 +63,13 @@ async function handleOrderPaid(supabase: any, data: Record<string, any>) {
     .maybeSingle()
 
   if (!mov) {
-    console.warn(`No movimentacao found for order ${orderId}`)
+    // Log all recent pending movimentacoes to help diagnose ID mismatch
+    const { data: recent } = await supabase
+      .from('movimentacoes')
+      .select('pagarme_order_id, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5)
+    console.warn(`No movimentacao found for order ${orderId}. Recent records:`, JSON.stringify(recent))
     return
   }
 

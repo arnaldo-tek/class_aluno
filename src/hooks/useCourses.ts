@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/contexts/AuthContext'
+import { useIsOnline } from './useIsOnline'
+import { getOfflineCourse, getOfflineModulesWithLessons } from '@/lib/offlineDb'
 
 export function useFeaturedCourses() {
   return useQuery({
@@ -153,9 +155,39 @@ export function useCourseFilterOptions(field: FilterField, parentFilters?: Recor
 }
 
 export function useCourseDetail(courseId: string) {
+  const isOnline = useIsOnline()
   return useQuery({
-    queryKey: ['course', courseId],
+    queryKey: ['course', courseId, isOnline],
+    networkMode: 'offlineFirst',
     queryFn: async () => {
+      if (!isOnline) {
+        const oc = await getOfflineCourse(courseId)
+        if (!oc) return null
+        return {
+          id: oc.id,
+          nome: oc.nome,
+          imagem: oc.imagem,
+          descricao: oc.descricao,
+          preco: oc.preco,
+          taxa_superclasse: oc.taxa_superclasse,
+          average_rating: oc.average_rating,
+          is_publicado: true,
+          is_encerrado: false,
+          is_degustacao: false,
+          professor: {
+            id: oc.professor_id,
+            user_id: oc.professor_user_id,
+            nome_professor: oc.professor_nome,
+            foto_perfil: oc.professor_foto,
+            average_rating: null,
+            descricao: null,
+            approval_status: 'aprovado',
+            is_blocked: false,
+          },
+          categoria: null,
+        } as any
+      }
+
       const { data, error } = await supabase
         .from('cursos')
         .select(`
@@ -176,9 +208,27 @@ export function useCourseDetail(courseId: string) {
 }
 
 export function useCourseModules(courseId: string) {
+  const isOnline = useIsOnline()
   return useQuery({
-    queryKey: ['course-modules', courseId],
+    queryKey: ['course-modules', courseId, isOnline],
+    networkMode: 'offlineFirst',
     queryFn: async () => {
+      if (!isOnline) {
+        const modules = await getOfflineModulesWithLessons(courseId)
+        return modules.map((mod) => ({
+          id: mod.id,
+          nome: mod.nome,
+          sort_order: mod.sort_order,
+          aulas: mod.aulas.map((a) => ({
+            id: a.id,
+            titulo: a.titulo,
+            is_liberado: a.is_liberado === 1,
+            is_degustacao: a.is_degustacao === 1,
+            sort_order: a.sort_order,
+          })),
+        }))
+      }
+
       const { data, error } = await supabase
         .from('modulos')
         .select('id, nome, sort_order, aulas:aulas(id, titulo, is_liberado, is_degustacao, sort_order)')

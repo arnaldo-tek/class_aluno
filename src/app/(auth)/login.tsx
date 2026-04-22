@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { Image } from 'expo-image'
 import { Link, useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { signIn, signOut } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { t } from '@/i18n'
@@ -12,6 +13,7 @@ import { t } from '@/i18n'
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -81,15 +83,20 @@ export default function LoginScreen() {
             <Text className="text-sm font-medium text-darkText-secondary mb-1.5">
               {t('auth.password')}
             </Text>
-            <TextInput
-              className="bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4 py-3.5 text-base text-darkText"
-              placeholder="Sua senha"
-              placeholderTextColor="#9ca3af"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="password"
-            />
+            <View className="flex-row items-center bg-dark-surfaceLight border border-darkBorder rounded-2xl px-4">
+              <TextInput
+                className="flex-1 py-3.5 text-base text-darkText"
+                placeholder="Sua senha"
+                placeholderTextColor="#9ca3af"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoComplete="password"
+              />
+              <TouchableOpacity onPress={() => setShowPassword((v) => !v)} className="pl-2">
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9ca3af" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {error ? (

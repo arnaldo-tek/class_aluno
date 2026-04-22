@@ -7,9 +7,11 @@ import {
   getDownload,
   deleteDownload as dbDelete,
   getDownloadsByCourse,
+  courseHasCompletedDownload,
   type ContentType,
   type DownloadRecord,
 } from './offlineDb'
+import { snapshotCourse } from './offlineSnapshot'
 
 const OFFLINE_DIR = `${FileSystem.documentDirectory}offline/`
 const MAX_CONCURRENT = 2
@@ -129,6 +131,14 @@ export async function startDownload(params: {
   if (existing?.status === 'completed') return id
   if (existing?.status === 'downloading') return id
 
+  // Snapshot do curso na primeira vez que uma aula é baixada individualmente
+  const hasDownloaded = await courseHasCompletedDownload(params.courseId)
+  if (!hasDownloaded) {
+    await snapshotCourse(params.courseId).catch((e) =>
+      console.warn('[downloadManager] Snapshot falhou:', e),
+    )
+  }
+
   await insertDownload({
     id,
     lesson_id: params.lessonId,
@@ -195,6 +205,11 @@ export async function downloadAllCourse(params: {
     pdfUrl?: string
   }>
 }) {
+  // Salva metadata do curso antes de baixar arquivos
+  await snapshotCourse(params.courseId).catch((e) =>
+    console.warn('[downloadManager] Snapshot falhou:', e),
+  )
+
   for (const lesson of params.lessons) {
     if (lesson.videoUrl) {
       await startDownload({

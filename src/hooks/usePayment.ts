@@ -42,7 +42,9 @@ interface PixResult extends OrderResult {
 
 // --- Edge Function calls ---
 
-async function invokeEdgeFunction<T>(name: string, body: unknown): Promise<T> {
+async function invokeEdgeFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
+  await supabase.auth.getSession() // triggers auto-refresh if token is near expiry
+
   const { data, error } = await supabase.functions.invoke(name, {
     body,
   })
@@ -158,6 +160,28 @@ export function useCheckoutPix() {
       qc.invalidateQueries({ queryKey: ['purchase-history'] })
       qc.invalidateQueries({ queryKey: ['my-packages'] })
       qc.invalidateQueries({ queryKey: ['package-access'] })
+      qc.invalidateQueries({ queryKey: ['enrollment-check'] })
+    },
+  })
+}
+
+/** Verify PIX payment status directly against Pagar.me (webhook fallback) */
+export function useVerifyPixPayment() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (orderId: string) =>
+      invokeEdgeFunction<{ status: string; already_enrolled: boolean }>(
+        'payment-verify-pix',
+        { order_id: orderId },
+      ),
+    onSuccess: (data) => {
+      if (data.status === 'paid') {
+        qc.invalidateQueries({ queryKey: ['enrollment-check'] })
+        qc.invalidateQueries({ queryKey: ['my-enrollments'] })
+        qc.invalidateQueries({ queryKey: ['purchase-history'] })
+        qc.invalidateQueries({ queryKey: ['pix-order-status'] })
+      }
     },
   })
 }
@@ -184,6 +208,32 @@ export function useValidateCoupon() {
 
       return data
     },
+  })
+}
+
+/** Poll movimentacoes until PIX order is paid or expired */
+export function usePixOrderStatus(orderId: string | null) {
+  const { user } = useAuthContext()
+
+  return useQuery({
+    queryKey: ['pix-order-status', orderId],
+    queryFn: async () => {
+      if (!orderId || !user) return null
+      const { data } = await supabase
+        .from('movimentacoes')
+        .select('status')
+        .eq('pagarme_order_id', orderId)
+        .eq('user_id', user.id)
+        .maybeSingle()
+      return data?.status ?? null
+    },
+    enabled: !!orderId && !!user,
+    refetchInterval: (query) => {
+      const status = query.state.data
+      if (status === 'paid' || status === 'failed' || status === 'cancelled') return false
+      return 5000 // poll every 5s while pending
+    },
+    staleTime: 0,
   })
 }
 

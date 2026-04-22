@@ -1,11 +1,36 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/contexts/AuthContext'
+import { useIsOnline } from './useIsOnline'
+import { getOfflineLesson } from '@/lib/offlineDb'
 
 export function useLessonDetail(lessonId: string) {
+  const isOnline = useIsOnline()
   return useQuery({
-    queryKey: ['lesson', lessonId],
+    queryKey: ['lesson', lessonId, isOnline],
+    networkMode: 'offlineFirst',
     queryFn: async () => {
+      if (!isOnline) {
+        const ol = await getOfflineLesson(lessonId)
+        if (!ol) return null
+        return {
+          id: ol.id,
+          titulo: ol.titulo,
+          descricao: ol.descricao,
+          is_liberado: ol.is_liberado === 1,
+          is_degustacao: ol.is_degustacao === 1,
+          imagem_capa: ol.imagem_capa,
+          pdf: ol.pdf_url,
+          video_url: ol.video_url,
+          texto_aula: ol.texto_aula,
+          curso_id: ol.course_id,
+          modulo_id: ol.module_id,
+          curso: { id: ol.course_id, nome: null },
+          modulo: { id: ol.module_id, nome: null },
+          autor: null,
+        } as any
+      }
+
       const { data, error } = await supabase
         .from('aulas')
         .select(`

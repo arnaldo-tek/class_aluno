@@ -1,9 +1,20 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { View } from 'react-native'
+import { Platform, View } from 'react-native'
 import { useColorScheme as useNativeWindColorScheme, vars } from 'nativewind'
 import * as SecureStore from 'expo-secure-store'
 
 const THEME_KEY = 'theme_preference'
+
+const storage = {
+  getItem: (key: string) =>
+    Platform.OS === 'web'
+      ? Promise.resolve(localStorage.getItem(key))
+      : SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string) =>
+    Platform.OS === 'web'
+      ? Promise.resolve(localStorage.setItem(key, value))
+      : SecureStore.setItemAsync(key, value),
+}
 
 type ThemeContextType = {
   isDark: boolean
@@ -49,7 +60,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const { setColorScheme } = useNativeWindColorScheme()
 
   useEffect(() => {
-    SecureStore.getItemAsync(THEME_KEY).then((value) => {
+    storage.getItem(THEME_KEY).then((value) => {
       const dark = value === 'dark'
       setIsDark(dark)
       setColorScheme(dark ? 'dark' : 'light')
@@ -61,7 +72,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const newDark = !isDark
     setIsDark(newDark)
     setColorScheme(newDark ? 'dark' : 'light')
-    SecureStore.setItemAsync(THEME_KEY, newDark ? 'dark' : 'light')
+    storage.setItem(THEME_KEY, newDark ? 'dark' : 'light')
   }
 
   if (!loaded) return null
