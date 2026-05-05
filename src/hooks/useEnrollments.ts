@@ -73,10 +73,12 @@ export function useMyEnrollments() {
         (progress ?? []).map((p) => [p.curso_id, p]),
       )
 
-      return (enrollments ?? []).map((e) => ({
-        ...e,
-        progress: progressMap.get(e.curso?.id ?? '') ?? null,
-      }))
+      return (enrollments ?? [])
+        .filter((e) => !!e.curso)
+        .map((e) => ({
+          ...e,
+          progress: progressMap.get(e.curso?.id ?? '') ?? null,
+        }))
     },
     enabled: !!userId,
   })

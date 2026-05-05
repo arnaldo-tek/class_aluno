@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { Image } from 'expo-image'
 import { Link, useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { signUp } from '@/lib/auth'
 import { t } from '@/i18n'
 
@@ -13,12 +14,17 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   async function handleRegister() {
     if (!name || !email || !password) return
+    if (!acceptedTerms) {
+      setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade')
+      return
+    }
     if (password !== confirmPassword) {
       setError('As senhas nao coincidem')
       return
@@ -122,14 +128,37 @@ export default function RegisterScreen() {
             />
           </View>
 
+          {/* Aceite de Termos */}
+          <TouchableOpacity
+            onPress={() => setAcceptedTerms(v => !v)}
+            className="flex-row items-center gap-3 mt-2"
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={acceptedTerms ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={acceptedTerms ? '#6366f1' : '#9ca3af'}
+            />
+            <Text className="text-sm text-darkText-secondary flex-1 leading-5">
+              Li e aceito os{' '}
+              <Link href="/terms" asChild>
+                <Text className="text-accent font-semibold">Termos de Uso</Text>
+              </Link>
+              {' '}e a{' '}
+              <Link href="/terms" asChild>
+                <Text className="text-accent font-semibold">Política de Privacidade</Text>
+              </Link>
+            </Text>
+          </TouchableOpacity>
+
           {error ? (
             <Text className="text-sm text-error">{error}</Text>
           ) : null}
 
           <TouchableOpacity
             onPress={handleRegister}
-            disabled={loading}
-            className="bg-primary rounded-2xl py-4 items-center mt-2"
+            disabled={loading || !acceptedTerms}
+            className={`rounded-2xl py-4 items-center mt-2 ${!acceptedTerms ? 'bg-primary/40' : 'bg-primary'}`}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />

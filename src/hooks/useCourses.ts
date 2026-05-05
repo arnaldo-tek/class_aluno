@@ -8,11 +8,13 @@ export function useFeaturedCourses() {
   return useQuery({
     queryKey: ['featured-courses'],
     queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10)
       const { data, error } = await supabase
         .from('cursos')
         .select('id, nome, imagem, preco, taxa_superclasse, average_rating, professor:professor_profiles!inner(nome_professor, approval_status, is_blocked)')
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
+        .or(`data_encerramento.is.null,data_encerramento.gte.${today}`)
         .eq('professor.approval_status', 'aprovado')
         .eq('professor.is_blocked', false)
         .order('average_rating', { ascending: false })
@@ -48,11 +50,13 @@ export function useCourses(filters: CoursesFilter = {}) {
   return useQuery({
     queryKey: ['courses', search, categoriaId, estado, cidade, orgao, cargo, escolaridade, nivelId, disciplinaId, page],
     queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10)
       let query = supabase
         .from('cursos')
         .select('id, nome, imagem, preco, taxa_superclasse, average_rating, descricao, professor:professor_profiles!inner(nome_professor, approval_status, is_blocked)', { count: 'exact' })
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
+        .or(`data_encerramento.is.null,data_encerramento.gte.${today}`)
         .eq('professor.approval_status', 'aprovado')
         .eq('professor.is_blocked', false)
         .order('created_at', { ascending: false })
@@ -117,11 +121,13 @@ export function useCourseFilterOptions(field: FilterField, parentFilters?: Recor
         : isNivel
         ? 'nivel_id, nivel:niveis(nome)'
         : field
+      const today = new Date().toISOString().slice(0, 10)
       let query = supabase
         .from('cursos')
         .select(selectField)
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
+        .or(`data_encerramento.is.null,data_encerramento.gte.${today}`)
         .not(field, 'is', null)
 
       if (categoriaId) query = query.eq('categoria_id', categoriaId)
