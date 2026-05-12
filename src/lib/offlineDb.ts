@@ -55,6 +55,45 @@ export interface OfflineLessonRecord {
   texto_aula: string | null
 }
 
+export interface OfflineAudioRecord {
+  id: string
+  lesson_id: string
+  titulo: string | null
+  audio_url: string
+  created_at: string
+}
+
+export interface OfflineTextRecord {
+  id: string
+  lesson_id: string
+  texto: string
+}
+
+export interface OfflineQuestionRecord {
+  id: string
+  lesson_id: string
+  pergunta: string
+  resposta: string
+  alternativas: string | null
+  video: string | null
+  resposta_escrita: number
+  sort_order: number
+}
+
+export interface OfflineFlashcardRecord {
+  id: string
+  lesson_id: string
+  pergunta: string
+  resposta: string
+  professor_id: string | null
+}
+
+export interface OfflineProgressRecord {
+  lesson_id: string
+  user_id: string
+  is_completed: number
+}
+
 let db: any = null
 
 async function getDb(): Promise<any> {
@@ -122,6 +161,50 @@ async function getDb(): Promise<any> {
     );
     CREATE INDEX IF NOT EXISTS idx_offline_lessons_module ON offline_lessons(module_id);
     CREATE INDEX IF NOT EXISTS idx_offline_lessons_course ON offline_lessons(course_id);
+
+    CREATE TABLE IF NOT EXISTS offline_audios (
+      id TEXT PRIMARY KEY,
+      lesson_id TEXT NOT NULL,
+      titulo TEXT,
+      audio_url TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_offline_audios_lesson ON offline_audios(lesson_id);
+
+    CREATE TABLE IF NOT EXISTS offline_texts (
+      id TEXT PRIMARY KEY,
+      lesson_id TEXT NOT NULL,
+      texto TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_offline_texts_lesson ON offline_texts(lesson_id);
+
+    CREATE TABLE IF NOT EXISTS offline_questions (
+      id TEXT PRIMARY KEY,
+      lesson_id TEXT NOT NULL,
+      pergunta TEXT NOT NULL,
+      resposta TEXT NOT NULL,
+      alternativas TEXT,
+      video TEXT,
+      resposta_escrita INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_offline_questions_lesson ON offline_questions(lesson_id);
+
+    CREATE TABLE IF NOT EXISTS offline_flashcards (
+      id TEXT PRIMARY KEY,
+      lesson_id TEXT NOT NULL,
+      pergunta TEXT NOT NULL,
+      resposta TEXT NOT NULL,
+      professor_id TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_offline_flashcards_lesson ON offline_flashcards(lesson_id);
+
+    CREATE TABLE IF NOT EXISTS offline_progress (
+      lesson_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      is_completed INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (lesson_id, user_id)
+    );
   `)
   return db
 }
@@ -201,6 +284,12 @@ export async function deleteDownloadsByCourse(courseId: string): Promise<string[
   )
   await database.runAsync(`DELETE FROM downloads WHERE course_id = ?`, courseId)
   // Limpa metadata offline (manualmente, pois CASCADE pode não ser ativado)
+  const lessonIds = `SELECT id FROM offline_lessons WHERE course_id = ?`
+  await database.runAsync(`DELETE FROM offline_audios WHERE lesson_id IN (${lessonIds})`, courseId)
+  await database.runAsync(`DELETE FROM offline_texts WHERE lesson_id IN (${lessonIds})`, courseId)
+  await database.runAsync(`DELETE FROM offline_questions WHERE lesson_id IN (${lessonIds})`, courseId)
+  await database.runAsync(`DELETE FROM offline_flashcards WHERE lesson_id IN (${lessonIds})`, courseId)
+  await database.runAsync(`DELETE FROM offline_progress WHERE lesson_id IN (${lessonIds})`, courseId)
   await database.runAsync(`DELETE FROM offline_lessons WHERE course_id = ?`, courseId)
   await database.runAsync(`DELETE FROM offline_modules WHERE course_id = ?`, courseId)
   await database.runAsync(`DELETE FROM offline_courses WHERE id = ?`, courseId)
@@ -344,6 +433,28 @@ export async function getOfflineModulesWithLessons(courseId: string): Promise<
   }))
 }
 
+export async function upsertOfflineAudio(record: Omit<OfflineAudioRecord, 'created_at'>): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  await database.runAsync(
+    `INSERT INTO offline_audios (id, lesson_id, titulo, audio_url)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       lesson_id = excluded.lesson_id,
+       titulo = excluded.titulo,
+       audio_url = excluded.audio_url`,
+    record.id, record.lesson_id, record.titulo ?? null, record.audio_url,
+  )
+}
+
+export async function getOfflineAudios(lessonId: string): Promise<OfflineAudioRecord[]> {
+  if (Platform.OS === 'web') return []
+  const database = await getDb()
+  return database.getAllAsync<OfflineAudioRecord>(
+    `SELECT * FROM offline_audios WHERE lesson_id = ? ORDER BY created_at`, lessonId,
+  )
+}
+
 export async function getOfflineLesson(lessonId: string): Promise<OfflineLessonRecord | null> {
   if (Platform.OS === 'web') return null
   const database = await getDb()
@@ -352,13 +463,113 @@ export async function getOfflineLesson(lessonId: string): Promise<OfflineLessonR
   ) as Promise<OfflineLessonRecord | null>
 }
 
+export async function upsertOfflineText(record: OfflineTextRecord): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  await database.runAsync(
+    `INSERT INTO offline_texts (id, lesson_id, texto) VALUES (?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET lesson_id = excluded.lesson_id, texto = excluded.texto`,
+    record.id, record.lesson_id, record.texto,
+  )
+}
+
+export async function getOfflineTexts(lessonId: string): Promise<OfflineTextRecord[]> {
+  if (Platform.OS === 'web') return []
+  const database = await getDb()
+  return database.getAllAsync<OfflineTextRecord>(
+    `SELECT * FROM offline_texts WHERE lesson_id = ?`, lessonId,
+  )
+}
+
+export async function upsertOfflineQuestion(record: OfflineQuestionRecord): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  await database.runAsync(
+    `INSERT INTO offline_questions (id, lesson_id, pergunta, resposta, alternativas, video, resposta_escrita, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       lesson_id = excluded.lesson_id, pergunta = excluded.pergunta, resposta = excluded.resposta,
+       alternativas = excluded.alternativas, video = excluded.video,
+       resposta_escrita = excluded.resposta_escrita, sort_order = excluded.sort_order`,
+    record.id, record.lesson_id, record.pergunta, record.resposta,
+    record.alternativas ?? null, record.video ?? null,
+    record.resposta_escrita, record.sort_order,
+  )
+}
+
+export async function getOfflineQuestions(lessonId: string): Promise<OfflineQuestionRecord[]> {
+  if (Platform.OS === 'web') return []
+  const database = await getDb()
+  const rows = await database.getAllAsync<OfflineQuestionRecord>(
+    `SELECT * FROM offline_questions WHERE lesson_id = ? ORDER BY sort_order`, lessonId,
+  )
+  return rows.map((r) => ({
+    ...r,
+    alternativas: r.alternativas ? JSON.parse(r.alternativas) : null,
+  }))
+}
+
+export async function upsertOfflineFlashcard(record: OfflineFlashcardRecord): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  await database.runAsync(
+    `INSERT INTO offline_flashcards (id, lesson_id, pergunta, resposta, professor_id)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       lesson_id = excluded.lesson_id, pergunta = excluded.pergunta,
+       resposta = excluded.resposta, professor_id = excluded.professor_id`,
+    record.id, record.lesson_id, record.pergunta, record.resposta, record.professor_id ?? null,
+  )
+}
+
+export async function getOfflineFlashcards(lessonId: string): Promise<OfflineFlashcardRecord[]> {
+  if (Platform.OS === 'web') return []
+  const database = await getDb()
+  return database.getAllAsync<OfflineFlashcardRecord>(
+    `SELECT * FROM offline_flashcards WHERE lesson_id = ?`, lessonId,
+  )
+}
+
+export async function upsertOfflineProgress(record: OfflineProgressRecord): Promise<void> {
+  if (Platform.OS === 'web') return
+  const database = await getDb()
+  await database.runAsync(
+    `INSERT INTO offline_progress (lesson_id, user_id, is_completed) VALUES (?, ?, ?)
+     ON CONFLICT(lesson_id, user_id) DO UPDATE SET is_completed = excluded.is_completed`,
+    record.lesson_id, record.user_id, record.is_completed,
+  )
+}
+
+export async function getOfflineProgress(lessonId: string, userId: string): Promise<OfflineProgressRecord | null> {
+  if (Platform.OS === 'web') return null
+  const database = await getDb()
+  return database.getFirstAsync<OfflineProgressRecord>(
+    `SELECT * FROM offline_progress WHERE lesson_id = ? AND user_id = ?`, lessonId, userId,
+  )
+}
+
 export async function deleteOfflineCourse(courseId: string): Promise<void> {
   if (Platform.OS === 'web') return
   const database = await getDb()
   // Manually delete children first (expo-sqlite may not enforce FK CASCADE)
+  const lessonIds = `SELECT id FROM offline_lessons WHERE course_id = ?`
+  await database.runAsync(`DELETE FROM offline_audios WHERE lesson_id IN (${lessonIds})`, courseId)
+  await database.runAsync(`DELETE FROM offline_texts WHERE lesson_id IN (${lessonIds})`, courseId)
+  await database.runAsync(`DELETE FROM offline_questions WHERE lesson_id IN (${lessonIds})`, courseId)
+  await database.runAsync(`DELETE FROM offline_flashcards WHERE lesson_id IN (${lessonIds})`, courseId)
+  await database.runAsync(`DELETE FROM offline_progress WHERE lesson_id IN (${lessonIds})`, courseId)
   await database.runAsync(`DELETE FROM offline_lessons WHERE course_id = ?`, courseId)
   await database.runAsync(`DELETE FROM offline_modules WHERE course_id = ?`, courseId)
   await database.runAsync(`DELETE FROM offline_courses WHERE id = ?`, courseId)
+}
+
+export async function getDownloadsByLesson(lessonId: string): Promise<DownloadRecord[]> {
+  if (Platform.OS === 'web') return []
+  const database = await getDb()
+  const rows = await database.getAllAsync(
+    `SELECT * FROM downloads WHERE lesson_id = ?`, lessonId,
+  )
+  return rows as DownloadRecord[]
 }
 
 export async function courseHasCompletedDownload(courseId: string): Promise<boolean> {

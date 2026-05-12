@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/contexts/AuthContext'
+import { useIsOnline } from './useIsOnline'
+import { getOfflineFlashcards } from '@/lib/offlineDb'
 
 // --- Pastas ---
 
@@ -148,11 +150,15 @@ export function useDeleteFlashcard() {
 
 export function useLessonFlashcards(aulaId: string) {
   const { user } = useAuthContext()
+  const isOnline = useIsOnline()
 
   return useQuery({
-    queryKey: ['flashcards-aula', aulaId, user?.id],
+    queryKey: ['flashcards-aula', aulaId, user?.id, isOnline],
+    networkMode: 'offlineFirst',
     queryFn: async () => {
       if (!user) return []
+      if (!isOnline) return getOfflineFlashcards(aulaId)
+
       // Fetch both: professor-created flashcards (aluno_id IS NULL) + aluno's own
       const { data, error } = await supabase
         .from('flashcards')

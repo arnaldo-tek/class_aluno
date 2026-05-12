@@ -3,6 +3,10 @@ import {
   upsertOfflineCourse,
   upsertOfflineModule,
   upsertOfflineLesson,
+  upsertOfflineAudio,
+  upsertOfflineText,
+  upsertOfflineQuestion,
+  upsertOfflineFlashcard,
 } from './offlineDb'
 
 export async function snapshotCourse(courseId: string): Promise<void> {
@@ -13,7 +17,11 @@ export async function snapshotCourse(courseId: string): Promise<void> {
       professor:professor_profiles!inner(id, user_id, nome_professor, foto_perfil),
       modulos(id, nome, sort_order,
         aulas(id, titulo, descricao, sort_order, is_liberado, is_degustacao,
-              imagem_capa, pdf, video_url, texto_aula)
+              imagem_capa, pdf, video_url, texto_aula,
+              audios_da_aula(id, titulo, audio_url),
+              textos_da_aula(id, texto),
+              questoes_da_aula(id, pergunta, resposta, alternativas, video, resposta_escrita, sort_order),
+              flashcards(id, pergunta, resposta, professor_id, aluno_id))
       )
     `)
     .eq('id', courseId)
@@ -66,6 +74,47 @@ export async function snapshotCourse(courseId: string): Promise<void> {
         video_url: aula.video_url ?? null,
         texto_aula: aula.texto_aula ?? null,
       })
+
+      const audios = (aula.audios_da_aula as any[]) ?? []
+      for (const audio of audios) {
+        await upsertOfflineAudio({
+          id: audio.id,
+          lesson_id: aula.id,
+          titulo: audio.titulo ?? null,
+          audio_url: audio.audio_url,
+        })
+      }
+
+      const textos = (aula.textos_da_aula as any[]) ?? []
+      for (const texto of textos) {
+        await upsertOfflineText({ id: texto.id, lesson_id: aula.id, texto: texto.texto ?? '' })
+      }
+
+      const questoes = (aula.questoes_da_aula as any[]) ?? []
+      for (const q of questoes) {
+        await upsertOfflineQuestion({
+          id: q.id,
+          lesson_id: aula.id,
+          pergunta: q.pergunta ?? '',
+          resposta: q.resposta ?? '',
+          alternativas: q.alternativas ? JSON.stringify(q.alternativas) : null,
+          video: q.video ?? null,
+          resposta_escrita: q.resposta_escrita ? 1 : 0,
+          sort_order: q.sort_order ?? 0,
+        })
+      }
+
+      const flashcards = (aula.flashcards as any[]) ?? []
+      for (const fc of flashcards) {
+        if (fc.aluno_id !== null) continue
+        await upsertOfflineFlashcard({
+          id: fc.id,
+          lesson_id: aula.id,
+          pergunta: fc.pergunta ?? '',
+          resposta: fc.resposta ?? '',
+          professor_id: fc.professor_id ?? null,
+        })
+      }
     }
   }
 }

@@ -24,11 +24,7 @@ type PackageAccess = {
 }
 
 function getSubscriptionState(item: PackageAccess) {
-  const now = new Date()
-  const isExpired = item.access_expire_date ? new Date(item.access_expire_date) < now : false
   const isCancelled = !!item.cancelled_at
-
-  if (isExpired) return 'expired' as const
   if (isCancelled) return 'cancelled_pending' as const
   return 'active' as const
 }
@@ -129,9 +125,6 @@ export default function MyPackagesScreen() {
                     </View>
                   )}
 
-                  {state === 'expired' && (
-                    <Badge variant="default">{t('packages.statusExpired')}</Badge>
-                  )}
                 </View>
               </TouchableOpacity>
 
@@ -142,17 +135,6 @@ export default function MyPackagesScreen() {
                 >
                   <Text className="text-sm text-error font-medium">
                     {t('packages.cancelSubscription')}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {state === 'expired' && (
-                <TouchableOpacity
-                  onPress={() => router.push({ pathname: '/packages/[id]', params: { id: item.pacote_id } })}
-                  className="border-t border-darkBorder-subtle py-3 items-center"
-                >
-                  <Text className="text-sm text-primary-light font-medium">
-                    {t('packages.renew')}
                   </Text>
                 </TouchableOpacity>
               )}

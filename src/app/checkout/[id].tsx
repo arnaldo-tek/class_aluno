@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useCourseDetail } from '@/hooks/useCourses'
-import { usePackageDetail } from '@/hooks/usePackages'
+import { usePackageDetail, filterPacoteCursosForCatalog } from '@/hooks/usePackages'
 import { useValidateCoupon, useCustomerId } from '@/hooks/usePayment'
 import { useFreeEnroll } from '@/hooks/useEnrollments'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -130,7 +130,7 @@ export default function CheckoutScreen() {
             )}
             {isPacote && (
               <Text className="text-xs text-darkText-secondary mt-0.5">
-                Pacote com {(item as any).pacote_cursos?.length ?? 0} cursos
+                Pacote com {filterPacoteCursosForCatalog((item as any).pacote_cursos).length} cursos
               </Text>
             )}
           </View>
@@ -215,8 +215,8 @@ export default function CheckoutScreen() {
               onPress={async () => {
                 try {
                   if (isPacote) {
-                    // For free packages, enroll in all courses
-                    const cursos = (item as any).pacote_cursos ?? []
+                    // For free packages, enroll in catalog-visible courses only
+                    const cursos = filterPacoteCursosForCatalog((item as any).pacote_cursos)
                     for (const pc of cursos) {
                       const cursoId = pc.curso_id ?? pc.cursos?.id
                       if (cursoId) await freeEnroll.mutateAsync({ cursoId })

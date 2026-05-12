@@ -124,8 +124,11 @@ export async function startDownload(params: {
   contentType: ContentType
   remoteUrl: string
   fileSize?: number
+  audioId?: string
 }): Promise<string> {
-  const id = `${params.lessonId}_${params.contentType}`
+  const id = params.audioId
+    ? `${params.lessonId}_audio_${params.audioId}`
+    : `${params.lessonId}_${params.contentType}`
 
   const existing = await getDownload(id)
   if (existing?.status === 'completed') return id
@@ -246,6 +249,16 @@ export async function downloadAllCourse(params: {
 
 export async function getOfflineUri(lessonId: string, contentType: ContentType): Promise<string | null> {
   const record = await getDownload(`${lessonId}_${contentType}`)
+  if (record?.status === 'completed' && record.file_uri) {
+    const info = await FileSystem.getInfoAsync(record.file_uri)
+    if (info.exists) return record.file_uri
+    await updateDownloadStatus(record.id, 'failed')
+  }
+  return null
+}
+
+export async function getOfflineUriById(downloadId: string): Promise<string | null> {
+  const record = await getDownload(downloadId)
   if (record?.status === 'completed' && record.file_uri) {
     const info = await FileSystem.getInfoAsync(record.file_uri)
     if (info.exists) return record.file_uri

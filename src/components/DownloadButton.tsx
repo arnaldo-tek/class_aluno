@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Pressable, View, Text, Alert, Platform, ToastAndroid } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useDownloadStatus, useStartDownload, usePauseDownload, useResumeDownload, useCancelDownload } from '@/hooks/useDownloads'
+import { useDownloadStatusById, useStartDownload, usePauseDownload, useResumeDownload, useCancelDownload } from '@/hooks/useDownloads'
 import type { ContentType } from '@/lib/offlineDb'
 import { t } from '@/i18n'
 import Svg, { Circle } from 'react-native-svg'
@@ -17,6 +17,7 @@ interface DownloadBaseProps {
   contentType: ContentType
   remoteUrl: string
   fileSize?: number
+  audioId?: string
 }
 
 interface DownloadButtonProps extends DownloadBaseProps {
@@ -34,7 +35,7 @@ interface DownloadSectionProps {
   courseTitle: string
   lessonTitle: string
   videoUrl?: string | null
-  audioUrl?: string | null
+  audios?: Array<{ id: string; url: string; titulo?: string | null }> | null
   pdfUrl?: string | null
 }
 
@@ -68,8 +69,9 @@ function CircularProgress({ progress, size }: { progress: number; size: number }
 
 // --- DownloadButton (compact icon, used in audio player) ---
 
-export function DownloadButton({ lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize, size = 32 }: DownloadButtonProps) {
-  const { data: download } = useDownloadStatus(lessonId, contentType)
+export function DownloadButton({ lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize, size = 32, audioId }: DownloadButtonProps) {
+  const downloadId = audioId ? `${lessonId}_audio_${audioId}` : `${lessonId}_${contentType}`
+  const { data: download } = useDownloadStatusById(downloadId)
   const startDownload = useStartDownload()
   const pauseDownload = usePauseDownload()
   const resumeDownload = useResumeDownload()
@@ -81,10 +83,10 @@ export function DownloadButton({ lessonId, courseId, courseTitle, lessonTitle, c
 
   const handlePress = () => {
     switch (status) {
-      case 'downloading': pauseDownload.mutate(`${lessonId}_${contentType}`); break
-      case 'paused': resumeDownload.mutate(`${lessonId}_${contentType}`); break
+      case 'downloading': pauseDownload.mutate(downloadId); break
+      case 'paused': resumeDownload.mutate(downloadId); break
       case 'failed':
-      default: startDownload.mutate({ lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize })
+      default: startDownload.mutate({ lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize, audioId })
     }
   }
 
@@ -92,7 +94,7 @@ export function DownloadButton({ lessonId, courseId, courseTitle, lessonTitle, c
     if (status === 'completed') {
       Alert.alert(t('removeDownload'), t('removeDownloadConfirm'), [
         { text: t('cancel'), style: 'cancel' },
-        { text: t('remove'), style: 'destructive', onPress: () => cancelDownload.mutate(`${lessonId}_${contentType}`) },
+        { text: t('remove'), style: 'destructive', onPress: () => cancelDownload.mutate(downloadId) },
       ])
     }
   }
@@ -128,9 +130,10 @@ export function DownloadButton({ lessonId, courseId, courseTitle, lessonTitle, c
 
 // --- DownloadRow (full row, used in lesson screen) ---
 
-export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize, icon, label }: DownloadRowProps) {
+export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize, icon, label, audioId }: DownloadRowProps) {
   const colors = useThemeColors()
-  const { data: download } = useDownloadStatus(lessonId, contentType)
+  const downloadId = audioId ? `${lessonId}_audio_${audioId}` : `${lessonId}_${contentType}`
+  const { data: download } = useDownloadStatusById(downloadId)
   const startDownload = useStartDownload()
   const pauseDownload = usePauseDownload()
   const resumeDownload = useResumeDownload()
@@ -155,10 +158,10 @@ export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, cont
 
   const handleAction = () => {
     switch (status) {
-      case 'downloading': pauseDownload.mutate(`${lessonId}_${contentType}`); break
-      case 'paused': resumeDownload.mutate(`${lessonId}_${contentType}`); break
+      case 'downloading': pauseDownload.mutate(downloadId); break
+      case 'paused': resumeDownload.mutate(downloadId); break
       case 'failed':
-      default: startDownload.mutate({ lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize })
+      default: startDownload.mutate({ lessonId, courseId, courseTitle, lessonTitle, contentType, remoteUrl, fileSize, audioId })
     }
   }
 
@@ -168,7 +171,7 @@ export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, cont
       {
         text: 'Remover', style: 'destructive',
         onPress: () => {
-          cancelDownload.mutate(`${lessonId}_${contentType}`)
+          cancelDownload.mutate(downloadId)
           showToast(`${label} removido`)
         },
       },
@@ -231,16 +234,11 @@ export function DownloadRow({ lessonId, courseId, courseTitle, lessonTitle, cont
 
 // --- DownloadSection (full section with all content types) ---
 
-export function DownloadSection({ lessonId, courseId, courseTitle, lessonTitle, videoUrl, audioUrl, pdfUrl }: DownloadSectionProps) {
+export function DownloadSection({ lessonId, courseId, courseTitle, lessonTitle, videoUrl, audios, pdfUrl }: DownloadSectionProps) {
   const colors = useThemeColors()
 
-  if (!videoUrl && !audioUrl && !pdfUrl) return null
-
-  const items = [
-    videoUrl ? { contentType: 'video' as ContentType, url: videoUrl, icon: 'videocam' as const, label: 'Vídeo' } : null,
-    audioUrl ? { contentType: 'audio' as ContentType, url: audioUrl, icon: 'musical-notes' as const, label: 'Áudio' } : null,
-    pdfUrl ? { contentType: 'pdf' as ContentType, url: pdfUrl, icon: 'document-text' as const, label: 'PDF' } : null,
-  ].filter(Boolean) as Array<{ contentType: ContentType; url: string; icon: keyof typeof Ionicons.glyphMap; label: string }>
+  const hasAudios = audios && audios.length > 0
+  if (!videoUrl && !hasAudios && !pdfUrl) return null
 
   return (
     <View style={{ marginHorizontal: 16, marginTop: 20, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
@@ -252,21 +250,38 @@ export function DownloadSection({ lessonId, courseId, courseTitle, lessonTitle, 
         </Text>
       </View>
 
-      {items.map((item, idx) => (
-        <View key={item.contentType}>
-          {idx > 0 && <View style={{ height: 1, backgroundColor: colors.borderSubtle, marginLeft: 66 }} />}
+      {videoUrl && (
+        <View key="video">
           <DownloadRow
-            lessonId={lessonId}
-            courseId={courseId}
-            courseTitle={courseTitle}
-            lessonTitle={lessonTitle}
-            contentType={item.contentType}
-            remoteUrl={item.url}
-            icon={item.icon}
-            label={item.label}
+            lessonId={lessonId} courseId={courseId} courseTitle={courseTitle} lessonTitle={lessonTitle}
+            contentType="video" remoteUrl={videoUrl} icon="videocam" label="Vídeo"
           />
         </View>
-      ))}
+      )}
+
+      {hasAudios && audios!.map((audio, idx) => {
+        const isFirst = !videoUrl && idx === 0
+        return (
+          <View key={audio.id}>
+            {!isFirst && <View style={{ height: 1, backgroundColor: colors.borderSubtle, marginLeft: 66 }} />}
+            <DownloadRow
+              lessonId={lessonId} courseId={courseId} courseTitle={courseTitle} lessonTitle={lessonTitle}
+              contentType="audio" remoteUrl={audio.url} audioId={audio.id}
+              icon="musical-notes" label={audio.titulo ?? `Áudio ${idx + 1}`}
+            />
+          </View>
+        )
+      })}
+
+      {pdfUrl && (
+        <View key="pdf">
+          <View style={{ height: 1, backgroundColor: colors.borderSubtle, marginLeft: 66 }} />
+          <DownloadRow
+            lessonId={lessonId} courseId={courseId} courseTitle={courseTitle} lessonTitle={lessonTitle}
+            contentType="pdf" remoteUrl={pdfUrl} icon="document-text" label="PDF"
+          />
+        </View>
+      )}
     </View>
   )
 }

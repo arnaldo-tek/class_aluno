@@ -151,16 +151,22 @@ async function handleSubscriptionRenewed(supabase: any, data: Record<string, any
 
   if (!subscriptionId) return
 
-  const updates: Record<string, any> = { cancelled_at: null }
+  const updates: Record<string, any> = {}
   if (nextBilling) {
     updates.access_expire_date = nextBilling
     updates.next_billing_date = nextBilling
   }
 
+  if (Object.keys(updates).length === 0) return
+
+  // Only renew subscriptions that are still active (not manually cancelled by the user).
+  // A race condition can cause Pagar.me to fire a renewal event after the user cancelled —
+  // in that case we must not clear cancelled_at or reactivate the subscription.
   const { data: access } = await supabase
     .from('package_access')
     .update(updates)
     .eq('pagarme_subscription_id', subscriptionId)
+    .is('cancelled_at', null)
     .select('user_id')
     .maybeSingle()
 

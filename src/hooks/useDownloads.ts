@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getAllDownloads,
+  getDownload,
   getDownloadByLessonAndType,
+  getDownloadsByLesson,
   getStorageUsed,
   getDownloadCount,
   getDownloadsByCourse,
@@ -18,6 +20,7 @@ import {
   setProgressCallback,
   setStatusCallback,
   getOfflineUri,
+  getOfflineUriById,
 } from '@/lib/downloadManager'
 import * as FileSystem from 'expo-file-system'
 
@@ -70,6 +73,32 @@ export function useDownloadStatus(lessonId: string, contentType: ContentType) {
     queryFn: () => getDownloadByLessonAndType(lessonId, contentType),
     enabled: !!lessonId,
     refetchInterval: 2000,
+  })
+}
+
+export function useDownloadStatusById(downloadId: string) {
+  return useQuery({
+    queryKey: [...DOWNLOAD_KEYS.all, 'by-id', downloadId],
+    queryFn: () => getDownload(downloadId),
+    enabled: !!downloadId,
+    refetchInterval: 2000,
+  })
+}
+
+export function useDownloadsByLesson(lessonId: string) {
+  return useQuery({
+    queryKey: [...DOWNLOAD_KEYS.all, 'lesson', lessonId],
+    queryFn: () => getDownloadsByLesson(lessonId),
+    enabled: !!lessonId,
+    refetchInterval: 2000,
+  })
+}
+
+export function useOfflineUriById(downloadId: string | undefined) {
+  return useQuery({
+    queryKey: ['offline-uri-by-id', downloadId],
+    queryFn: () => getOfflineUriById(downloadId!),
+    enabled: !!downloadId,
   })
 }
 

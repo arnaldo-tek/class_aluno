@@ -25,12 +25,14 @@ export function useProfessorCourses(professorId: string) {
   return useQuery({
     queryKey: ['professor-courses', professorId],
     queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10)
       const { data, error } = await supabase
         .from('cursos')
         .select('id, nome, imagem, preco, taxa_superclasse, average_rating')
         .eq('professor_id', professorId)
         .eq('is_publicado', true)
         .eq('is_encerrado', false)
+        .or(`data_encerramento.is.null,data_encerramento.gte.${today}`)
         .order('created_at', { ascending: false })
 
       if (error) throw error

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { useIsOnline } from './useIsOnline'
-import { getOfflineLesson } from '@/lib/offlineDb'
+import { getOfflineLesson, getOfflineAudios, getOfflineTexts, getOfflineQuestions, getOfflineProgress, upsertOfflineProgress } from '@/lib/offlineDb'
 
 export function useLessonDetail(lessonId: string) {
   const isOnline = useIsOnline()
@@ -50,9 +50,13 @@ export function useLessonDetail(lessonId: string) {
 }
 
 export function useLessonTexts(lessonId: string) {
+  const isOnline = useIsOnline()
   return useQuery({
-    queryKey: ['lesson-texts', lessonId],
+    queryKey: ['lesson-texts', lessonId, isOnline],
+    networkMode: 'offlineFirst',
     queryFn: async () => {
+      if (!isOnline) return getOfflineTexts(lessonId)
+
       const { data, error } = await supabase
         .from('textos_da_aula')
         .select('id, texto, created_at')
@@ -67,9 +71,15 @@ export function useLessonTexts(lessonId: string) {
 }
 
 export function useLessonAudios(lessonId: string) {
+  const isOnline = useIsOnline()
   return useQuery({
-    queryKey: ['lesson-audios', lessonId],
+    queryKey: ['lesson-audios', lessonId, isOnline],
+    networkMode: 'offlineFirst',
     queryFn: async () => {
+      if (!isOnline) {
+        return getOfflineAudios(lessonId)
+      }
+
       const { data, error } = await supabase
         .from('audios_da_aula')
         .select('id, titulo, audio_url, created_at')
@@ -84,9 +94,13 @@ export function useLessonAudios(lessonId: string) {
 }
 
 export function useLessonQuestions(lessonId: string) {
+  const isOnline = useIsOnline()
   return useQuery({
-    queryKey: ['lesson-questions', lessonId],
+    queryKey: ['lesson-questions', lessonId, isOnline],
+    networkMode: 'offlineFirst',
     queryFn: async () => {
+      if (!isOnline) return getOfflineQuestions(lessonId)
+
       const { data, error } = await supabase
         .from('questoes_da_aula')
         .select('id, pergunta, resposta, alternativas, video, resposta_escrita, sort_order')
@@ -102,11 +116,18 @@ export function useLessonQuestions(lessonId: string) {
 
 export function useLessonProgress(lessonId: string) {
   const { user } = useAuthContext()
+  const isOnline = useIsOnline()
 
   return useQuery({
-    queryKey: ['lesson-progress', user?.id, lessonId],
+    queryKey: ['lesson-progress', user?.id, lessonId, isOnline],
+    networkMode: 'offlineFirst',
     queryFn: async () => {
       if (!user) return null
+      if (!isOnline) {
+        const local = await getOfflineProgress(lessonId, user.id)
+        return local ? { is_completed: local.is_completed === 1 } : null
+      }
+
       const { data, error } = await supabase
         .from('lesson_progress')
         .select('*')
@@ -115,6 +136,9 @@ export function useLessonProgress(lessonId: string) {
         .maybeSingle()
 
       if (error) throw error
+      if (data) {
+        await upsertOfflineProgress({ lesson_id: lessonId, user_id: user.id, is_completed: data.is_completed ? 1 : 0 })
+      }
       return data
     },
     enabled: !!user && !!lessonId,
@@ -128,6 +152,7 @@ export function useMarkLessonComplete() {
   return useMutation({
     mutationFn: async ({ aulaId, cursoId }: { aulaId: string; cursoId: string }) => {
       if (!user) throw new Error('Not authenticated')
+      await upsertOfflineProgress({ lesson_id: aulaId, user_id: user.id, is_completed: 1 })
       const { error } = await supabase
         .from('lesson_progress')
         .upsert(

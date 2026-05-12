@@ -4,6 +4,22 @@ import { useAuthContext } from '@/contexts/AuthContext'
 import { useIsOnline } from './useIsOnline'
 import { getOfflineCoursesWithDownloads, getOfflineCourse } from '@/lib/offlineDb'
 
+/** Alinha à regra do catálogo: some da lista "meus cursos" se encerrado, despublicado ou data_encerramento passada. */
+function cursoAindaVisivelEmMeusCursos(curso: {
+  is_publicado?: boolean | null
+  is_encerrado?: boolean | null
+  data_encerramento?: string | null
+}) {
+  if (curso.is_publicado === false) return false
+  if (curso.is_encerrado === true) return false
+  const de = curso.data_encerramento
+  if (de) {
+    const today = new Date().toISOString().slice(0, 10)
+    if (String(de).slice(0, 10) < today) return false
+  }
+  return true
+}
+
 export function useFreeEnroll() {
   const { user } = useAuthContext()
   const qc = useQueryClient()
@@ -56,7 +72,7 @@ export function useMyEnrollments() {
         .from('enrollments')
         .select(`
           id, enrolled_at, is_suspended,
-          curso:cursos(id, nome, imagem, preco, professor:professor_profiles(nome_professor))
+          curso:cursos(id, nome, imagem, preco, is_publicado, is_encerrado, data_encerramento, professor:professor_profiles(nome_professor))
         `)
         .eq('user_id', user.id)
         .or('is_suspended.is.null,is_suspended.eq.false')
@@ -74,7 +90,7 @@ export function useMyEnrollments() {
       )
 
       return (enrollments ?? [])
-        .filter((e) => !!e.curso)
+        .filter((e) => !!e.curso && cursoAindaVisivelEmMeusCursos(e.curso as any))
         .map((e) => ({
           ...e,
           progress: progressMap.get(e.curso?.id ?? '') ?? null,

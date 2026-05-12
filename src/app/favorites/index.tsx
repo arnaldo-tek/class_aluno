@@ -71,10 +71,14 @@ function useFavoriteCourseDetails(ids: string[]) {
     queryKey: ['favorite-course-details', ids],
     queryFn: async () => {
       if (!ids.length) return []
+      const today = new Date().toISOString().slice(0, 10)
       const { data, error } = await supabase
         .from('cursos')
         .select('id, nome, imagem, preco, taxa_superclasse, average_rating')
         .in('id', ids)
+        .eq('is_publicado', true)
+        .eq('is_encerrado', false)
+        .or(`data_encerramento.is.null,data_encerramento.gte.${today}`)
       if (error) throw error
       return (data ?? []).map((c) => ({
         ...c,
@@ -105,7 +109,7 @@ export default function FavoritesScreen() {
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: 'professores', label: 'Professores', count: following?.length ?? 0 },
-    { key: 'cursos', label: 'Cursos', count: favCourses?.length ?? 0 },
+    { key: 'cursos', label: 'Cursos', count: courseDetails?.length ?? 0 },
     { key: 'noticias', label: 'Noticias', count: favNews?.length ?? 0 },
     { key: 'editais', label: 'Editais', count: favNotices?.length ?? 0 },
   ]

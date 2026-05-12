@@ -3,7 +3,7 @@ import { Image } from 'expo-image'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { usePackageDetail, useHasPackageAccess } from '@/hooks/usePackages'
+import { usePackageDetail, useHasPackageAccess, filterPacoteCursosForCatalog } from '@/hooks/usePackages'
 import { CourseCard } from '@/components/CourseCard'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
@@ -21,7 +21,9 @@ export default function PackageDetailScreen() {
   if (isLoading) return <LoadingSpinner />
   if (!pkg) return null
 
-  const courses = (pkg as any).pacote_cursos ?? []
+  const allPackageCourses = (pkg as any).pacote_cursos ?? []
+  const courses =
+    hasAccess === true ? allPackageCourses : filterPacoteCursosForCatalog(allPackageCourses)
 
   return (
     <SafeAreaView className="flex-1 bg-dark-bg">

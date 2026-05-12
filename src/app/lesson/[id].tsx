@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { View, Text, ScrollView, FlatList, TouchableOpacity, Dimensions, TextInput, Alert } from 'react-native'
+import { View, Text, ScrollView, FlatList, TouchableOpacity, Dimensions, TextInput, Alert, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -12,7 +12,9 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { DownloadSection } from '@/components/DownloadButton'
 import { AudioPlayerList, AudioSpeedControl } from '@/components/AudioPlayer'
 import { useThemeColors } from '@/hooks/useThemeColors'
-import { useOfflineUri } from '@/hooks/useDownloads'
+import { useOfflineUri, useDownloadsByLesson } from '@/hooks/useDownloads'
+import * as FileSystem from 'expo-file-system'
+import * as Sharing from 'expo-sharing'
 import { t } from '@/i18n'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
@@ -140,8 +142,8 @@ export default function LessonScreen() {
         <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
           {activeTab === 'video' && <VideoTab lesson={lesson} lessonId={id!} audios={audios} />}
           {activeTab === 'text' && <TextTab texts={texts ?? []} mainText={lesson.texto_aula} />}
-          {activeTab === 'audio' && <AudioTab audios={audios ?? []} />}
-          {activeTab === 'pdf' && lesson.pdf && <PdfTab url={lesson.pdf} />}
+          {activeTab === 'audio' && <AudioTab audios={audios ?? []} lessonId={id!} />}
+          {activeTab === 'pdf' && lesson.pdf && <PdfTab url={lesson.pdf} lessonId={id!} />}
           {activeTab === 'quiz' && (
             <TouchableOpacity
               onPress={() => router.push({ pathname: '/lesson/quiz', params: { lesson_id: id! } })}
@@ -183,7 +185,7 @@ export default function LessonScreen() {
 
 // --- Video Tab ---
 
-function VideoTab({ lesson, lessonId, audios }: { lesson: any; lessonId: string; audios?: Array<{ audio_url: string }> | null }) {
+function VideoTab({ lesson, lessonId, audios }: { lesson: any; lessonId: string; audios?: Array<{ id: string; titulo: string | null; audio_url: string }> | null }) {
   const colors = useThemeColors()
   const videoRef = useRef<Video>(null)
   const { data: offlineVideoUri } = useOfflineUri(lessonId, 'video')
@@ -194,8 +196,7 @@ function VideoTab({ lesson, lessonId, audios }: { lesson: any; lessonId: string;
 
   const courseId = (lesson.curso as any)?.id ?? lesson.curso_id ?? ''
   const courseTitle = (lesson.curso as any)?.nome ?? ''
-  const audioUrl = audios && audios.length > 0 ? audios[0].audio_url : null
-  const hasDownloadable = !!(lesson.video_url || audioUrl || lesson.pdf)
+  const hasDownloadable = !!(lesson.video_url || (audios && audios.length > 0) || lesson.pdf)
 
   return (
     <View>
@@ -254,7 +255,7 @@ function VideoTab({ lesson, lessonId, audios }: { lesson: any; lessonId: string;
           courseTitle={courseTitle}
           lessonTitle={lesson.titulo ?? ''}
           videoUrl={lesson.video_url}
-          audioUrl={audioUrl}
+          audios={audios?.map(a => ({ id: a.id, url: a.audio_url, titulo: a.titulo }))}
           pdfUrl={lesson.pdf}
         />
       )}
@@ -281,23 +282,85 @@ function TextTab({ texts, mainText }: { texts: Array<{ id: string; texto: string
 
 // --- Audio Tab ---
 
-function AudioTab({ audios }: { audios: Array<{ id: string; titulo: string | null; audio_url: string }> }) {
+function AudioTab({ audios, lessonId }: { audios: Array<{ id: string; titulo: string | null; audio_url: string }>; lessonId: string }) {
+  const { data: lessonDownloads } = useDownloadsByLesson(lessonId)
+
+  const resolvedAudios = audios.map(audio => {
+    const downloadId = `${lessonId}_audio_${audio.id}`
+    const download = lessonDownloads?.find(d => d.id === downloadId)
+    const offlineUri = download?.status === 'completed' && download.file_uri ? download.file_uri : null
+    return { ...audio, audio_url: offlineUri ?? audio.audio_url }
+  })
+
+  const allOffline = audios.length > 0 && audios.every(audio => {
+    const downloadId = `${lessonId}_audio_${audio.id}`
+    return lessonDownloads?.find(d => d.id === downloadId)?.status === 'completed'
+  })
+
   return (
     <View className="px-4 pt-5">
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <Text style={{ fontSize: 14, fontWeight: '700', color: '#f7f6f3' }}>
           Áudios ({audios.length})
         </Text>
+        {allOffline && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(52,211,153,0.12)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 }}>
+            <Ionicons name="save" size={10} color="#34d399" />
+            <Text style={{ fontSize: 11, color: '#34d399', fontWeight: '700', marginLeft: 4 }}>Offline</Text>
+          </View>
+        )}
       </View>
-      <AudioPlayerList audios={audios} accentColor="#3b82f6" />
+      <AudioPlayerList audios={resolvedAudios} accentColor="#3b82f6" />
     </View>
   )
 }
 
 // --- PDF Tab ---
 
-function PdfTab({ url }: { url: string }) {
+function PdfTab({ url, lessonId }: { url: string; lessonId: string }) {
+  const { data: offlinePdfUri } = useOfflineUri(lessonId, 'pdf')
   const viewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`
+
+  const openOfflinePdf = async () => {
+    if (!offlinePdfUri) return
+    try {
+      const canShare = await Sharing.isAvailableAsync()
+      if (canShare) {
+        await Sharing.shareAsync(offlinePdfUri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' })
+      } else {
+        const contentUri = await FileSystem.getContentUriAsync(offlinePdfUri)
+        await Linking.openURL(contentUri)
+      }
+    } catch {
+      Alert.alert('Erro', 'Não foi possível abrir o PDF.')
+    }
+  }
+
+  if (offlinePdfUri) {
+    return (
+      <View className="px-4 pt-4">
+        <View style={{ padding: 32, backgroundColor: '#1a1a1a', borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#2a2a2a' }}>
+          <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(245,158,11,0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+            <Ionicons name="document-text" size={28} color="#f59e0b" />
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Ionicons name="save" size={11} color="#34d399" />
+            <Text style={{ fontSize: 12, color: '#34d399', fontWeight: '700', marginLeft: 4 }}>Salvo offline</Text>
+          </View>
+          <Text style={{ fontSize: 14, color: '#9ca3af', textAlign: 'center', marginBottom: 24 }}>
+            Este PDF está salvo no seu dispositivo
+          </Text>
+          <TouchableOpacity
+            onPress={openOfflinePdf}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f59e0b', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 32 }}
+          >
+            <Ionicons name="open-outline" size={18} color="#000" />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#000', marginLeft: 8 }}>Abrir PDF</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View className="px-4 pt-4">
@@ -312,10 +375,7 @@ function PdfTab({ url }: { url: string }) {
         />
       </View>
       <TouchableOpacity
-        onPress={() => {
-          const { Linking } = require('react-native')
-          Linking.openURL(url)
-        }}
+        onPress={() => Linking.openURL(url)}
         className="flex-row items-center justify-center bg-primary rounded-2xl py-3.5 mt-3"
       >
         <Ionicons name="download-outline" size={18} color="#ffffff" />
