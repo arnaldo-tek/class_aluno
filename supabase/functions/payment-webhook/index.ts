@@ -1,9 +1,8 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
 import { createSupabaseAdmin } from '../_shared/supabase.ts'
 import { createMovimentacaoSplits } from '../_shared/checkout.ts'
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const cors = handleCors(req)
   if (cors) return cors
 
@@ -157,26 +156,44 @@ async function handleSubscriptionRenewed(supabase: any, data: Record<string, any
     updates.next_billing_date = nextBilling
   }
 
-  if (Object.keys(updates).length === 0) return
-
   // Only renew subscriptions that are still active (not manually cancelled by the user).
   // A race condition can cause Pagar.me to fire a renewal event after the user cancelled —
   // in that case we must not clear cancelled_at or reactivate the subscription.
   const { data: access } = await supabase
     .from('package_access')
-    .update(updates)
+    .update(Object.keys(updates).length > 0 ? updates : { next_billing_date: nextBilling ?? null })
     .eq('pagarme_subscription_id', subscriptionId)
     .is('cancelled_at', null)
-    .select('user_id')
+    .select('user_id, pacote_id')
     .maybeSingle()
 
-  if (access) {
-    await supabase.from('notificacoes').insert({
+  if (!access) return
+
+  // Create movimentacao for this recurring charge
+  const amountCents = Number(
+    data.minimum_price
+    ?? data.items?.[0]?.pricing_scheme?.price
+    ?? 0,
+  )
+  if (amountCents > 0) {
+    const { data: mov } = await supabase.from('movimentacoes').insert({
+      pagarme_order_id: `${subscriptionId}_renew_${Date.now()}`,
+      valor: amountCents / 100,
       user_id: access.user_id,
-      titulo: 'Assinatura renovada',
-      descricao: 'Sua assinatura foi renovada com sucesso!',
-    })
+      pacote_id: access.pacote_id,
+      status: 'paid',
+    }).select('id').single()
+
+    if (mov) {
+      await createMovimentacaoSplits(supabase, mov.id, amountCents, undefined, access.pacote_id)
+    }
   }
+
+  await supabase.from('notificacoes').insert({
+    user_id: access.user_id,
+    titulo: 'Assinatura renovada',
+    descricao: 'Sua assinatura foi renovada com sucesso!',
+  })
 }
 
 async function handleSubscriptionCanceled(supabase: any, data: Record<string, any>) {

@@ -1,7 +1,7 @@
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
 import { createSupabaseFromRequest, createSupabaseAdmin } from '../_shared/supabase.ts'
 import { pagarmeRequest, PagarmeError } from '../_shared/pagarme.ts'
-import { resolveReceiverIds } from '../_shared/checkout.ts'
+import { resolveReceiverIds, createMovimentacaoSplits } from '../_shared/checkout.ts'
 
 const PLATFORM_RECEIVER_ID = 're_cm7m9wnhe0jnv0l9tbhvr7rky'
 
@@ -79,6 +79,30 @@ Deno.serve(async (req) => {
       // Subscriptions API only allows type 'percentage' (not flat amounts like orders)
       const splitRules = buildSubscriptionSplitRules(receiverIds)
 
+      // Ciclo curto só para testes (renovação em ~1 dia). Secret no projeto — desligar após o teste.
+      const debugShort = ['1', 'true', 'yes'].includes(
+        (Deno.env.get('SUBSCRIPTION_DEBUG_SHORT_CYCLE') ?? '').toLowerCase(),
+      )
+      const interval = debugShort ? 'day' : (body.interval || 'month')
+      const intervalCount = debugShort ? 1 : (body.interval_count || 1)
+      if (debugShort) {
+        const maxCentsRaw = Deno.env.get('SUBSCRIPTION_DEBUG_MAX_AMOUNT_CENTS')
+        const parsed = maxCentsRaw != null && maxCentsRaw !== '' ? parseInt(maxCentsRaw, 10) : NaN
+        const cap = Number.isFinite(parsed) && parsed > 0 ? parsed : 300
+        if (body.amount > cap) {
+          return jsonResponse(
+            {
+              error:
+                `Modo teste (cobrança diária): valor ${body.amount}¢ acima do teto ${cap}¢. Ajuste SUBSCRIPTION_DEBUG_MAX_AMOUNT_CENTS ou desligue SUBSCRIPTION_DEBUG_SHORT_CYCLE.`,
+            },
+            400,
+          )
+        }
+        console.warn(
+          `[payment-subscription] SUBSCRIPTION_DEBUG_SHORT_CYCLE: interval=day amount=${body.amount}¢ teto=${cap}c — unset o secret após validar`,
+        )
+      }
+
       const subscription = await pagarmeRequest<{
         id: string
         status: string
@@ -106,8 +130,8 @@ Deno.serve(async (req) => {
             },
           },
           statement_descriptor: 'SuperClasse',
-          interval: body.interval || 'month',
-          interval_count: body.interval_count || 1,
+          interval,
+          interval_count: intervalCount,
           minimum_price: body.amount,
           items: [
             {
@@ -128,7 +152,7 @@ Deno.serve(async (req) => {
         ?? subscription.current_period?.end_at
         ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
-      await admin.from('package_access').upsert(
+      const { error: accessError } = await admin.from('package_access').upsert(
         {
           user_id: user.id,
           pacote_id: body.pacote_id,
@@ -139,6 +163,16 @@ Deno.serve(async (req) => {
         },
         { onConflict: 'pacote_id,user_id' },
       )
+      if (accessError) {
+        console.error('package_access upsert failed:', accessError)
+        return jsonResponse(
+          {
+            error: 'Assinatura criada no Pagar.me, mas falhou ao registrar o acesso no app. Fale com o suporte.',
+            details: accessError.message,
+          },
+          500,
+        )
+      }
 
       // Enroll in all package courses
       const { data: cursos } = await admin
@@ -148,11 +182,35 @@ Deno.serve(async (req) => {
 
       if (cursos) {
         for (const c of cursos) {
-          await admin.from('enrollments').upsert(
+          const { error: enrollError } = await admin.from('enrollments').upsert(
             { user_id: user.id, curso_id: c.curso_id },
             { onConflict: 'user_id,curso_id' },
           )
+          if (enrollError) {
+            console.error('enrollment upsert failed:', enrollError, c)
+            return jsonResponse(
+              {
+                error: 'Acesso ao pacote foi registrado, mas falhou ao matricular nos cursos. Fale com o suporte.',
+                details: enrollError.message,
+              },
+              500,
+            )
+          }
         }
+      }
+
+      // Create movimentacao for initial subscription charge
+      const isPaid = subscription.status === 'active' || subscription.status === 'paid'
+      const { data: mov } = await admin.from('movimentacoes').insert({
+        pagarme_order_id: subscription.id,
+        valor: body.amount / 100,
+        user_id: user.id,
+        pacote_id: body.pacote_id,
+        status: isPaid ? 'paid' : 'pending',
+      }).select('id').single()
+
+      if (mov && isPaid) {
+        await createMovimentacaoSplits(admin, mov.id, body.amount, undefined, body.pacote_id)
       }
 
       return jsonResponse({
@@ -172,7 +230,7 @@ Deno.serve(async (req) => {
       // Lookup subscription from package_access
       const { data: access, error: dbError } = await admin
         .from('package_access')
-        .select('id, pagarme_subscription_id, access_expire_date')
+        .select('id, pagarme_subscription_id, access_expire_date, cancelled_at')
         .eq('user_id', user.id)
         .eq('pacote_id', body.pacote_id)
         .maybeSingle()
@@ -183,11 +241,39 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: 'Assinatura não encontrada' })
       }
 
+      if (access.cancelled_at) {
+        return jsonResponse({
+          cancelled: true,
+          access_until: access.access_expire_date,
+          already_cancelled: true,
+        })
+      }
+
+      // Só marca cancelado no Supabase depois de cancelar no Pagar.me. Se o gateway falhar e
+      // gravássemos cancelled_at mesmo assim, o app mostraria "cancelado" mas a recorrência
+      // continuaria cobrando.
       if (access.pagarme_subscription_id) {
         try {
-          await pagarmeRequest(`/subscriptions/${access.pagarme_subscription_id}`, 'DELETE')
-        } catch (pagarmeErr: any) {
-          console.warn('Pagar.me cancel failed (proceeding with DB update):', pagarmeErr?.message)
+          await pagarmeRequest(
+            `/subscriptions/${access.pagarme_subscription_id}`,
+            'DELETE',
+            { cancel_pending_invoices: true },
+          )
+        } catch (pagarmeErr: unknown) {
+          const status = pagarmeErr instanceof PagarmeError ? pagarmeErr.status : 0
+          if (status === 404) {
+            console.warn('Pagar.me: assinatura já removida', access.pagarme_subscription_id)
+          } else {
+            console.error('Pagar.me cancel failed:', pagarmeErr)
+            return jsonResponse(
+              {
+                error:
+                  'Não foi possível cancelar a cobrança recorrente no Pagar.me. Nada foi alterado aqui — tente de novo em instantes ou fale com o suporte.',
+                details: pagarmeErr instanceof PagarmeError ? pagarmeErr.data : String(pagarmeErr),
+              },
+              502,
+            )
+          }
         }
       }
 

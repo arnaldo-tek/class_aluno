@@ -22,13 +22,29 @@ export interface SplitRule {
  * Build Pagar.me split rules using fixed amounts (centavos).
  * Platform always gets exactly 25%. Remaining 75% split equally among unique teachers.
  * Any remainder from rounding goes to the last teacher (never to the platform).
+ *
+ * If no teachers have receiver IDs, returns 100% to the platform — sending a partial
+ * split (only 25%) makes Pagar.me silently strip the entire split and the teacher
+ * portion gets lost.
  */
 export function buildSplitRules(receiverIds: string[], totalAmount: number): SplitRule[] {
   const unique = [...new Set(receiverIds)]
 
+  if (unique.length === 0) {
+    console.warn('[buildSplitRules] No teacher receiver IDs — sending 100% to platform')
+    return [
+      {
+        amount: totalAmount,
+        recipient_id: PLATFORM_RECEIVER_ID,
+        type: 'flat_value',
+        options: { charge_processing_fee: true, charge_remainder_fee: true, liable: true },
+      },
+    ]
+  }
+
   const platformAmount = Math.round(totalAmount * 0.25)
   const teachersTotal = totalAmount - platformAmount
-  const teacherBase = unique.length > 0 ? Math.floor(teachersTotal / unique.length) : 0
+  const teacherBase = Math.floor(teachersTotal / unique.length)
   const remainder = teachersTotal - teacherBase * unique.length
 
   const rules: SplitRule[] = [
@@ -59,7 +75,7 @@ export interface PagarmeRequestOptions {
 /** Generic Pagar.me API call */
 export async function pagarmeRequest<T = unknown>(
   path: string,
-  method: 'GET' | 'POST' | 'DELETE' = 'GET',
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
   body?: unknown,
   options?: PagarmeRequestOptions,
 ): Promise<T> {
